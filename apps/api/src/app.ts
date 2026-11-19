@@ -8,6 +8,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerBranchRoutes } from "./routes/branches.js";
+import { registerInventoryRoutes } from "./routes/inventory.js";
 
 export interface BuildAppOptions {
   db: PrismaClient;
@@ -95,5 +96,6 @@ export async function buildApp({
   await registerAuthRoutes(app, db, config);
   await registerUserRoutes(app, db, config);
   await registerBranchRoutes(app, db, config);
+  await registerInventoryRoutes(app, db, config);
   return app;
 }
