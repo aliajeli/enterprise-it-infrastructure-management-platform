@@ -21,6 +21,7 @@ All state-changing routes require an exact trusted Origin, an authenticated serv
 | PUT | /api/v1/users/{userId}/branches | ADMIN atomically replaces branch grants and audits the change. |
 | POST | /api/v1/users/{userId}/reset-password | ADMIN issues one-time temporary password to an active non-admin; revokes sessions and forces password change. |
 | GET | /api/v1/branches | ADMIN lists active, inactive and archived branch records. |
+| GET | /api/v1/branches/accessible | Returns active branches visible to the authenticated inventory user: all active branches for ADMIN, current grants only for OPERATOR/VIEWER. Requires `inventory.read`. |
 | POST | /api/v1/branches | ADMIN creates a branch. |
 | PATCH | /api/v1/branches/{branchId} | ADMIN edits branch code/name with optimistic version check. |
 | POST | /api/v1/branches/{branchId}/archive | ADMIN soft-archives branch and revokes all active branch grants. |
