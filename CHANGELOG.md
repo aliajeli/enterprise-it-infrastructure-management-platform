@@ -16,6 +16,14 @@
 - Recomputed `FINAL_FILE_MANIFEST.md` and `SHA256SUMS.txt` a second time after these corrections; `sha256sum -c` passes for all 21 entries.
 - Documentation only: no settings, visibility, hook, workflow or Git-history changes; the pull request remains open and unmerged; Phase 3 remains not started.
 
+### Owner decision recorded — same day, owner-authorized documentation update
+- Recorded the owner-approved decision of 2026-11-19 in `DECISION_LOG.md`: the temporary public documentation mirror `aliajeli/testing` has been **permanently deleted by the owner**, and the primary private repository `aliajeli/enterprise-it-infrastructure-management-platform` is the **sole authoritative project repository**. The change is purely additive — the six owner-approved architectural decisions of 2026-11-18 are unchanged.
+- Explicitly recorded in the decision entry: deletion does **not** recall content already cloned, downloaded, crawled, indexed or cached while the mirror was public; no GitHub Support cache purge is claimed or verified; no offline archival copy is claimed to have been created (**Not verified**). The decision entry also lists the point-in-time statements in other documents that it supersedes.
+- `PHASE2_REVIEW_2026-11-19.md`: Q-03 closed as **RESOLVED by owner decision**; F-09 and S-1 updated; §7 deferred list and §9 P1 list annotated; Appendix A extended with "Current state" and "Outcome of the owner decision" subsections and temporal framing that separates the verified historical public exposure (retained as history) from the post-deletion state; new evidence E-21 (read-only deletion verification).
+- `HANDOVER.md`: snapshot rows updated for consistency (new "Sole authoritative repository" row; next-action question list). All historical pre-transfer text remains byte-for-byte verbatim.
+- `FINAL_FILE_MANIFEST.md` and `SHA256SUMS.txt` recomputed a third time, after all other changes; `sha256sum -c` passes for all 21 entries.
+- Documentation only: no settings, visibility, branch protection, webhook, workflow, hook or Git-history changes; no branches created or deleted; the pull request remains open and unmerged; `main` unchanged; Phase 3 remains not started.
+
 ## Unreleased — 2026-11-18
 - Drafted architecture, security, database, deployment, testing and release design documentation.
 - Recorded repository visibility evidence and outstanding validation gaps.

@@ -7,6 +7,7 @@ This section is the operative handover snapshot for the primary private reposito
 | Item | Value (verified 2026-11-19 unless noted) |
 |---|---|
 | Repository | `aliajeli/enterprise-it-infrastructure-management-platform` — primary, private (GitHub API metadata `private: true`) |
+| Sole authoritative repository | This primary private repository — owner-approved decision of 2026-11-19, recorded in [DECISION_LOG.md](DECISION_LOG.md). The temporary public documentation mirror https://github.com/aliajeli/testing was **permanently deleted by the owner** (owner-confirmed; independently checked read-only: HTTP 404 anonymously and with the owner token, and absent from the owner's authenticated repository list, which does include private repositories). Deletion does **not** recall content already cloned, downloaded, crawled, indexed or cached while the mirror was public, and no GitHub Support cache purge or offline archival copy is claimed or verified. Historical references to the mirror elsewhere in this file are retained verbatim as history |
 | Default branch / latest commit on `main` | `f60676205bcf9ff7f5608f0e3b3074a76bdb3776` — "docs: record Phase 2 documentation transfer status" (2026-11-19T06:39:03Z); `origin/main` identical |
 | Full history | 22 commits at review time: root `c509d99` (README baseline, 06:37:26Z), 19 per-file transfer commits (06:37:51Z–06:38:36Z), `b6bd6d8` (README landing page — the commit referenced by TRANSFER_STATUS.md, 06:38:54Z), `f606762` (TRANSFER_STATUS.md, 06:39:03Z). Review clones may be shallow; unshallow before history verification |
 | Current development phase | Phase 2 — Architecture, Design, Documentation and Technical Validation Planning. Phase 3 not authorized and not started |
@@ -22,7 +23,7 @@ This section is the operative handover snapshot for the primary private reposito
 | Last completed task | Phase 2 primary-repository documentation and architecture review (2026-11-19), findings in [PHASE2_REVIEW_2026-11-19.md](PHASE2_REVIEW_2026-11-19.md) |
 | In-progress task | Owner review of the pull request containing that report and the safe documentation repairs |
 | Known documentation discrepancies | Historical pre-transfer wording in this file, [FINAL_HANDOVER_REPORT.md](FINAL_HANDOVER_REPORT.md) and [DOCUMENTATION_REVIEW_REPORT.md](DOCUMENTATION_REVIEW_REPORT.md) describes the temporary mirror and the untransferred local package; retained as history, superseded by this snapshot and TRANSFER_STATUS.md. Full list in the review report §4 |
-| Exact next action | Owner: review the pull request, answer the questions in the review report §8 (one-SHA-one-channel confirmation, archival byte-preservation mechanism, public-mirror disposition, `docs/` layout, bootstrap version policy), then decide on Phase 3 authorization. Do not start Phase 3 without explicit authorization |
+| Exact next action | Owner: review the pull request, answer the remaining open questions in the review report §8 (one-SHA-one-channel confirmation, archival byte-preservation mechanism, `docs/` layout, bootstrap version policy), then decide on Phase 3 authorization. The public-mirror question (Q-03) is **resolved** — see the "Sole authoritative repository" row above and Appendix A of the review report. Do not start Phase 3 without explicit authorization |
 
 *Historical — pre-transfer; superseded by the snapshot above.*
 
