@@ -228,7 +228,12 @@ function InventoryContent() {
     try {
       await requestJson(`/api/v1/inventory/assets/${editingAsset.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ version: editingAsset.version, ...editAssetForm }),
+        body: JSON.stringify({
+          version: editingAsset.version,
+          ...editAssetForm,
+          primaryIp: editAssetForm.primaryIp.trim() || undefined,
+          macAddress: editAssetForm.macAddress.trim() || undefined,
+        }),
       });
       setEditingAsset(null);
       setNotice("Asset details updated.");
