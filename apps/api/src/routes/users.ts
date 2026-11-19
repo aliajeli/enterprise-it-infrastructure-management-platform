@@ -494,4 +494,99 @@ export async function registerUserRoutes(
       }
     },
   );
+
+  app.post<{ Params: { userId: string } }>(
+    "/api/v1/users/:userId/reset-password",
+    {
+      config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
+      schema: {
+        params: {
+          type: "object",
+          required: ["userId"],
+          properties: { userId: { type: "string", format: "uuid" } },
+        },
+      },
+    },
+    async (request, reply) => {
+      const actor = await requireAdmin(db, config, request, reply);
+      if (!actor) return;
+      if (request.params.userId === actor.user.id) {
+        return reply.code(409).send({
+          error: {
+            code: "SELF_MODIFICATION_NOT_ALLOWED",
+            message: "Use the authenticated password-change flow for your own account.",
+          },
+        });
+      }
+
+      const target = await db.user.findUnique({
+        where: { id: request.params.userId },
+        select: { id: true, role: true, status: true },
+      });
+      if (!target) {
+        return reply.code(404).send({
+          error: { code: "USER_NOT_FOUND", message: "User not found." },
+        });
+      }
+      if (target.role === "ADMIN") {
+        return reply.code(409).send({
+          error: {
+            code: "ADMIN_MANAGEMENT_RESTRICTED",
+            message: "Administrator recovery requires the owner-controlled procedure.",
+          },
+        });
+      }
+      if (target.status !== "ACTIVE") {
+        return reply.code(409).send({
+          error: {
+            code: "USER_DISABLED",
+            message: "Enable the account before issuing a temporary password.",
+          },
+        });
+      }
+
+      const temporaryPassword = randomBytes(32).toString("base64url");
+      const passwordHash = await hashPassword(temporaryPassword);
+      const now = new Date();
+
+      await db.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: target.id },
+          data: {
+            passwordHash,
+            passwordChangedAt: now,
+            mustChangePassword: true,
+            authEpoch: { increment: 1 },
+            failedLoginCount: 0,
+            lockedUntil: null,
+          },
+        });
+        await tx.session.updateMany({
+          where: { userId: target.id, revokedAt: null },
+          data: { revokedAt: now },
+        });
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: actor.user.id,
+            actorType: "USER",
+            action: "USER_PASSWORD_RESET",
+            objectType: "user",
+            objectId: target.id,
+            outcome: "SUCCESS",
+            requestId: request.id,
+            sourceIp: request.ip,
+            metadata: { mustChangePassword: true, sessionsRevoked: true },
+          },
+        });
+      });
+
+      reply.header("cache-control", "no-store");
+      return reply.send({
+        userId: target.id,
+        temporaryPassword,
+        mustChangePassword: true,
+      });
+    },
+  );
+
 }
