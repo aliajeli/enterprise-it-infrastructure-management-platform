@@ -15,9 +15,30 @@ The project is being implemented in reviewable milestones. **M0 — repository a
 - **Windows Agent target:** C# / .NET 10 LTS.
 - **Deployment target:** self-contained Windows installation with five independent Windows services.
 
+## First local administrator
+
+Copy the repository-root `.env.example` to `.env` and set a local PostgreSQL connection string. Start PostgreSQL, then run:
+
+```sh
+npm ci
+npm run db:validate
+npm run db:migrate:deploy
+npm run build
+npm run bootstrap-admin
+```
+
+The bootstrap command requires an interactive terminal, masks password entry, and creates an administrator only when the users table is empty. It has no default username or password and never accepts a password as a command-line argument.
+
+For local development, run the API and web app in separate terminals:
+
+```sh
+npm run dev:api
+npm run dev
+```
+
 ## Development
 
-The web application lives in `apps/web`, the API service in `apps/api`, and the Prisma database package in `packages/database`. In local development, the Next.js server proxies same-origin `/api` requests to the loopback API service.
+The web application lives in `apps/web`, the API service in `apps/api`, and the Prisma database package in `packages/database`. See [M1 authentication and persistence design](M1_AUTHENTICATION_DESIGN.md) for the security model. In local development, the Next.js server proxies same-origin `/api` requests to the loopback API service.
 
 After installing the supported Node.js runtime and dependencies:
 

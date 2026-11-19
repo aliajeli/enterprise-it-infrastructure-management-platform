@@ -36,6 +36,7 @@
 - Add the dedicated Fastify API workspace and Prisma 7.10.1 PostgreSQL adapter package.
 - Establish users, sessions, recovery codes, branches, branch-scoped access grants and append-only audit events.
 - Implement Argon2id password hashing, opaque HttpOnly sessions, strict Origin validation, login throttling, generic authentication failures and server-side authorization primitives.
+- Provide a one-time interactive bootstrap command for the first administrator; never seed default credentials.
 - Keep the exact operational permission matrix owner-pending; no branch/device mutation endpoints are enabled until that matrix is approved.
 - Add database migration validation against disposable PostgreSQL 18 in CI. Production backup/restore and Windows service identity remain later acceptance requirements.
 

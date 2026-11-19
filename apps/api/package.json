@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "bootstrap-admin": "node dist/cli/bootstrap-admin.js"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.5",

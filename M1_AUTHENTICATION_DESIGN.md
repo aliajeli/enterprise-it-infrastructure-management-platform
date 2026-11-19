@@ -58,4 +58,4 @@ The database supports ADMIN, OPERATOR and VIEWER. Branch grants are persisted se
 - GET /api/v1/session: return the authenticated principal.
 - POST /api/v1/auth/logout: revoke the current session.
 
-No production administrator bootstrap, password recovery, user-management API or operational permission matrix is claimed as implemented.
+The administrator bootstrap command is implemented. Password recovery, user-management API and the operational permission matrix are not implemented.
