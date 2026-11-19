@@ -270,3 +270,12 @@ An earlier application-repository inspection reported an empty clone before the 
 - Unit tests cover retry delay and max-attempt policy. PostgreSQL race/lease integration tests are still outstanding.
 - No SNMP handler, credential vault, API enqueue/cancel route, Windows service registration, installer or release is implemented.
 - Previous exact-head CI for `f73cab6c97ab199c415e77f356e80e1682cac7a3` passed; CI for this new commit is required and pending.
+
+
+## 2026-11-19 — Worker queue follow-up (current session)
+- Verified GitHub Actions run [44572613928](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44572613928) on head `356c5b5ab2e49fbbf29ae7d6b26a5ccf06d3d302`: all three jobs passed, including Windows API runtime smoke, Prisma schema/migration validation on PostgreSQL 18, lint, typecheck, unit tests, backup/restore smoke and production build.
+- Fixed Worker lease recovery ordering so cancellation takes precedence over retry exhaustion. Added live-lease-expiry predicates to completion and cancellation acknowledgement so stale workers cannot finalize expired runs.
+- Added PostgreSQL integration tests for single-claim concurrency, lease owner enforcement, stale-worker rejection, expired-lease recovery/reclaim, retry requeue/exhaustion, cancellation precedence and transaction rollback. Tests are restricted to the disposable `platform_test` database.
+- Commits after the last validated CI head: `5c2cb8f`, `3600961`, `1691302`. Their validation is pending; do not describe these fixes/tests as CI-passing until a run for the exact current head succeeds.
+- PR #8 remains Draft and unmerged. Worker has no discovery handlers and its source allow-list remains empty. No network polling, credential vault, enqueue API, Windows Worker service, installer or Release is available yet.
+- Next action: wait for the current head's CI, inspect logs on failure, then add any missing queue race tests and reconcile this handover with the exact result. Do not merge or publish an installer/release without owner approval and required platform gates.
