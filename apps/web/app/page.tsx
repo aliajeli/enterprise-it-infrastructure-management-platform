@@ -107,9 +107,38 @@ export default function DashboardPage() {
       <section className="min-w-0">
         <header className="flex h-[72px] items-center justify-between border-b border-slate-700/40 px-5 sm:px-8">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-lg border border-slate-700/60 bg-slate-900 lg:hidden">
-              <Command size={18} />
-            </div>
+            <details className="mobile-menu relative lg:hidden">
+              <summary
+                className="grid h-9 w-9 cursor-pointer list-none place-items-center rounded-lg border border-slate-700/60 bg-slate-900 text-slate-300"
+                aria-label="Open navigation menu"
+              >
+                <Menu size={18} />
+              </summary>
+              <nav
+                aria-label="Mobile navigation"
+                className="absolute left-0 top-11 z-20 w-64 rounded-xl border border-slate-700/70 bg-slate-950 p-3 shadow-2xl"
+              >
+                <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">Workspace</p>
+                <a href="/" className="sidebar-link" aria-current="page">
+                  <LayoutDashboard size={17} strokeWidth={1.8} />
+                  <span>Overview</span>
+                </a>
+                {navigation.slice(1).map(({ label, icon: Icon }) => (
+                  <div key={label} className="sidebar-link is-disabled" aria-disabled="true">
+                    <Icon size={17} strokeWidth={1.8} />
+                    <span>{label}</span>
+                    <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-600">Planned</span>
+                  </div>
+                ))}
+                <p className="px-3 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">Operations</p>
+                {operations.map(({ label, icon: Icon }) => (
+                  <div key={label} className="sidebar-link is-disabled" aria-disabled="true">
+                    <Icon size={17} strokeWidth={1.8} />
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </nav>
+            </details>
             <div>
               <p className="text-xs text-slate-500">Workspace / Overview</p>
               <h1 className="mt-0.5 text-sm font-semibold text-slate-100">Infrastructure overview</h1>
