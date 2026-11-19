@@ -92,3 +92,8 @@ Exact-head CI passed on `5067518791b0899f410fee8b76495028e11bd590`: Push run [44
 - Old versions are retained; no deletion/retirement API exists. Rotation fails closed at 64 entries rather than discarding keys.
 - Storage requires a process-safe exclusive lock, durable same-directory atomic replacement and installer-provisioned ACL verification. No concrete filesystem adapter is registered; tests use in-memory storage only.
 - Independent recovery, ACL provisioning/verification, credential persistence and production key-provider registration remain unimplemented. Do not enter real equipment secrets.
+
+
+
+## Windows Credential Keyring Storage — design gate (2026-11-19)
+The binding storage contract is documented in `WINDOWS_KEYRING_STORAGE_DESIGN.md`. It requires a fixed ProgramData path, a dedicated API service SID, exact owner and protected-DACL validation on every operation, transaction-scoped cross-process locking, durable same-directory atomic replacement and bounded binary helper sessions. Arbitrary paths, runtime ACL broadening, unlocked fallback and implicit LocalSystem/administrator execution are prohibited. This is documentation only; no concrete adapter, ACL provisioning, recovery, credential persistence or production registration exists. Keep the Credential Vault test-only.

@@ -171,3 +171,10 @@ The separate `apps/worker` workspace now contains the first durable queue primit
 - Rotation preserves every prior key version and has a bounded 64-entry capacity. No key retirement is implemented.
 - Tests cover idempotent initialization, old-key retention, concurrent rotations, malformed/missing registry rejection and capacity handling.
 - Remaining gates: concrete Windows storage adapter with ACL verification and atomic durable replacement; independent recovery export/custody and clean-host restore; reference-aware audited retirement; then Prisma Credential records/API/RBAC/audit.
+
+
+
+### Credential Vault continuation — Windows storage adapter design gate (2026-11-19)
+- Added `WINDOWS_KEYRING_STORAGE_DESIGN.md` as the binding implementation contract for the fixed ProgramData keyring location, dedicated service SID, exact owner/DACL policy, transaction-scoped cross-process lock, durable same-directory atomic replacement and binary helper session.
+- Design explicitly rejects arbitrary paths, ACL auto-repair, unlocked fallback and use of LocalSystem/interactive administrator as an implicit service identity.
+- Next step is helper-side protocol/path/ACL primitives and Windows acceptance tests. No production storage adapter or keyring registration is implemented; recovery, Credential DB/API/RBAC/audit, discovery and installer remain blocked.

@@ -272,3 +272,10 @@
 - Added tests for initialization idempotency, old-key retention, concurrent rotation, malformed registry rejection and capacity handling.
 - No concrete filesystem adapter, ACL verification/provisioning, independent recovery or clean-host restore drill exists yet. This is not a production key store; do not enter real equipment secrets.
 - Root version metadata advanced to 0.1.11. No installer or Release is produced under the approved bootstrap exception.
+
+
+## Unreleased — Windows keyring storage adapter design gate
+- Recorded a fixed-path, service-SID-bound Windows storage contract for the versioned Credential Vault keyring.
+- Specified exact owner/DACL validation, transaction-scoped cross-process locking, same-directory durable atomic replacement, bounded binary helper sessions and Windows multi-process/security acceptance tests.
+- This is a design milestone only: no filesystem adapter, ACL provisioning, storage helper operation, production keyring registration, recovery export or installer is implemented by this change.
+- Root version metadata advanced to 0.1.12; no Release or installer is produced.

@@ -413,3 +413,12 @@ An earlier application-repository inspection reported an empty clone before the 
 - The Node client and helper implement bounded binary framing, machine-scope DPAPI, installation ID + current SID entropy, generic failure behavior and buffer cleanup. The helper is a primitive, not a production provider.
 - Remaining hard gates: installer-managed service identity and NTFS ACL provisioning/verification; persistent protected key registry; atomic key rotation and reference-aware retirement; independent recovery export/custody; clean-machine recovery drill. No Credential model/API, production key registration, discovery handler, installer or Release is available.
 - Root version metadata is `0.1.10`.
+
+
+
+## 2026-11-19 — Windows keyring storage design gate
+- Exact-head CI passed on keyring-core commit `2b9b30d99018161970aba4f8e3aa9e33b904d1b3`: Push run [44595293338](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44595293338) and PR run [44595309352](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44595309352). Both Linux/PostgreSQL platform validation and Windows API runtime smoke completed successfully.
+- GitHub Actions then created lockfile metadata commit `7d5927d907e961afd60eb48c09834268b9b01e2d` as the expected bootstrap follow-up; branch head was verified before this documentation change.
+- Added `WINDOWS_KEYRING_STORAGE_DESIGN.md` defining fixed ProgramData storage, dedicated service SID, exact ACL verification, transaction-scoped process lock, durable atomic replacement, binary helper session and Windows acceptance gates.
+- Design only; no production storage adapter or real credential storage. Worker handlers remain disabled. No installer or Release.
+- Root package and lockfile metadata advanced to `0.1.12`.
