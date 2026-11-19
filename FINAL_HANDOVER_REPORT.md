@@ -1,0 +1,33 @@
+# Final Phase 2 local handover report
+
+## Purpose and status
+This directory is a **local owner-review draft**, prepared for a possible later transfer to the root of the private primary project repository. It has not been published or transferred there, and current private-repository contents were not inspected. No GitHub operation was performed during this finalization. Phase 2 remains active; Phase 3, application implementation, production migrations, installers, production release automation and execution of the Desktop Bridge PoC were not started.
+
+Source is local review branch `phase2/final-documentation-corrections`, commit `4dea17d1bdc02e2b5e00aaefc0d759094011b915`, parent `a19fce5c5e2c632ada3ff3748a11a541d0853a30`. The 17 source documents were copied into this directory; package-only edits are not a new Git commit. Prior published-mirror observations remain historical and are not revalidated in this task.
+
+## Decisions and consistency
+The six owner decisions dated 2026-11-18 are preserved in DECISION_LOG.md: five distinct Windows services; date-only package directory; one-time bootstrap exception; central Update Proxy; separately authorized Bridge PoC; tiered testing. The one-SHA-one-channel rule remains **PROPOSED — OWNER CONFIRMATION REQUIRED**; RELEASE_PROCESS.md now labels the corresponding cross-channel treatment as a proposal rather than a settled decision. Other release and installer behaviors remain unimplemented designs.
+
+The earlier mirror-root `MANIFEST.md` was a snapshot-specific inventory of historical ZIPs, duplicate directories and a different checksum scope; it is intentionally not carried into this clean root package. Its useful purpose is superseded by FINAL_FILE_MANIFEST.md and SHA256SUMS.txt. DOCUMENTATION_REVIEW_REPORT.md preserves historical findings and paths, identified as historical rather than required package dependencies. CHANGELOG.md and HANDOVER.md reflect local preparation and avoid claiming publication to the primary repository.
+
+## Original master prompt
+The original attachment was used to restore the exact embedded source bytes within this package's GUIDELINE.md, including CRLF. It was compared byte-for-byte with the attachment; the source SHA-256 is `38634f573b0391402a1b58ad927d133fa0ad2ca6551c8ea66180daddd3e24b16`. This verifies fidelity to the supplied attachment, not an independent byte comparison with the conversation. Earlier mirror copies had CRLF-to-LF normalization. Future Git staging or transfer can normalize line endings; an owner must select and test a byte-preserving approach before transfer. No Git attributes or project settings were changed here.
+
+## Local security review and limitations
+A limited pattern-based review covered 175 local non-Git filesystem files, 10 distinct ZIP archives with 175 entries examined, and six commits/51 unique blobs in the available local review-branch history. ZIPs were deduplicated by content; three binary, large or otherwise non-text records were skipped. Git configuration and credentials were not read. A subsequent scan traversed all three usable local Git repositories, covering six distinct commits and 51 unique blobs (86 text records including ZIP members); common credential, connection-string and IP patterns had zero matches, while domain and topology patterns matched. The `/home/user/repo` Git metadata is incomplete, so its unavailable history could not be scanned. Dedicated `gitleaks`, `trufflehog` and `detect-secrets` tools were unavailable. Common GitHub/AWS token and private-key patterns, quoted secret assignments, IPv4/CIDR and common connection-string patterns returned no matches in the scanned text. This is **not a comprehensive security audit** or proof that no secrets exist.
+
+Sensitive operational details remain present: domain/organizational identifiers and administrative mapping; SMB, remote service, firewall and trust assumptions; infrastructure topology and monitoring; device and management-interface details; and deployment paths/procedures. Examples occur in GUIDELINE.md, ARCHITECTURE.md, NETWORK_REQUIREMENTS.md, AGENT_SPECIFICATION.md, DEPLOYMENT_WORKFLOWS.md and DOCUMENTATION_REVIEW_REPORT.md, including historical copies elsewhere in the workspace. These details were not removed or silently altered. The owner should assess public exposure and approve any redacted public derivative or history remediation. Do not expose credentials in reports.
+
+## Package verification and checksums
+The required 17 documentation files and these two final reports plus SHA256SUMS.txt comprise the root upload. FINAL_FILE_MANIFEST.md lists the payload files with byte counts and SHA-256 hashes. SHA256SUMS.txt covers all files except itself to avoid an impossible self-hash. The ZIP is separate and its hash is supplied outside this directory; hashes prove byte integrity, not publisher authenticity. Run `sha256sum -c SHA256SUMS.txt` within the extracted root and compare the downloaded ZIP against its detached checksum.
+
+## Remaining issues and exact next action
+1. Owner review is required for operational information exposed publicly and for the one-SHA-one-channel proposal.
+2. Preserve original prompt bytes across future Git operations; CRLF normalization occurred before. Current package verification does not prove future repository preservation.
+3. Windows services, Agent, network/vendor integrations, Bridge, Update Proxy, installer, PostgreSQL recovery and release automation remain unimplemented or unverified. No target compatibility test or PoC was run.
+4. The primary repository's current branch, contents, documentation conflicts and permissions remain unverified. Compare and merge documents only after explicit approval and secure authenticated access; never blindly overwrite the target.
+
+**Next action:** provide this package to the owner, wait for review and explicit authorization, and do not start Phase 3.
+
+## Local verification results
+The initial package check found exactly 20 root files (17 required documents plus the two final reports and checksum inventory), no unexpected paths, 19 of 19 listed file checksums correct, and 61 relative Markdown links with no missing targets. All six approved-decision headings and the owner-confirmation-required marker in both release and versioning documents were present. The extracted GUIDELINE.md master-prompt bytes matched the supplied attachment. These are local documentation checks, not application, compatibility or security certification tests. The final ZIP is verified separately after packaging; its own digest is not embedded in the ZIP to avoid self-reference.
