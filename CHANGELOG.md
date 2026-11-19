@@ -1,3 +1,9 @@
+## 0.1.24 — Define independent Credential Vault recovery (2026-11-20)
+
+- Added a recovery architecture for offline RSA-OAEP KEK wrapping, separately signed canonical manifests, HSM-backed private-key custody, and clean-host DPAPI re-protection.
+- Defined export/restore authorization, version retention, rotation, audit, backup pairing and acceptance tests.
+- Design only: no recovery private key, export API, restore utility or production credential persistence was added.
+
 ## 0.1.23 — Align DPAPI tests with service-only execution (2026-11-20)
 
 - Replaced the outdated Windows CI expectation of interactive-user DPAPI round-trip with an explicit fail-closed test for tokens without the dedicated service SID.

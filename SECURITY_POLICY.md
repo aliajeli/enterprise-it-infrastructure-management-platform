@@ -104,3 +104,7 @@ The DPAPI helper now requires exactly one unique dedicated Windows service SID (
 
 
 The Windows DPAPI test suite now distinguishes negative hosted-runner coverage from positive service-account integration. The normal CI runner must be rejected because it has no provisioned dedicated service SID. The positive protect/unprotect round-trip is gated behind `RUN_PROVISIONED_DPAPI_INTEGRATION=1`; do not set this flag on an ordinary interactive or LocalSystem runner.
+
+
+## Independent Credential Vault recovery design — 2026-11-20
+See `CREDENTIAL_VAULT_RECOVERY_DESIGN.md`. Proposed design wraps every retained KEK to an offline RSA-3072 recovery public key (OAEP-SHA256) and signs a canonical manifest with a separate offline RSA-PSS-SHA256 signing key. Private keys remain in an independently controlled HSM/hardware-backed store with dual control. Clean-host recovery re-protects KEKs with the new host's DPAPI while preserving the immutable installation ID. This is not implemented or approved for production; a successful second-host restore drill is mandatory.

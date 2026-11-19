@@ -494,3 +494,8 @@ An earlier application-repository inspection reported an empty clone before the 
 - Windows CI correctly rejected the helper under the hosted runner's non-service identity after v0.1.22. The existing Vitest integration test still expected an interactive-user DPAPI round-trip, so that test failed by design.
 - Updated tests to assert rejection for a non-service process token in CI. Positive protect/unprotect round-trip is now explicitly gated behind `RUN_PROVISIONED_DPAPI_INTEGRATION=1` and must only run inside the future installer-provisioned dedicated service identity test environment.
 - This is a test expectation correction, not a weakening of service identity enforcement.
+
+
+## 2026-11-20 — Independent recovery design (v0.1.24)
+- Added `CREDENTIAL_VAULT_RECOVERY_DESIGN.md`: independent offline RSA-3072 OAEP-SHA256 wrapping for every retained KEK, separate RSA-PSS-SHA256 manifest signing, canonical bounded manifest, HSM/hardware-backed private-key custody, two-person export/restore approval, clean-host restore preserving installation ID, and explicit acceptance gates.
+- This is a design decision proposal only. No recovery keys or recovery workflow have been implemented. DPAPI remains machine-bound; no production use until the clean-host restore drill succeeds.
