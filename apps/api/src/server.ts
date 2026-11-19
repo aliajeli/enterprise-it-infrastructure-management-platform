@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { prisma } from "@platform/database";
 import { buildApp } from "./app.js";
 import { loadApiConfig } from "./config.js";

@@ -52,11 +52,17 @@ export async function buildApp({
       "API request failed",
     );
 
-    const status =
-      typeof error.statusCode === "number" &&
-      error.statusCode >= 400 &&
-      error.statusCode < 500
+    const candidateStatus =
+      typeof error === "object" &&
+      error !== null &&
+      "statusCode" in error
         ? error.statusCode
+        : undefined;
+    const status =
+      typeof candidateStatus === "number" &&
+      candidateStatus >= 400 &&
+      candidateStatus < 500
+        ? candidateStatus
         : 500;
     const code =
       status === 429
