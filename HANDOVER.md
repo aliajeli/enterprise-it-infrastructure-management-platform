@@ -1,6 +1,38 @@
-# Phase 2 documentation handover
+# Project handover
 
-## Current snapshot — primary repository (2026-11-19, post-merge R1)
+## Current snapshot — Phase 3 implementation (2026-11-19)
+
+**Snapshot observed:** 2026-11-19T08:39:00Z (UTC). This section supersedes the earlier Phase 2 snapshot below; historical evidence and decisions remain preserved.
+
+| Item | Current verified state |
+|---|---|
+| Authoritative repository | `aliajeli/enterprise-it-infrastructure-management-platform` — Private |
+| Default branch | `main` at `60b0e515896c6db1e3d3469f834866e76d0198ca` |
+| Current phase | **Phase 3 — Implementation**, explicitly authorized by the owner on 2026-11-19 |
+| Active development branch | `phase3/platform-foundation` |
+| Current implementation commit | `7603d3854d08b9197d3aa3623176e897eb4e17d6` |
+| Active pull request | [PR #3 — initial platform web foundation](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/3), open, draft, base `main`; not merged |
+| First milestone | M0 — repository and application foundation, in progress |
+| Implemented scope | Initial Next.js App Router workspace, strict TypeScript configuration, Tailwind CSS integration, responsive infrastructure overview shell with truthful empty states, Phase 3 plan and refreshed landing page/changelog |
+| Not implemented | Authentication, API, database schema/migrations, Windows services, worker, Agent, monitoring, NVR/switch integrations, Desktop Bridge, installer, updater and release automation |
+| Dependency reproducibility | No generated `package-lock.json` yet. Exact dependencies are pinned in package manifests; clean installation and lockfile generation remain mandatory M0 exit criteria |
+| Validation | No dependency installation, typecheck, production build, lint, unit/integration test or Windows validation has been run for PR #3. PR remains draft and must not be merged/released until required checks pass |
+| Execution environment limitation | Available execution environment reports Node.js 22.16.0/npm 10.9.2, below the selected Node.js 26 baseline; outbound DNS/network access is unavailable, so it cannot install Node 26 or fetch npm dependencies. This is a limitation of the current execution environment, not a claim about the owner's workstation |
+| Architectural constraints | All six owner-approved decisions in `DECISION_LOG.md` remain binding. Five independent Windows services remain required |
+| Repository administration | No branch protection, settings, hooks, webhooks, permissions or workflow configuration changed |
+| Desktop Bridge | PoC not executed; it remains a separately authorized isolated task |
+
+### Next actions
+
+1. Provision an approved Node.js 26 LTS build environment with npm registry access, or connect an authorized Windows runner.
+2. Run dependency installation and commit the generated `package-lock.json`; verify dependency and peer compatibility.
+3. Run TypeScript, production build, lint, unit/security checks and accessibility review; fix all findings.
+4. Reconcile the M0 result and update this handover with exact commands, runner versions and evidence.
+5. Only after all M0 exit criteria pass, begin M1 identity, access control and persistence. Do not treat the dashboard shell as a functioning management platform.
+
+---
+
+## Historical snapshot — primary repository (2026-11-19, post-merge R1)
 
 **Snapshot observed:** 2026-11-19T08:27:09Z (UTC). This is a dated record, not continuously current status. Before acting, verify live PR/main state from GitHub with `gh pr view 2 --json state,headRefOid,baseRefName,url` and `git ls-remote origin refs/heads/main`. The authoritative repository/default branch is the primary private repository's `main`; a temporary Arena session branch is only a PR source, not a replacement authoritative development branch.
 
