@@ -57,6 +57,8 @@
 
 ### M2 — Branch and inventory management (initial slice in progress)
 
+**Inventory UI slice implemented on Draft PR #8, stacked on Draft PR #7:** authenticated branch selector, branch-scoped asset listing/search/type filters, asset registration, switch-port metadata entry, and latest-observation display. A new `GET /api/v1/branches/accessible` endpoint returns only active branches the signed-in user may access. Desktop and mobile dashboard navigation now expose the inventory workspace. CI and review remain pending on PR #8's final head.
+
 **Implemented on `phase3/m2-inventory-foundation` (CI passed; PR #7 Draft/unmerged):**
 - PostgreSQL/Prisma schema and migration for branch-owned common assets, switch profiles, switch ports, timestamped port observations and discovery-run records.
 - Branch-scoped inventory list/create/update API with bounded pagination, filtering, IP/MAC validation, optimistic concurrency and transactional audit events.
