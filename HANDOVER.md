@@ -1,6 +1,32 @@
 # Project handover
 
-## Current snapshot — M2 inventory UI (2026-11-19)
+## Current snapshot — CI-verified M2 inventory UI and SNMP safety design (2026-11-19)
+
+**Snapshot observed:** branch `phase3/m2-inventory-ui`, PR [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), head `e324d6a47fc232421488c330528bc1784fac9f94`. PR #8 remains Draft/open/unmerged and is stacked on Draft PR #7.
+
+| Item | Verified state |
+|---|---|
+| M2 inventory UI and editing | Branch selector, branch-scoped inventory list/search, asset create/edit, switch-port metadata create/edit, latest observation display |
+| Exact-head validation | PR run [44570604144](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44570604144) and push run [44570589162](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44570589162) both passed on `e324d6a47fc232421488c330528bc1784fac9f94` |
+| PostgreSQL/API tests | Inventory integration suite executed; API Vitest reported 15 tests passed across 5 files |
+| Windows API | Runtime smoke, Prisma generation/compile, API/test typecheck and API build passed |
+| Platform checks | Prisma schema/migrations, dependency tree, npm audit, ESLint, TypeScript, unit tests, PostgreSQL backup/restore smoke and production build passed |
+| MikroTik safety | SNMP discovery design prohibits port scans/mapping, NAT/port-forward changes, SNMP SET and automatic RouterOS firewall/address-list changes |
+| Not implemented | Worker, credential vault, SNMP/SSH discovery transport, live switch configuration, monitoring, NVR integration, Windows Agent/services, installer, updater and release automation |
+| Release/production | No installer, tag, GitHub Release or production deployment claimed |
+
+### Immediate next actions
+
+1. Keep PR #8 Draft/unmerged; CI passing does not replace code review or resolve the stacked dependency chain #5 → #6 → #7 → #8.
+2. Implement and test the durable PostgreSQL-backed Worker lifecycle before any device polling.
+3. Implement the encrypted credential vault and explicit branch-scoped discovery API before storing or using SNMP credentials.
+4. Implement a single-target, read-only SNMP prototype using the safety requirements in `SNMP_DISCOVERY_DESIGN.md`; test with a simulator before named Cisco/MikroTik hardware.
+5. Keep the one-time installer bootstrap exception in `VERSIONING_POLICY.md`: do not fabricate an installer or Release. Per-commit version ledger and release automation are not implemented.
+
+---
+
+
+## Historical snapshot — M2 inventory UI before CI repair (2026-11-19)
 
 **Snapshot observed:** 2026-11-19, branch `phase3/m2-inventory-ui`, PR [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), based on PR #7 head `e015919110a77cc13db0678113a88eae95166063`. PR #8 is Draft/open/unmerged. CI must be checked against its final head before treating this slice as validated.
 

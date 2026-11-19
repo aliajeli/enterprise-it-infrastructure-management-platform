@@ -119,3 +119,20 @@ The repository now contains the merged M0 web foundation and M1 identity/authent
 - Cross-channel reuse/promotion of the same Git commit SHA remains marked **PROPOSED — OWNER CONFIRMATION REQUIRED** in `VERSIONING_POLICY.md`; do not implement a conflicting release policy until resolved.
 - Branch protection for `main` and future `beta` remains an owner-controlled repository setting and is not changed by this implementation.
 - Desktop Bridge PoC execution remains a separately authorized task under `DESKTOP_BRIDGE_POC.md`.
+
+
+## M2 continuation — guarded read-only network discovery (design gate)
+
+The current inventory schema already has `DiscoveryRun`, `SwitchPort` and append-only `PortObservation` records. It does not yet have a durable Worker implementation, a credential vault, discovery endpoints or an SNMP transport. Do not begin device polling until those prerequisites and their tests are in place.
+
+The next design slice is documented in [SNMP_DISCOVERY_DESIGN.md](SNMP_DISCOVERY_DESIGN.md). It is intentionally limited to SNMP reads against explicitly registered management IPs. Port-range scanning, subnet sweeps, NAT/port-forward changes, SNMP SET and automatic MikroTik firewall changes are prohibited. A target that times out or appears filtered is paused for the run; the application must not retry aggressively or attempt to unblock itself.
+
+Implementation order:
+1. Establish and test the PostgreSQL-backed Worker job lifecycle (lease, bounded retry, cancellation, idempotency and audit).
+2. Implement server-side credential storage and retrieval with encryption, RBAC, redaction and key recovery tests. Never put community strings or SNMPv3 secrets in general asset/profile fields.
+3. Add an explicit, branch-scoped discovery API and per-target policy/rate limits.
+4. Implement SNMPv3 read-only polling for a single explicitly selected device; add opt-in SNMPv2c read-only compatibility only where required.
+5. Add IF-MIB and bridge/VLAN table mapping, simulator tests, then controlled hardware tests for named Cisco and MikroTik models and firmware.
+6. Enable scheduled discovery only after manual-run behavior and firewall-safe stop conditions pass acceptance.
+
+No device compatibility or live discovery is claimed until target hardware tests pass.

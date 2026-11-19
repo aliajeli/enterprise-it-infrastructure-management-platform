@@ -67,6 +67,7 @@ The development server binds to `127.0.0.1`. The initial dashboard is an impleme
 - [API contract](API_DOCUMENTATION.md)
 - [Windows Agent specification](AGENT_SPECIFICATION.md)
 - [Network requirements](NETWORK_REQUIREMENTS.md)
+- [SNMP read-only discovery design and MikroTik safety controls](SNMP_DISCOVERY_DESIGN.md)
 - [Deployment workflows](DEPLOYMENT_WORKFLOWS.md)
 - [Security policy](SECURITY_POLICY.md)
 - [Desktop Bridge PoC specification](DESKTOP_BRIDGE_POC.md)

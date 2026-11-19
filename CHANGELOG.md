@@ -1,3 +1,11 @@
+## Unreleased — inventory CI repair and guarded SNMP discovery design
+
+- Fixed React Hooks ESLint failures by deferring inventory data-loading calls from effects to a microtask.
+- Verified PR-triggered run [44570604144](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44570604144) and push run [44570589162](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44570589162), both successful on exact head `e324d6a47fc232421488c330528bc1784fac9f94`.
+- PostgreSQL-backed API integration tests executed, including the inventory integration suite; the API Vitest run reported 15 passing tests across 5 files. Windows API runtime smoke, lint, typecheck, security audit, backup/restore smoke and production build passed.
+- Added a read-only SNMP discovery design with explicit MikroTik safety controls: no port scanning/mapping, no NAT/port forwarding, no SNMP SET, no automatic firewall/address-list changes, and conservative per-target rate limits/circuit breaking.
+- Discovery remains design-only until the durable Worker, credential vault and scoped API are implemented and tested. No device was contacted and no router configuration was changed.
+
 ## Unreleased — Phase 3 pull-request CI trigger
 
 - Expanded `.github/workflows/validation.yml` so pull requests targeting `phase3/**` branches receive the same validation workflow as pull requests targeting `main`. Push validation for `phase3/**` remains enabled.

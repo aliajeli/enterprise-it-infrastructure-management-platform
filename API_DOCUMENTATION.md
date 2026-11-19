@@ -81,3 +81,14 @@ Candidate `/v1/channels/{channel}/releases` and `/v1/releases/{releaseId}/assets
 
 ## WebSocket and Agent protocol
 Separate operator and agent channels with authenticated handshake, Origin checks for browsers and server-side scope on every event. Candidate events `job.updated`, `target.step.updated`, `monitor.updated`, `alert.created`, `agent.heartbeat`, `agent.task`, `agent.task.result`, and `ssh.output`; include event ID, schema version, correlation, UTC time and scoped resource, never secrets. Use bounded payload, backpressure, replay cursor/reconnect semantics and periodic authorization revalidation. Agent protocol requires single-use enrollment, per-device key proof, task UUID/nonce/expiry, allowlisted structured types/parameter bounds, idempotency and sanitized result; reject arbitrary shell or PowerShell. Disconnect/reconnect and revocation invalidate sessions, with uncertain outcomes reconciled rather than blindly repeated.
+
+
+## Planned SNMP discovery API — not implemented
+
+No discovery HTTP endpoint or SNMP worker is currently implemented. The existing `discovery_runs` table is only a persistence shape; it does not execute a job.
+
+The proposed API must be explicitly scoped to an existing asset and an authorized branch. It must not accept arbitrary subnet/range targets, arbitrary destination ports, raw OIDs, or credentials in the request body. Credential references are server-side only. A run must capture the initiating user, target asset, protocol profile, start/end state, counters and sanitized error classification.
+
+The proposed operation is a user-triggered read-only discovery of one registered device. It may issue SNMP GET/GETNEXT/bounded GETBULK to the configured UDP/161 endpoint only. SNMP SET, TCP/UDP port scans, subnet sweeps, NAT/port-forward changes and MikroTik firewall edits are explicitly out of scope. See [SNMP_DISCOVERY_DESIGN.md](SNMP_DISCOVERY_DESIGN.md).
+
+API authorization, Worker execution, credential vault, cancellation and rate-limit behavior must be implemented and tested before this section is promoted to an implemented API contract.
