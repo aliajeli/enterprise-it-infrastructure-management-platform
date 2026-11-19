@@ -136,3 +136,10 @@ Implementation order:
 6. Enable scheduled discovery only after manual-run behavior and firewall-safe stop conditions pass acceptance.
 
 No device compatibility or live discovery is claimed until target hardware tests pass.
+
+
+### M2 continuation — PostgreSQL Worker queue foundation (implementation slice)
+
+The separate `apps/worker` workspace now contains the first durable queue primitives over existing `DiscoveryRun` records: atomic `SKIP LOCKED` claim, worker-owned lease, heartbeat, expired-lease recovery, bounded exponential retry, cancellation acknowledgement and owner-bound completion. The Prisma schema and additive migration add lease/attempt/cancellation metadata and indexes.
+
+**Safety gate:** the Worker currently registers no task handlers. Its supported-source allow-list is intentionally empty, so it cannot claim or execute discovery jobs. No SNMP/SSH/ISAPI/Agent transport, credential vault, enqueue/cancel API, Windows service registration or real-device access is implemented. Keep this as infrastructure foundation only. Before enabling any handler, add PostgreSQL concurrency/lease integration tests, API authorization and audit, encrypted credential handling, per-target network limits and simulator/hardware validation.

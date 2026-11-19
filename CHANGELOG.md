@@ -168,3 +168,12 @@
 - Explicitly denied OPERATOR remote sessions, stored credential use, live device configuration, deployments and Store Commerce force-close. Force-close requires separate explicit approval and warning even for ADMIN.
 - Added a closed server-side `PlatformAction` policy and branch-action authorization helper requiring both capability and active branch grant.
 - Expanded unit tests to cover allowed and denied actions for all roles and branch-scope enforcement. Operational endpoints remain unimplemented and must enforce the policy when introduced.
+
+
+## Unreleased — PostgreSQL Worker queue foundation
+
+- Added an additive migration and Prisma fields for discovery-run leases, heartbeats, attempts, retry scheduling and cancellation requests.
+- Added a separate `@platform/worker` workspace with atomic PostgreSQL `SKIP LOCKED` claiming, lease recovery, heartbeat, owner-bound completion/failure, cancellation acknowledgement and bounded exponential retry.
+- Added Worker unit tests for retry policy and attempt limits.
+- The Worker deliberately registers no discovery handlers and uses an empty source allow-list; it cannot claim queued runs. No SNMP/SSH/ISAPI/Agent requests, credential storage, enqueue API or Windows service deployment are included.
+- Runtime/CI validation is pending for commit-specific head.

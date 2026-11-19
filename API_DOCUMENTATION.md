@@ -92,3 +92,8 @@ The proposed API must be explicitly scoped to an existing asset and an authorize
 The proposed operation is a user-triggered read-only discovery of one registered device. It may issue SNMP GET/GETNEXT/bounded GETBULK to the configured UDP/161 endpoint only. SNMP SET, TCP/UDP port scans, subnet sweeps, NAT/port-forward changes and MikroTik firewall edits are explicitly out of scope. See [SNMP_DISCOVERY_DESIGN.md](SNMP_DISCOVERY_DESIGN.md).
 
 API authorization, Worker execution, credential vault, cancellation and rate-limit behavior must be implemented and tested before this section is promoted to an implemented API contract.
+
+
+## Worker queue operations — internal only, not an HTTP API
+
+The Worker uses PostgreSQL directly to claim existing `DiscoveryRun` rows with an atomic `FOR UPDATE SKIP LOCKED` operation and a time-bounded owner lease. Heartbeat, completion, failure, retry, expiry recovery and cancellation acknowledgement are guarded by the worker identity. No public enqueue or cancellation endpoint exists yet. The current worker registers no discovery source handlers and therefore claims no rows. Do not treat these internal primitives as an available API or live discovery capability.

@@ -193,3 +193,10 @@ erDiagram
   ReleaseInstallation ||--o{ UpdateRun : records
 ```
 The diagram denotes logical relationships across separate trust domains; do not implement cross-database foreign keys. API authorization enforces policy. **User.role** has admin/operator/viewer; if future granular grants are added, **RolePermission** and **UserScopeGrant** model server-side permissions and device/branch scope without relying on UI restrictions. Audit references actor, target and outcome; access and retention policy require owner configuration.
+
+
+## Discovery worker queue foundation — implementation slice
+
+Migration `20261119150000_discovery_worker_leases` extends `discovery_runs` with lease owner/expiry, heartbeat, attempt counters, maximum attempts, next-attempt time and cancellation request timestamp. The separate `apps/worker` workspace provides PostgreSQL `FOR UPDATE SKIP LOCKED` claiming, owner-bound lease operations, expired lease recovery and bounded retries.
+
+This is not a functioning discovery feature: no source handler is registered, so the worker allow-list is empty and queued runs are not claimed. No credentials or network traffic are involved. PostgreSQL concurrency/integration tests and Windows service supervision tests remain required before production use.

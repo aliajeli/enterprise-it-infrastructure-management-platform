@@ -308,6 +308,13 @@ model DiscoveryRun {
   status            DiscoveryStatus @default(QUEUED)
   startedAt         DateTime?       @map("started_at") @db.Timestamptz(6)
   completedAt       DateTime?       @map("completed_at") @db.Timestamptz(6)
+  leaseOwner        String?         @map("lease_owner") @db.VarChar(128)
+  leaseExpiresAt    DateTime?       @map("lease_expires_at") @db.Timestamptz(6)
+  heartbeatAt       DateTime?       @map("heartbeat_at") @db.Timestamptz(6)
+  attemptCount      Int             @default(0) @map("attempt_count")
+  maxAttempts       Int             @default(3) @map("max_attempts")
+  nextAttemptAt     DateTime        @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  cancelRequestedAt DateTime?       @map("cancel_requested_at") @db.Timestamptz(6)
   discoveredAssets  Int             @default(0) @map("discovered_assets")
   updatedAssets     Int             @default(0) @map("updated_assets")
   unchangedAssets   Int             @default(0) @map("unchanged_assets")
@@ -321,5 +328,7 @@ model DiscoveryRun {
 
   @@index([branchId, createdAt(sort: Desc)])
   @@index([status, createdAt])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([leaseExpiresAt])
   @@map("discovery_runs")
 }
