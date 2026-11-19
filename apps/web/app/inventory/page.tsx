@@ -231,8 +231,8 @@ function InventoryContent() {
         body: JSON.stringify({
           version: editingAsset.version,
           ...editAssetForm,
-          primaryIp: editAssetForm.primaryIp.trim() || undefined,
-          macAddress: editAssetForm.macAddress.trim() || undefined,
+          primaryIp: editAssetForm.primaryIp.trim() || null,
+          macAddress: editAssetForm.macAddress.trim() || null,
         }),
       });
       setEditingAsset(null);
