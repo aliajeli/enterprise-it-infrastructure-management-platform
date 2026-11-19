@@ -62,3 +62,10 @@
 - Added a Node.js 26 runtime selector file.
 - Dependency installation, lockfile generation and execution of lint/typecheck/build remain pending a network-enabled Node.js 26 runner.
 - Added a native, keyboard-accessible mobile navigation disclosure menu and made the active Overview item a real navigation link.
+
+## 2026-11-19 — M0 validation and dependency lockfile bootstrap
+- Added a Node.js 26 GitHub Actions validation workflow covering dependency installation, dependency-tree verification, ESLint, TypeScript and production build.
+- Added a safe lockfile bootstrap job: dependency lifecycle scripts are disabled while generating the lockfile, and the workflow commits only the lockfile to the active feature branch.
+- Committed the generated npm v3 lockfile using Node.js 26.13.1/npm 11.20.0.
+- The first lint run found two internal anchor elements; both were replaced with Next.js Link components.
+- GitHub Actions run 44490452757 passed dependency installation, dependency-tree verification, lint, typecheck and production build for the application source. That run preceded the lockfile commit; a fresh npm ci run against the committed lockfile is still required.

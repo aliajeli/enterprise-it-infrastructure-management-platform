@@ -22,7 +22,7 @@ The web application lives in `apps/web`.
 After installing the supported Node.js runtime and dependencies:
 
 ```sh
-npm install
+npm ci
 npm run lint
 npm run typecheck
 npm run build
@@ -31,7 +31,7 @@ npm run dev
 
 The development server binds to `127.0.0.1`. The initial dashboard is an implementation-status shell; it does not display fabricated device or monitoring data.
 
-**Reproducibility status:** a generated `package-lock.json` is still required. Run `npm install` with Node.js 26/npm 11, commit the resulting lockfile, then verify `npm ci`, lint, typecheck and production build on a clean runner.
+**Reproducibility status:** `package-lock.json` is committed. Use Node.js 26/npm 11 and `npm ci` for clean, deterministic installs. GitHub Actions validates dependency installation, dependency-tree integrity, lint, typecheck and production build; the committed-lockfile `npm ci` run is still pending.
 
 ## Documentation index
 
