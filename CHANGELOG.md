@@ -1,3 +1,11 @@
+## Unreleased — M2 inventory workspace
+
+- Added a responsive, authenticated inventory page with active-branch selection, equipment search/type filters, asset registration and switch-port metadata entry.
+- Added `GET /api/v1/branches/accessible`: ADMIN receives active branches globally; OPERATOR/VIEWER receive only active branches with a current grant. The existing ADMIN-only branch administration endpoint remains unchanged.
+- Added integration assertions for branch-scoped branch discovery and exposed the inventory page from desktop/mobile navigation.
+- The UI distinguishes operator-maintained port metadata from timestamped observations and does not imply live switch configuration or discovery.
+- Implementation is in Draft PR [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), stacked on Draft PR #7; CI must pass on the final head before review.
+
 ## Unreleased — M2 inventory foundation
 
 - Added PostgreSQL/Prisma models and migration for branch-owned assets, switch profiles, switch ports, port observations and discovery-run records.
