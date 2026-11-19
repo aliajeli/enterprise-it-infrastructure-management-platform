@@ -449,3 +449,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - Follow-up review of `89c0dc8dc96f5700c1227f3009326b9b6e8690f7` found that successful transaction completion needed to send the explicit END opcode, and helper startup failures must release the local queue. Corrected both and added an END assertion.
 - This is still only an unregistered transport client; the .NET helper storage operations, ACL, cross-process lock, atomic write and installer provisioning remain absent.
 - Root version metadata advanced to `0.1.16`.
+
+
+## 2026-11-19 — Windows keyring helper path portability correction
+- Exact-head CI on `505a2b2b487d7a4e85e26b4d0396def84399c59b` failed only in Linux Platform validation's API Unit tests: two tests constructed the Windows helper client with a Windows drive path, while the implementation used host-native `node:path.isAbsolute`. Windows API runtime smoke passed; lint and typecheck passed on Linux.
+- Corrected validation to use `node:path.win32.isAbsolute`, because this executable path is always a Windows path regardless of where the unit test runs. Added explicit regression coverage for absolute and relative Windows paths.
+- Root package/lockfile version metadata advanced to `0.1.17`. Fresh exact-head Push and PR CI are required; do not treat the fix as validated until both complete.
+- The Node transport remains deliberately unregistered. The .NET helper still lacks keyring storage operations, strict service-SID/DACL validation, cross-process locking and durable atomic replacement. No installer, Release or real credential storage is enabled.

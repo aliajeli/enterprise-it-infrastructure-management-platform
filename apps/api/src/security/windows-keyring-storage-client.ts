@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { spawn, type ChildProcess } from "node:child_process";
-import { isAbsolute } from "node:path";
+import { win32 as pathWin32 } from "node:path";
 import type { CredentialKeyringStorage } from "./credential-keyring.js";
 import { decodeKeyringFrame, decodeKeyringUtf8, encodeKeyringFrame, KeyringOpcode } from "./windows-keyring-protocol.js";
 
@@ -167,7 +167,7 @@ export class WindowsKeyringStorageClient implements CredentialKeyringStorage {
     },
   ) {
     if (platform !== "win32") throw new Error("Windows keyring storage is available only on Windows.");
-    if (!isAbsolute(helperPath)) throw new Error("Windows keyring helper path must be absolute.");
+    if (!pathWin32.isAbsolute(helperPath)) throw new Error("Windows keyring helper path must be absolute.");
   }
 
   async withExclusiveLock<T>(operation: () => Promise<T>): Promise<T> {

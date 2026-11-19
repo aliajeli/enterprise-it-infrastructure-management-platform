@@ -75,6 +75,11 @@ describe("Windows keyring storage helper transport", () => {
     });
   });
 
+  it("validates helper paths with Windows path semantics on every host", () => {
+    expect(() => new WindowsKeyringStorageClient("C:\\\\Program Files\\\\EnterpriseIT\\\\keyring-helper.exe", "win32", () => new FakeHelper())).not.toThrow();
+    expect(() => new WindowsKeyringStorageClient("relative\\\\helper.exe", "win32")).toThrow("absolute");
+  });
+
   it("fails closed on non-Windows platforms and relative helper paths", () => {
     expect(() => new WindowsKeyringStorageClient("/tmp/helper", "linux")).toThrow("only on Windows");
     expect(() => new WindowsKeyringStorageClient("helper.exe", "win32")).toThrow("absolute");

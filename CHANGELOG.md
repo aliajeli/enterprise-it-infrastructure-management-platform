@@ -1,3 +1,9 @@
+## Unreleased — Windows helper path validation portability (2026-11-19)
+
+- Corrected helper executable path validation to use Windows path semantics explicitly, independent of the host running the unit tests.
+- Added regression coverage proving that an absolute Windows drive path is accepted on Linux-hosted tests while relative Windows paths are rejected.
+- Root package and lockfile metadata advanced to `0.1.17`; this fixes the test portability defect only. The helper remains unregistered and no installer or Release is created.
+
 ## Unreleased — keyring helper-session lifecycle correction (2026-11-19)
 
 - Corrected transaction completion so END is sent after a successful callback, while callback/helper failures abort the session. Helper startup failures now release the in-process transaction queue.
