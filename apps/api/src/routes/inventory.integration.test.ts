@@ -179,11 +179,22 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
     expect(updateAsset.json().asset.primaryIp).toBe("192.0.2.11");
     expect(updateAsset.json().asset.macAddress).toBe("02:00:00:00:00:11");
 
+    const clearNetworkIdentity = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: { version: 2, primaryIp: null, macAddress: null },
+    });
+    expect(clearNetworkIdentity.statusCode).toBe(200);
+    expect(clearNetworkIdentity.json().asset.version).toBe(3);
+    expect(clearNetworkIdentity.json().asset.primaryIp).toBeNull();
+    expect(clearNetworkIdentity.json().asset.macAddress).toBeNull();
+
     const invalidAssetIp = await app.inject({
       method: "PATCH",
       url: `/api/v1/inventory/assets/${switchAssetId}`,
       headers: { origin, cookie: operatorCookie },
-      payload: { version: 2, primaryIp: "not-an-ip" },
+      payload: { version: 3, primaryIp: "not-an-ip" },
     });
     expect(invalidAssetIp.statusCode).toBe(400);
 
@@ -191,7 +202,7 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
       method: "PATCH",
       url: `/api/v1/inventory/assets/${switchAssetId}`,
       headers: { origin, cookie: operatorCookie },
-      payload: { version: 2, macAddress: "invalid-mac" },
+      payload: { version: 3, macAddress: "invalid-mac" },
     });
     expect(invalidAssetMac.statusCode).toBe(400);
 
