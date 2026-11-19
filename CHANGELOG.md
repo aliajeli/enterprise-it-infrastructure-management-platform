@@ -1,3 +1,11 @@
+## Unreleased — Credential Vault cryptographic core (2026-11-19)
+
+- Added an AES-256-GCM envelope-encryption primitive with a fresh random 256-bit data key per credential, independent 96-bit nonces for data/key wrapping, 128-bit authentication tags and AAD bound to credential, branch, asset and credential kind.
+- Added a versioned key-provider contract; production key material must be supplied by a future Windows DPAPI-backed provider. No plaintext/environment/file key fallback is provided.
+- Added tests for round-trip, per-record randomization, context substitution, ciphertext/tag/wrapped-key tampering, key rotation and missing-key failure.
+- **Security boundary:** no DPAPI provider, recovery export/restore drill, database model, API, RBAC, audit integration or production key provider is implemented. The module is not wired into the API and must not store real equipment secrets yet.
+- Prior exact-head CI passed on `4b67a718ce1210a7dc8a634b811bbdf5c8af0814` (runs [44579435913](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44579435913) and [44579448547](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44579448547)); validation for this new commit is pending.
+
 ## Unreleased — PostgreSQL Worker queue CI validation (2026-11-19)
 
 - Corrected queue integration test isolation so each test clears only its own branch-scoped discovery runs and asserts the exact run ID returned by claim.

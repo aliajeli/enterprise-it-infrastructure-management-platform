@@ -67,6 +67,8 @@
 - Integration tests cover OPERATOR create/edit, VIEWER read/denied write, cross-branch denial and optimistic version conflicts.
 - GitHub Actions run [44531050529](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44531050529) passed on exact head `5d3aec16b760c1e5318297409a29fb7bb0135821`, including PostgreSQL 18 migration/integration, lint, typecheck, tests, production build and Windows API compile/runtime smoke.
 
+**Credential Vault progress (2026-11-19):** AES-256-GCM envelope cryptographic core and unit tests are being added in PR #8. The production DPAPI provider, separately-held recovery/restore drill, persistent credential records, ADMIN-only API/RBAC and audit integration remain not implemented. Do not enter real equipment secrets or enable discovery yet.
+
 **Remaining M2 work:**
 - Branch links and richer typed asset profiles (servers, POS, printers, NVRs, cameras, routers and computers).
 - Inventory UI with branch-aware filters, asset detail and port table/editor.

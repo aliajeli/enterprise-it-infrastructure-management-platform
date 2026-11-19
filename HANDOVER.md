@@ -1,4 +1,33 @@
 # Project handover
+## Current verified snapshot — Credential Vault cryptographic core added; platform integration pending (2026-11-19)
+
+**Branch:** `phase3/m2-inventory-ui`  
+**Previous verified head:** `4b67a718ce1210a7dc8a634b811bbdf5c8af0814` — both Push run [44579435913](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44579435913) and PR run [44579448547](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44579448547) passed on that exact SHA.  
+**PR:** [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8) — Draft/open/unmerged.
+
+### Credential Vault progress
+
+- Added a tested AES-256-GCM envelope-encryption core: a fresh random 256-bit data-encryption key per credential, unique 96-bit nonces for data and key wrapping, 128-bit authentication tags, and authenticated context binding to credential/branch/asset/type.
+- The 32-byte key-encryption key is supplied only through a `CredentialKeyProvider` contract. No environment-variable, plaintext-file or hard-coded production-key fallback exists.
+- Added key-version identifiers so a future DPAPI-backed provider can retain old KEK versions during rotation.
+- Added unit tests for round-trip, randomization, cross-asset substitution, ciphertext/tag/wrapped-key tampering, rotation and missing-key fail-closed behavior.
+
+### Explicitly not implemented / not verified
+
+- No Windows DPAPI provider, machine/service key provisioning, separately-held recovery export, restore drill or Windows service identity/ACL validation.
+- No Prisma credential table, credential CRUD/reveal API, credential-use endpoint, RBAC integration or audit lifecycle.
+- No production key provider is registered; the cryptographic core is not wired into the running API and must not be used to store real equipment credentials.
+- No discovery handler is registered; no network equipment is contacted.
+
+### Next gates
+
+1. Implement the Windows DPAPI-backed key provider and a separately protected recovery mechanism; prove clean-host restore and key rotation before production use.
+2. Add branch-scoped credential records and ADMIN-only management APIs, with OPERATOR denied stored-credential use as required by the approved role matrix.
+3. Add credential access audit/redaction and integration tests; then connect discovery only after the API and vault gates pass.
+4. Keep PR #8 Draft/unmerged. No installer or Release is claimed.
+
+---
+
 
 ## Current verified snapshot — Worker queue foundation CI passed (2026-11-19)
 

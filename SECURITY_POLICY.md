@@ -12,6 +12,29 @@ No controls are implemented or tested yet. Treat the previous token as compromis
 
 ## Proposed controls
 
+## Credential Vault implementation status — 2026-11-19
+
+### Implemented cryptographic core (not production-wired)
+
+`apps/api/src/security/credential-vault-crypto.ts` implements a versioned AES-256-GCM envelope format:
+- A fresh cryptographically random 256-bit data-encryption key (DEK) for each credential.
+- Independent 96-bit random nonces and 128-bit GCM tags for secret encryption and DEK wrapping.
+- Authenticated additional data (AAD) binds the envelope to its credential ID, branch ID, asset ID, credential kind, format version and key version. Copying ciphertext to another asset/branch or changing bound metadata must fail authentication.
+- The 32-byte key-encryption key (KEK) is obtained only through the `CredentialKeyProvider` interface. The API has no plaintext environment-variable, file or hard-coded key fallback.
+- Key version IDs allow old KEK versions to remain available for decrypt during rotation while new records use the active version.
+- Decryption returns one generic failure and does not log plaintext or cryptographic material. Temporary key/plaintext buffers are zeroed on a best-effort basis after use.
+
+### Mandatory production gates — still NOT implemented
+
+1. A Windows DPAPI-backed provider bound to the dedicated service identity and machine, with restrictive filesystem/registry ACLs and no LocalSystem/domain-admin assumption.
+2. A separately held recovery export protected by an independently controlled recovery key; documented custody, rotation, emergency access and a successful clean-machine restore drill. DPAPI machine-bound material alone is not recoverable after host loss.
+3. A persistent key-version registry and rotation procedure that never destroys a key version while records still depend on it.
+4. A database credential record and API layer with ADMIN-only management. The owner-approved role matrix explicitly denies OPERATOR stored-credential use; VIEWER is read-only. No credential values may be returned to browser responses.
+5. Transactional audit of create/update/disable/reveal/use/rotate/recover actions, secret redaction and backup/restore validation.
+
+The current key provider exists only as an interface. Unit tests use an in-memory test provider; this is test scaffolding, not a deployable key store. The module is not registered in the API, no credentials are persisted, and no live equipment credentials should be entered. Do not enable discovery until all mandatory gates pass.
+
+
 * TLS for LAN and agents with managed trusted certificate, SAN validation and rotation. No disabled verification. Browser sessions use opaque random tokens, HttpOnly Secure SameSite cookies, server-side revocation, CSRF protection, Origin validation, rate limiting, timeout and session rotation on authentication/privilege change. Passwords use Argon2id with measured parameters and secure salt. Recovery code is CSPRNG generated, shown once, hashed, single-use transactionally, rate limited and audited. Recovery must not bypass role checks or expose vault secrets.
 * Server-side RBAC on every HTTP endpoint, job, credential operation and WebSocket message. Viewer read-only; Operator authorized operational activities within granted scope; Admin users, credentials and security configuration. Exact permission matrix requires approval. No plaintext secrets in browser responses, logs, URLs, CLI args or crash reports. SSH host keys pinned/verified, explicit change confirmation. Validate destination to prevent SSRF and arbitrary network reach.
 * Equipment passwords AES-256-GCM with random unique nonce per key and contextual AAD. Envelope key protected by Windows DPAPI bound to the service identity/machine; ACLs, least privilege, key rotation and audit. DPAPI is not portable: design encrypted export/recovery key held separately, require recovery drill before production; compromise of service account can expose keys. Database/backups contain ciphertext, not the protection key alone.
