@@ -8,6 +8,7 @@ import {
   Command,
   Database,
   LayoutDashboard,
+  Menu,
   Monitor,
   Network,
   Router,
@@ -59,17 +60,23 @@ export default function DashboardPage() {
         <nav aria-label="Main navigation" className="mt-8">
           <SectionLabel>Workspace</SectionLabel>
           {navigation.map(({ label, icon: Icon, active }) => (
-            <div
-              key={label}
-              className={`sidebar-link ${active ? "" : "is-disabled"}`}
-              aria-current={active ? "page" : undefined}
-              aria-disabled={!active}
-              title={active ? undefined : "This module has not been implemented yet"}
-            >
-              <Icon size={17} strokeWidth={1.8} />
-              <span>{label}</span>
-              {!active && <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-600">Planned</span>}
-            </div>
+            active ? (
+              <a key={label} href="/" className="sidebar-link" aria-current="page">
+                <Icon size={17} strokeWidth={1.8} />
+                <span>{label}</span>
+              </a>
+            ) : (
+              <div
+                key={label}
+                className="sidebar-link is-disabled"
+                aria-disabled="true"
+                title="This module has not been implemented yet"
+              >
+                <Icon size={17} strokeWidth={1.8} />
+                <span>{label}</span>
+                <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-600">Planned</span>
+              </div>
+            )
           ))}
 
           <SectionLabel>Operations</SectionLabel>

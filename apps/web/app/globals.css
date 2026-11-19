@@ -59,3 +59,10 @@ button, a { font: inherit; }
   background: rgba(148, 163, 184, .07);
   color: #a8c8f5;
 }
+
+.mobile-menu > summary::-webkit-details-marker { display: none; }
+.mobile-menu > summary::marker { content: ""; }
+.mobile-menu[open] > summary {
+  border-color: rgba(96, 165, 250, .45);
+  color: #dbeafe;
+}
