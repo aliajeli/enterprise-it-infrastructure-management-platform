@@ -68,11 +68,13 @@ export function UsersClient() {
     setBranches(branchResult.branches);
   }, []);
 
+  const reportLoadError = useCallback((reason: unknown) => {
+    setError(reason instanceof Error ? reason.message : "Unable to load user data.");
+  }, []);
+
   useEffect(() => {
-    void refresh().catch((reason: unknown) => {
-      setError(reason instanceof Error ? reason.message : "Unable to load user data.");
-    });
-  }, [refresh]);
+    void refresh().catch(reportLoadError);
+  }, [refresh, reportLoadError]);
 
   function toggleBranch(
     selected: string[],
