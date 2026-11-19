@@ -158,3 +158,9 @@ The separate `apps/worker` workspace now contains the first durable queue primit
 - Added the fixed-purpose .NET 10 Windows DPAPI helper and Node.js client using bounded binary stdin/stdout framing. DPAPI machine scope is fixed; optional entropy is derived within the helper from installation ID and current Windows SID.
 - Windows CI now compiles the helper and runs the native round-trip and cross-installation binding test.
 - This is not yet the production key provider. Installer/service identity provisioning, NTFS ACL creation/verification, persistent keyring and rotation, independently protected recovery export and clean-host restore remain mandatory gates. Credential records/API and discovery remain disabled.
+
+
+### DPAPI primitive CI evidence — 2026-11-19
+- Exact-head `5067518791b0899f410fee8b76495028e11bd590` passed Push run `44590138482` and PR run `44590153726`.
+- Windows CI built the .NET 10 helper and passed native DPAPI Protect/Unprotect and installation-identity binding. Linux/PostgreSQL validation passed.
+- Next milestone: installer/service identity + NTFS ACL provisioning/verification, persistent versioned keyring, atomic rotation and independently protected recovery/clean-host restore. Credential persistence/API remains blocked until those are implemented and tested.

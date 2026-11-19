@@ -403,3 +403,13 @@ An earlier application-repository inspection reported an empty clone before the 
 ## 2026-11-19 — DPAPI payload test expectation
 - The Linux CI run on `6392e0cff79257a7a03e78b450d0c2663cabfaf4` exposed only a stale assertion message in the invalid-length unit test after the request validator was generalized for variable-length protected blobs. Updated the expectation and bumped root/lock metadata to `0.1.9`.
 - The native Windows integration test has not yet passed; the next exact-head Windows run must verify Protect/Unprotect end-to-end.
+
+
+## 2026-11-19 — DPAPI primitive validation completed
+- Exact HEAD `5067518791b0899f410fee8b76495028e11bd590` passed both CI workflows:
+  - Push: [44590138482](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44590138482) — all three jobs successful.
+  - PR: [44590153726](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44590153726) — Linux platform validation and Windows API runtime smoke successful; bootstrap job skipped as expected for PR.
+- Windows CI compiled the .NET 10 DPAPI helper and passed the native Protect/Unprotect integration test, including installation-identity binding. Linux CI passed the non-Windows fail-closed tests and full platform suite.
+- The Node client and helper implement bounded binary framing, machine-scope DPAPI, installation ID + current SID entropy, generic failure behavior and buffer cleanup. The helper is a primitive, not a production provider.
+- Remaining hard gates: installer-managed service identity and NTFS ACL provisioning/verification; persistent protected key registry; atomic key rotation and reference-aware retirement; independent recovery export/custody; clean-machine recovery drill. No Credential model/API, production key registration, discovery handler, installer or Release is available.
+- Root version metadata is `0.1.10`.

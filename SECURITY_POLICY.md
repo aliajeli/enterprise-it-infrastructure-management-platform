@@ -81,3 +81,7 @@ The initial Windows integration test exposed and corrected a framing assumption:
 
 
 The DPAPI protocol now distinguishes input/output sizes: Protect accepts a 32-byte KEK; Unprotect accepts a bounded variable-length DPAPI blob and returns exactly 32 bytes. The Windows integration test is the acceptance gate for this protocol.
+
+
+## DPAPI primitive CI evidence — 2026-11-19
+Exact-head CI passed on `5067518791b0899f410fee8b76495028e11bd590`: Push run [44590138482](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44590138482) and PR run [44590153726](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44590153726). Windows compiled the .NET helper and passed native Protect/Unprotect plus installation-identity binding; Linux/PostgreSQL platform validation passed. This verifies the helper primitive only. It does not verify service account isolation, NTFS ACLs, persistent key storage, rotation, recovery, or production deployment.

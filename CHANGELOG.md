@@ -1,3 +1,9 @@
+## Unreleased — DPAPI primitive validation milestone (2026-11-19)
+
+- Exact-head Push and PR validation both passed for `5067518791b0899f410fee8b76495028e11bd590`: Linux/Node.js 26/PostgreSQL 18 and Windows API runtime smoke, including .NET 10 DPAPI helper compilation and native Protect/Unprotect integration.
+- DPAPI protocol accepts a 32-byte KEK for Protect, bounded variable-length protected blobs for Unprotect, and enforces a 32-byte decrypted KEK. Installation ID + current Windows SID are bound as optional entropy.
+- Root package version advanced to `0.1.10`; no installer or Release is created.
+
 ## Unreleased — DPAPI payload validation test correction (2026-11-19)
 
 - Updated the invalid-length test to assert the revised generic DPAPI payload-length error after allowing variable-size protected blobs.
