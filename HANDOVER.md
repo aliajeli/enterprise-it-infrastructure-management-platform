@@ -13,15 +13,15 @@
 | M1 lifecycle and approved role policy | PR #6 Draft/open/unmerged |
 | M2 inventory and switch-port API | PR #7 Draft/open/unmerged; CI passed on its exact head `e015919110a77cc13db0678113a88eae95166063` |
 | M2 inventory UI | PR #8 Draft/open/unmerged; branch selector, inventory list/search, asset registration, switch-port metadata and observation display added |
-| M2 inventory editing | Asset and switch-port metadata edit forms use optimistic version PATCH. API integration assertions now cover valid asset IP/MAC updates, invalid IP/MAC rejection, successful port metadata update, duplicate/out-of-range VLAN rejection, and stale port-version conflict. Test changes committed in `f980fa1473f82ab65baa7dc40225ebf26fc978e6`; execution and CI validation pending |
+| M2 inventory editing | Asset and switch-port metadata edit forms use optimistic version PATCH. API integration assertions cover valid asset IP/MAC updates, invalid IP/MAC rejection, successful port metadata update, duplicate/out-of-range VLAN rejection, and stale port-version conflict. Test changes committed in `f980fa1473f82ab65baa7dc40225ebf26fc978e6`; execution still needs verification |
 | Accessible branch API | Added in PR #8; ADMIN sees active branches globally, OPERATOR/VIEWER see only active granted branches |
 | Not implemented | SNMP/SSH discovery, live switch configuration, Windows services, Worker, Windows Agent, monitoring, NVR integration, Desktop Bridge, Store Commerce deployment, installer, updater and release automation |
 | Release/production | No installer, release, tag or production deployment claimed |
 
 ### Immediate next actions
 
-1. Run and verify all required CI jobs on the exact current PR #8 head (`f980fa1473f82ab65baa7dc40225ebf26fc978e6`); GitHub currently returns no status checks or PR-triggered workflow runs for this SHA, so validation remains pending.
-2. Added API integration assertions for asset IP/MAC validation, successful asset and port updates, duplicate/out-of-range VLAN rejection, and stale port-version conflict. These are committed but not executed in this session; ensure the PostgreSQL integration test job actually runs.
+1. Verify the CI run for the exact current PR #8 head after the workflow-trigger change (`7f071f51c13431624994110a275c2832995a86a3`). The workflow now triggers on pushes to `phase3/**` and pull requests targeting `main` or `phase3/**`. The available commit-workflow query only returns pull-request-triggered runs, so it cannot by itself confirm the push run; inspect the Actions run directly before declaring validation complete.
+2. API integration assertions now cover asset IP/MAC validation, successful asset and port updates, duplicate/out-of-range VLAN rejection, and stale port-version conflict. They are committed but not yet demonstrated as executed; verify the PostgreSQL integration test job.
 3. Review the stacked PR chain #5 → #6 → #7 → #8; passing CI does not replace code review. Keep all dependent PRs Draft/unmerged until owner review and dependency order are resolved.
 4. Continue M2 with asset detail presentation, switch-port metadata history and safe read-only discovery as a separate tested slice.
 5. Keep installer/release work within the documented one-time bootstrap exception: assign immutable per-commit version identities in the future release ledger, but do not fabricate an installer before clean Windows installation and readiness gates are genuinely met.
