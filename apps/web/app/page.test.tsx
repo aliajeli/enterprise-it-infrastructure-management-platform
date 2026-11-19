@@ -1,6 +1,15 @@
+import type { ReactNode } from "react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("./components/auth-guard", () => ({
+  AuthGuard: ({ children }: { children: ReactNode }) => children,
+}));
+vi.mock("./components/logout-button", () => ({
+  LogoutButton: () => null,
+}));
+
 import DashboardPage from "./page";
 
 describe("infrastructure dashboard foundation", () => {
