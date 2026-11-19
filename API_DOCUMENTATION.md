@@ -1,6 +1,6 @@
 # API contract and implementation status
 
-The complete platform API described below remains a design target. M1 identity/user/branch APIs are implemented on the review branches. The initial M2 asset and switch-port metadata endpoints listed below are implemented on the M2 feature branch and await CI/review; discovery transports and operational device configuration remain unimplemented.
+The complete platform API described below remains a design target. M1 identity/user/branch APIs are implemented on the review branches. The initial M2 asset and switch-port metadata endpoints listed below are implemented on the M2 feature branch; CI run 44531050529 passed on commit `5d3aec16b760c1e5318297409a29fb7bb0135821`, and PR #7 is Draft/unmerged pending review. Discovery transports and operational device configuration remain unimplemented.
 
 ## Implemented M1 API subset
 
@@ -26,7 +26,7 @@ All state-changing routes require an exact trusted Origin, an authenticated serv
 | POST | /api/v1/branches/{branchId}/archive | ADMIN soft-archives branch and revokes all active branch grants. |
 | POST | /api/v1/branches/{branchId}/restore | ADMIN restores branch without restoring previously revoked grants. |
 
-## Implemented M2 inventory API slice (feature branch; validation pending)
+## Implemented M2 inventory API slice (CI-verified feature branch; PR #7 review pending)
 
 | Method | Route | Behavior and authorization |
 |---|---|---|

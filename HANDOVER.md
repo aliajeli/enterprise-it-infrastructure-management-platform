@@ -2,7 +2,7 @@
 
 ## Current snapshot — M2 inventory foundation (2026-11-19)
 
-**Snapshot observed:** 2026-11-19, development branch `phase3/m2-inventory-foundation` based on CI-verified M1 review head `ebc349cffd35c50a91f3c18c219821acf0d53391`. M2 commits are awaiting CI/review. This is a development handover, not a production-readiness assertion.
+**Snapshot observed:** 2026-11-19, development branch `phase3/m2-inventory-foundation` at CI-verified head `5d3aec16b760c1e5318297409a29fb7bb0135821`, based on CI-verified M1 review head `ebc349cffd35c50a91f3c18c219821acf0d53391`. PR #7 is Draft/open/unmerged. This is a development handover, not a production-readiness assertion.
 
 | Item | Verified state |
 |---|---|
@@ -12,12 +12,12 @@
 | M1 identity foundation | Merged — PR #4 |
 | M1 user/branch administration | Implemented on PR #5 branch; PR #5 remains Draft/open/unmerged |
 | M1 completion work | [PR #6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), Draft/open/unmerged, based on PR #5; branch lifecycle, admin temporary password reset and approved role policy added |
-| M2 inventory foundation | Branch `phase3/m2-inventory-foundation`; asset/switch schema, migration, scoped CRUD and switch-port metadata APIs committed; CI/review pending; no PR merge |
+| M2 inventory foundation | [PR #7](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/7), Draft/open/unmerged, branch `phase3/m2-inventory-foundation`; schema, migration, scoped CRUD and switch-port metadata APIs; CI run 44531050529 passed on head `5d3aec16b760c1e5318297409a29fb7bb0135821` |
 | Branch lifecycle | Edit with optimistic version; soft archive; restore; audit events; archive revokes grants and restore does not reinstate them |
 | Password recovery | ADMIN-issued one-time temporary password for active non-admin users; no-store response, forced change, session revocation, auth epoch increment and audit |
 | M1 CI | [Run 44527895017](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44527895017) **passed** on exact final PR #6 head `ebc349cffd35c50a91f3c18c219821acf0d53391`, including Node.js 26/PostgreSQL 18, migrations, audit, lint, typecheck, tests, backup/restore smoke, production build and Windows API runtime smoke |
 | M1 / platform acceptance gates | Role/action matrix approved and helper tested; clean target-Windows service identity/ACL/startup/API integration; production PostgreSQL encrypted backup/restore and key recovery; final review of PRs #5/#6 |
-| M2 current CI | [Run 44530297736](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44530297736) was running on intermediate commit `0928ba993c5c38d8a72a5a626a815c737d9d3b18`; later commits require their own exact-head CI evidence |
+| M2 CI | [Run 44531050529](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44531050529) **passed** on exact PR #7 head `5d3aec16b760c1e5318297409a29fb7bb0135821`; all Linux/PostgreSQL and Windows API validation jobs passed |
 | Not implemented | SNMP/SSH discovery workers, inventory UI, Windows services, Background Worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge PoC, Store Commerce deployment, installer, updater and release automation |
 | Security boundaries | User/branch management routes remain ADMIN-only. Owner-approved role policy is centralized in `PlatformAction`; OPERATOR is branch-scoped inventory/metadata editor plus safe discovery/sync; VIEWER is branch-scoped read-only; ADMIN is global. No operational device endpoints exist yet; no ADMIN creation/promotion via API |
 | Repository administration | No repository settings, branch protections, permissions, hooks, webhooks or workflow administration settings changed |
@@ -38,7 +38,7 @@ The owner approved ADMIN global administration and platform capabilities; OPERAT
 
 ### M2 inventory foundation — implementation boundary
 
-The M2 branch adds common assets, switch profiles, manually maintained switch-port metadata, timestamped port observations and discovery-run persistence. API routes are branch-scoped and enforce the approved role matrix. This slice does not perform SNMP/SSH discovery, switch configuration, subnet scanning, Agent execution or monitoring. Discovery must preserve manual metadata and append provenance-stamped observations; partial/failed discovery must not delete assets or ports.
+The M2 branch adds common assets, switch profiles, manually maintained switch-port metadata, timestamped port observations and discovery-run persistence. API routes are branch-scoped and enforce the approved role matrix. CI run 44531050529 passed. This slice does not perform SNMP/SSH discovery, switch configuration, subnet scanning, Agent execution or monitoring. Discovery must preserve manual metadata and append provenance-stamped observations; partial/failed discovery must not delete assets or ports.
 
 ### Next actions
 

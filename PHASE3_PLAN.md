@@ -57,12 +57,13 @@
 
 ### M2 — Branch and inventory management (initial slice in progress)
 
-**Implemented on `phase3/m2-inventory-foundation` (CI/review pending):**
+**Implemented on `phase3/m2-inventory-foundation` (CI passed; PR #7 Draft/unmerged):**
 - PostgreSQL/Prisma schema and migration for branch-owned common assets, switch profiles, switch ports, timestamped port observations and discovery-run records.
 - Branch-scoped inventory list/create/update API with bounded pagination, filtering, IP/MAC validation, optimistic concurrency and transactional audit events.
 - Switch-port metadata list/create/update API for operator-maintained alias, description, configured VLANs and connected-device label.
 - Server-side role and branch enforcement: OPERATOR can edit inventory and metadata only in assigned active branches; VIEWER is read-only; ADMIN is global. No live switch configuration is exposed.
 - Integration tests cover OPERATOR create/edit, VIEWER read/denied write, cross-branch denial and optimistic version conflicts.
+- GitHub Actions run [44531050529](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44531050529) passed on exact head `5d3aec16b760c1e5318297409a29fb7bb0135821`, including PostgreSQL 18 migration/integration, lint, typecheck, tests, production build and Windows API compile/runtime smoke.
 
 **Remaining M2 work:**
 - Branch links and richer typed asset profiles (servers, POS, printers, NVRs, cameras, routers and computers).

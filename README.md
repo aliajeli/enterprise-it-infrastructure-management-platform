@@ -4,7 +4,7 @@
 
 **Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration and role policy are implemented in Draft PRs [#5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) and [#6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), both unmerged. The initial M2 inventory and switch-port API/schema slice is being developed in Draft PR #7. M1 still requires clean Windows service integration and production encrypted backup/restore evidence. M2 discovery transports, UI and hardware validation remain future work. The platform is not production-ready.
+The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration and role policy are implemented in Draft PRs [#5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) and [#6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), both unmerged. The initial M2 inventory and switch-port API/schema slice is implemented and CI-verified in Draft PR #7 (unmerged). M1 still requires clean Windows service integration and production encrypted backup/restore evidence. M2 discovery transports, UI and hardware validation remain future work. The platform is not production-ready.
 
 ## Application baseline
 
