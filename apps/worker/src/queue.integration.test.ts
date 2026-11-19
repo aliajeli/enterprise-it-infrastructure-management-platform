@@ -112,12 +112,19 @@ describe.skipIf(!isDisposableTestDatabase)(
 
     it("retries with bounded backoff and fails after max attempts", async () => {
       if (!db) throw new Error("Database integration was not initialized.");
-      const runId = await createRun({ maxAttempts: 1 });
+      const runId = await createRun({ maxAttempts: 2 });
       await claimNextDiscoveryRun(db, "retry-worker", ["SNMP"]);
+      expect(await failDiscoveryRun(db, runId, "retry-worker", "TEST_FAILURE", "safe test failure")).toBe("REQUEUED");
+      await db.$executeRaw`
+        UPDATE discovery_runs SET next_attempt_at = NOW()
+        WHERE id = ${runId}::uuid
+      `;
+      expect((await claimNextDiscoveryRun(db, "retry-worker", ["SNMP"]))?.id).toBe(runId);
       expect(await failDiscoveryRun(db, runId, "retry-worker", "TEST_FAILURE", "safe test failure")).toBe("FAILED");
       const failed = await db.discoveryRun.findUniqueOrThrow({ where: { id: runId } });
       expect(failed.status).toBe("FAILED");
       expect(failed.completedAt).not.toBeNull();
+      expect(failed.attemptCount).toBe(2);
     });
 
     it("gives cancellation precedence over retry exhaustion on expired leases", async () => {
