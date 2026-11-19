@@ -230,6 +230,35 @@ describe.skipIf(!isDisposableTestDatabase)(
         select: { version: true, deletedAt: true },
       });
       expect(archivedBranch.deletedAt).not.toBeNull();
+
+      const replacementBranch = await app.inject({
+        method: "POST",
+        url: "/api/v1/branches",
+        headers: { origin: publicOrigin, cookie: adminCookie },
+        payload: {
+          branchCode: editBranch.json().branch.branchCode,
+          name: "Replacement branch using released code",
+        },
+      });
+      expect(replacementBranch.statusCode).toBe(201);
+
+      const conflictingRestore = await app.inject({
+        method: "POST",
+        url: `/api/v1/branches/${secondBranchId}/restore`,
+        headers: { origin: publicOrigin, cookie: adminCookie },
+        payload: { version: archivedBranch.version },
+      });
+      expect(conflictingRestore.statusCode).toBe(409);
+      expect(conflictingRestore.json().error.code).toBe("BRANCH_CODE_EXISTS");
+
+      const archiveReplacement = await app.inject({
+        method: "POST",
+        url: `/api/v1/branches/${replacementBranch.json().branch.id}/archive`,
+        headers: { origin: publicOrigin, cookie: adminCookie },
+        payload: { version: replacementBranch.json().branch.version },
+      });
+      expect(archiveReplacement.statusCode).toBe(204);
+
       const restoreBranch = await app.inject({
         method: "POST",
         url: `/api/v1/branches/${secondBranchId}/restore`,
