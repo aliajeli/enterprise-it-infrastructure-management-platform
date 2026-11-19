@@ -11,6 +11,18 @@ export interface ClaimedDiscoveryRun {
 }
 
 export async function recoverExpiredLeases(db: PrismaClient): Promise<number> {
+  // Cancellation takes precedence over retry exhaustion when a lease expires.
+  const cancelled = await db.$executeRaw`
+    UPDATE discovery_runs
+    SET status = 'CANCELLED',
+        completed_at = NOW(),
+        lease_owner = NULL,
+        lease_expires_at = NULL,
+        heartbeat_at = NULL
+    WHERE status = 'RUNNING'
+      AND lease_expires_at <= NOW()
+      AND cancel_requested_at IS NOT NULL
+  `;
   const requeued = await db.$executeRaw`
     UPDATE discovery_runs
     SET status = 'QUEUED',
@@ -37,17 +49,7 @@ export async function recoverExpiredLeases(db: PrismaClient): Promise<number> {
     WHERE status = 'RUNNING'
       AND lease_expires_at <= NOW()
       AND attempt_count >= max_attempts
-  `;
-  const cancelled = await db.$executeRaw`
-    UPDATE discovery_runs
-    SET status = 'CANCELLED',
-        completed_at = NOW(),
-        lease_owner = NULL,
-        lease_expires_at = NULL,
-        heartbeat_at = NULL
-    WHERE status = 'RUNNING'
-      AND lease_expires_at <= NOW()
-      AND cancel_requested_at IS NOT NULL
+      AND cancel_requested_at IS NULL
   `;
   return Number(requeued) + Number(exhausted) + Number(cancelled);
 }
@@ -126,6 +128,7 @@ export async function completeDiscoveryRun(
     WHERE id = ${runId}::uuid
       AND status = 'RUNNING'
       AND lease_owner = ${workerId}
+      AND lease_expires_at > NOW()
       AND cancel_requested_at IS NULL
   `;
   return Number(updated) === 1;
@@ -175,6 +178,7 @@ export async function acknowledgeCancellation(
     WHERE id = ${runId}::uuid
       AND status = 'RUNNING'
       AND lease_owner = ${workerId}
+      AND lease_expires_at > NOW()
       AND cancel_requested_at IS NOT NULL
   `;
   return Number(updated) === 1;
