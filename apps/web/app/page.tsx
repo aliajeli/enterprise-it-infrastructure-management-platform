@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -64,7 +65,7 @@ export default function DashboardPage() {
               <a key={label} href="/" className="sidebar-link" aria-current="page">
                 <Icon size={17} strokeWidth={1.8} />
                 <span>{label}</span>
-              </a>
+              </Link>
             ) : (
               <div
                 key={label}
@@ -119,10 +120,10 @@ export default function DashboardPage() {
                 className="absolute left-0 top-11 z-20 w-64 rounded-xl border border-slate-700/70 bg-slate-950 p-3 shadow-2xl"
               >
                 <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">Workspace</p>
-                <a href="/" className="sidebar-link" aria-current="page">
+                <Link href="/" className="sidebar-link" aria-current="page">
                   <LayoutDashboard size={17} strokeWidth={1.8} />
                   <span>Overview</span>
-                </a>
+                </Link>
                 {navigation.slice(1).map(({ label, icon: Icon }) => (
                   <div key={label} className="sidebar-link is-disabled" aria-disabled="true">
                     <Icon size={17} strokeWidth={1.8} />
