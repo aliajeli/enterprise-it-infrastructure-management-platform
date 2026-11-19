@@ -73,6 +73,7 @@ export function UsersClient() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- This starts an asynchronous API load; state changes only when the request resolves.
     void refresh().catch(reportLoadError);
   }, [refresh, reportLoadError]);
 
