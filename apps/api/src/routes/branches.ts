@@ -309,7 +309,9 @@ export async function registerBranchRoutes(
     async (request, reply) => {
       const actor = await requireAdmin(db, config, request, reply);
       if (!actor) return;
-      const restored = await db.$transaction(async (tx) => {
+      let restored;
+      try {
+        return await db.$transaction(async (tx) => {
         const changed = await tx.branch.updateMany({
           where: {
             id: request.params.branchId,
@@ -345,6 +347,17 @@ export async function registerBranchRoutes(
         });
         return branch;
       });
+      } catch (error) {
+        if (hasPrismaCode(error, "P2002")) {
+          return reply.code(409).send({
+            error: {
+              code: "BRANCH_CODE_EXISTS",
+              message: "Another active branch is using this code. Rename that branch or choose a new code before restoring.",
+            },
+          });
+        }
+        throw error;
+      }
       if (!restored) {
         const existing = await db.branch.findUnique({
           where: { id: request.params.branchId },
