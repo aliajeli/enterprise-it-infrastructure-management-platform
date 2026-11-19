@@ -1,3 +1,8 @@
+## Unreleased — DPAPI payload validation test correction (2026-11-19)
+
+- Updated the invalid-length test to assert the revised generic DPAPI payload-length error after allowing variable-size protected blobs.
+- Bumped root package version to `0.1.9` and synchronized lockfile metadata.
+
 ## Unreleased — DPAPI Unprotect payload bounds (2026-11-19)
 
 - Corrected request validation so Protect accepts exactly a 32-byte KEK, while Unprotect accepts a bounded variable-length DPAPI blob and still requires the helper's decrypted output to be exactly 32 bytes.

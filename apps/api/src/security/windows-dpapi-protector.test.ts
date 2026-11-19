@@ -22,7 +22,7 @@ describe("Windows DPAPI helper boundary", () => {
       "a2c4b6d8-1234-4abc-8def-1234567890ab",
       "win32",
     );
-    await expect(windows.protect(Buffer.alloc(16))).rejects.toThrow("exactly one 32-byte key");
+    await expect(windows.protect(Buffer.alloc(16))).rejects.toThrow("Invalid DPAPI payload length.");
   });
 
   it.skipIf(!canRunWindowsHelper)("protects and unprotects a KEK, and binds it to installation identity", async () => {

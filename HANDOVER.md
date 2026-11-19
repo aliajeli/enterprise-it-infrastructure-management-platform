@@ -398,3 +398,8 @@ An earlier application-repository inspection reported an empty clone before the 
 - Windows integration showed that the Node client incorrectly required the input to Unprotect to be exactly 32 bytes. DPAPI ciphertext is variable length; only the original KEK and decrypted output are 32 bytes.
 - Node framing and .NET helper now allow bounded protected blobs for Unprotect, while Protect still accepts exactly 32-byte KEKs and Unprotect output remains exactly 32 bytes.
 - Bumped root version/lock metadata to `0.1.8`. Fresh Windows and Linux CI required.
+
+
+## 2026-11-19 — DPAPI payload test expectation
+- The Linux CI run on `6392e0cff79257a7a03e78b450d0c2663cabfaf4` exposed only a stale assertion message in the invalid-length unit test after the request validator was generalized for variable-length protected blobs. Updated the expectation and bumped root/lock metadata to `0.1.9`.
+- The native Windows integration test has not yet passed; the next exact-head Windows run must verify Protect/Unprotect end-to-end.
