@@ -6,10 +6,10 @@
 
 The project is being implemented in reviewable milestones. The first milestone establishes the application workspace and initial web interface. The platform is not yet production-ready; authentication, API, database, Windows services, Agent, integrations, installer and release automation remain future milestones.
 
-## Application
+## Application baseline
 
 - **Web:** Next.js App Router, React, strict TypeScript and Tailwind CSS.
-- **Runtime baseline:** Node.js 26 Active LTS.
+- **Runtime:** Node.js 26 Active LTS.
 - **Database target:** PostgreSQL 18 (dedicated Windows service).
 - **ORM target:** Prisma ORM 7 GA; Prisma ORM 8 remains a release candidate and is not selected for production.
 - **Windows Agent target:** C# / .NET 10 LTS.
@@ -26,11 +26,13 @@ npm install
 npm run dev
 ```
 
-The development server binds to `127.0.0.1`. The initial dashboard is an honest implementation-status shell; it does not display fabricated device or monitoring data.
+The development server binds to `127.0.0.1`. The initial dashboard is an implementation-status shell; it does not display fabricated device or monitoring data.
 
 **Reproducibility status:** the initial scaffold does not yet include a generated `package-lock.json`. Dependency installation and clean-runner build must be verified before this milestone is complete.
 
-## Project documentation
+## Documentation index
+
+### Design and specifications
 
 - [Phase 3 implementation plan](PHASE3_PLAN.md)
 - [Architecture](ARCHITECTURE.md)
@@ -45,10 +47,22 @@ The development server binds to `127.0.0.1`. The initial dashboard is an honest 
 - [Release process](RELEASE_PROCESS.md)
 - [Versioning policy](VERSIONING_POLICY.md)
 - [Decision log](DECISION_LOG.md)
+
+### Project record and status
+
 - [Project guideline and history](GUIDELINE.md)
 - [Handover](HANDOVER.md)
+- [Transfer status](TRANSFER_STATUS.md)
 - [Changelog](CHANGELOG.md)
+- [Phase 2 primary-repository review — 2026-11-19](PHASE2_REVIEW_2026-11-19.md)
+- [Documentation review report (historical, pre-transfer)](DOCUMENTATION_REVIEW_REPORT.md)
+- [Final handover report (historical, pre-transfer)](FINAL_HANDOVER_REPORT.md)
 
-## Integrity
+### Package integrity
 
-The Phase 2 checksum manifest describes the documentation baseline and is not a checksum manifest for the new Phase 3 source tree. Recompute it when the documentation baseline is formally retired; do not treat the old manifest as covering new source files.
+- [File manifest](FINAL_FILE_MANIFEST.md)
+- [Checksums](SHA256SUMS.txt)
+
+The Phase 2 checksum manifest predates the Phase 3 source tree and does not cover the new source files. Recompute it when the documentation baseline is formally retired; do not use it as an integrity gate for the current application tree.
+
+All behavior described as planned or not implemented remains unverified until implemented and independently validated.
