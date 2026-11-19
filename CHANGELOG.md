@@ -1,3 +1,8 @@
+## Unreleased — Phase 3 pull-request CI trigger
+
+- Expanded `.github/workflows/validation.yml` so pull requests targeting `phase3/**` branches receive the same validation workflow as pull requests targeting `main`. Push validation for `phase3/**` remains enabled.
+- The available workflow-run inspection endpoint only reports PR-triggered runs; an empty result does not prove that a push-triggered run did not execute. Verify the Actions run for the exact commit before treating checks as passed.
+
 ## Unreleased — M2 edit validation coverage
 
 - Extended PostgreSQL-backed inventory API integration coverage for successful asset IP/MAC updates, invalid IP/MAC rejection, successful switch-port metadata updates, duplicate and out-of-range VLAN rejection, and stale switch-port version conflicts.
