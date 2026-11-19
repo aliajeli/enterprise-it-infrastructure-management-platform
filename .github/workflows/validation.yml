@@ -86,8 +86,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet -- package-lock.json; then
-            echo "Lockfile is already current."
+          if [ ! -f package-lock.json ]; then
+            echo "Expected npm to generate package-lock.json, but the file is missing."
+            exit 1
+          fi
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "Tracked lockfile is already current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
