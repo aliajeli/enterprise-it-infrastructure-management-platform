@@ -19,7 +19,7 @@ const config: ApiConfig = {
 
 describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
   const db = createDatabaseClient();
-  let app: Awaited<ReturnType<typeof buildApp>>;
+  let app: Awaited<ReturnType<typeof buildApp>> | undefined;
   let operatorCookie = "";
   let viewerCookie = "";
   let branchId = "";
@@ -79,6 +79,7 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
   });
 
   it("enforces branch scope and role policy for assets and switch-port metadata", async () => {
+    if (!app) throw new Error("Inventory integration API was not initialized.");
     const createSwitch = await app.inject({
       method: "POST",
       url: "/api/v1/inventory/assets",

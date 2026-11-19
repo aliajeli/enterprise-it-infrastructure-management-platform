@@ -46,18 +46,6 @@ CREATE TABLE "switch_profiles" (
 );
 CREATE UNIQUE INDEX "switch_profiles_asset_id_key" ON "switch_profiles"("asset_id");
 
-CREATE FUNCTION is_valid_vlan_list(vlan_values INTEGER[]) RETURNS BOOLEAN
-LANGUAGE SQL IMMUTABLE STRICT AS $
-  SELECT COALESCE(bool_and(vlan BETWEEN 1 AND 4094), TRUE)
-  FROM unnest(vlan_values) AS vlan
-$;
-
-CREATE FUNCTION is_valid_vlan_list(vlan_values INTEGER[]) RETURNS BOOLEAN
-LANGUAGE SQL IMMUTABLE STRICT AS $
-  SELECT COALESCE(bool_and(vlan BETWEEN 1 AND 4094), TRUE)
-  FROM unnest(vlan_values) AS vlan
-$;
-
 CREATE TABLE "switch_ports" (
   "id" UUID NOT NULL,
   "switch_id" UUID NOT NULL,
@@ -74,7 +62,7 @@ CREATE TABLE "switch_ports" (
   CONSTRAINT "switch_ports_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "switch_ports_if_index_check" CHECK ("if_index" > 0),
   CONSTRAINT "switch_ports_vlan_id_check" CHECK ("configured_vlan_id" IS NULL OR "configured_vlan_id" BETWEEN 1 AND 4094),
-  CONSTRAINT "switch_ports_tagged_vlans_check" CHECK (is_valid_vlan_list("configured_tagged_vlans"))
+  CONSTRAINT "switch_ports_tagged_vlans_check" CHECK (int4range(1, 4095, '[)') @> ALL("configured_tagged_vlans"))
 );
 CREATE UNIQUE INDEX "switch_ports_switch_id_if_index_key" ON "switch_ports"("switch_id", "if_index");
 CREATE INDEX "switch_ports_switch_id_name_idx" ON "switch_ports"("switch_id", "name");
