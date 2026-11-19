@@ -4,7 +4,7 @@
 
 **Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is implemented and under review in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). M1 remains in progress: user management, password change/recovery and final operational permissions are not yet implemented. The platform is not production-ready; Windows services, Agent, monitoring, integrations, installer, updater and release automation remain future milestones.
+The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration is implemented in [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5); branch lifecycle and administrator password recovery are being completed in the follow-up review branch. M1 acceptance still requires owner confirmation of the OPERATOR/VIEWER action matrix and real Windows service plus production backup/restore evidence. The platform is not production-ready; Windows services, Agent, monitoring, integrations, installer, updater and release automation remain future milestones.
 
 ## Application baseline
 
