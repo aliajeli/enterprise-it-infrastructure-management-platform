@@ -29,7 +29,7 @@
 - Restore clears `deletedAt`, sets `status=ACTIVE`, increments `version` and appends an audit event.
 - **Restore never restores old branch grants.** Access must be explicitly re-granted after restore. This prevents a previously revoked assignment from silently becoming effective again.
 - Hard deletion is not exposed. Branch IDs and audit history remain stable.
-- A unique active branch code cannot be reused while the archived record exists; restore or choose another code.
+- The active-code constraint permits reusing a code after its branch is archived. If another active branch has since claimed that code, restore returns HTTP 409; rename the active branch or choose another code before retrying.
 - The branch list includes archived records for administrative recovery; user assignment only offers active, non-archived branches.
 
 ## API controls
