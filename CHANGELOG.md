@@ -1,3 +1,9 @@
+## 0.1.20 — Resolve nullable analysis in Windows helper (2026-11-19)
+
+- Made the transaction-held lock dereference explicit after the fail-closed transaction guard.
+- Explicitly reject a missing owner SID before exact owner comparison.
+- No runtime permissions or storage semantics changed.
+
 ## 0.1.19 — Fix Windows keyring helper P/Invoke declaration (2026-11-19)
 
 - Corrected the CreateFileW P/Invoke EntryPoint placement found by the first Windows helper compile.

@@ -68,7 +68,7 @@ internal static class Program
                     else if(op==End && payload.Length==0)
                     {
                         RequireLock();
-                        heldLock.Dispose(); heldLock=null;
+                        heldLock!.Dispose(); heldLock=null;
                         await Send(output,EndOk,[]);
                         return 0;
                     }
@@ -192,7 +192,7 @@ internal static class Program
             if(len==0 || len>65536) throw new UnauthorizedAccessException();
             var bytes=new byte[(int)len]; Marshal.Copy(ptr,bytes,0,bytes.Length);
             var sd=new RawSecurityDescriptor(bytes,0); CryptographicOperations.ZeroMemory(bytes);
-            if(!expected.Equals(sd.Owner) || (sd.ControlFlags&ControlFlags.DiscretionaryAclProtected)==0 ||
+            if(sd.Owner is null || !expected.Equals(sd.Owner) || (sd.ControlFlags&ControlFlags.DiscretionaryAclProtected)==0 ||
                (sd.ControlFlags&ControlFlags.DiscretionaryAclPresent)==0 || sd.DiscretionaryAcl is null || sd.DiscretionaryAcl.Count!=2)
                 throw new UnauthorizedAccessException();
             var user=false; var system=false;

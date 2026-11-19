@@ -469,3 +469,8 @@ An earlier application-repository inspection reported an empty clone before the 
 ## 2026-11-19 — Helper compile correction (v0.1.19)
 - Windows CI on `5637432dcaf4253d7e12eb214b20932e6f3574ec` compiled the existing DPAPI helper but failed compiling the new keyring storage helper at the CreateFileW P/Invoke declaration (CS1001).
 - Moved `EntryPoint="CreateFileW"` into the `DllImport` attribute. This is a compile-only correction; the new helper remains unregistered and has not passed dedicated Windows identity/ACL/process integration tests.
+
+
+## 2026-11-19 — Windows helper nullable compile correction (v0.1.20)
+- The first P/Invoke syntax correction on `c0ede7b69d464750d0d17bc0e2d07cb563057c83` passed the previous syntax location but exposed two nullable-analysis errors: the compiler could not infer the transaction guard's non-null guarantee for `heldLock`, and `RawSecurityDescriptor.Owner` is nullable.
+- Added an explicit null-forgiving dereference only after `RequireLock()`, and an explicit null-owner rejection before SID equality. No storage behavior was broadened.
