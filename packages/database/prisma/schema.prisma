@@ -67,6 +67,7 @@ model User {
   auditEvents           AuditEvent[]       @relation("AuditActor")
   branchAccesses        UserBranchAccess[] @relation("AccessUser")
   grantedBranchAccesses UserBranchAccess[] @relation("AccessGrantor")
+  initiatedDiscoveryRuns DiscoveryRun[]
 
   @@index([status, role])
   @@map("users")
@@ -113,6 +114,8 @@ model Branch {
   createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
   accesses  UserBranchAccess[]
+  assets    Asset[]
+  discoveryRuns DiscoveryRun[]
 
   @@index([branchCode, deletedAt])
   @@index([status, deletedAt])
@@ -153,4 +156,170 @@ model AuditEvent {
   @@index([objectType, objectId, occurredAt(sort: Desc)])
   @@index([actorUserId, occurredAt(sort: Desc)])
   @@map("audit_events")
+}
+
+
+enum AssetKind {
+  COMPUTER
+  SERVER
+  SWITCH
+  ROUTER
+  FIREWALL
+  NVR
+  CAMERA
+  PRINTER
+  POS
+  UPS
+  OTHER
+
+  @@map("asset_kind")
+}
+
+enum AssetStatus {
+  ACTIVE
+  INACTIVE
+  RETIRED
+
+  @@map("asset_status")
+}
+
+enum DiscoverySource {
+  MANUAL
+  SNMP
+  SSH
+  AGENT
+  ISAPI
+  IMPORT
+
+  @@map("discovery_source")
+}
+
+enum DiscoveryStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+  CANCELLED
+
+  @@map("discovery_status")
+}
+
+enum PortState {
+  UNKNOWN
+  UP
+  DOWN
+
+  @@map("port_state")
+}
+
+model Asset {
+  id           String      @id @default(uuid()) @db.Uuid
+  branchId     String      @map("branch_id") @db.Uuid
+  assetCode    String      @map("asset_code") @db.VarChar(64)
+  name         String      @db.VarChar(160)
+  kind         AssetKind
+  status       AssetStatus @default(ACTIVE)
+  hostname     String?     @db.VarChar(255)
+  primaryIp    String?     @map("primary_ip") @db.Inet
+  macAddress   String?     @map("mac_address") @db.VarChar(17)
+  vendor       String?     @db.VarChar(120)
+  model        String?     @db.VarChar(120)
+  serialNumber String?     @map("serial_number") @db.VarChar(160)
+  location     String?     @db.VarChar(255)
+  description  String?     @db.VarChar(2000)
+  version      Int         @default(1)
+  deletedAt    DateTime?   @map("deleted_at") @db.Timestamptz(6)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  branch       Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  switch       SwitchProfile?
+  discoveryRuns DiscoveryRun[]
+
+  @@unique([branchId, assetCode])
+  @@index([branchId, kind, status, deletedAt])
+  @@index([primaryIp])
+  @@index([serialNumber])
+  @@map("assets")
+}
+
+model SwitchProfile {
+  id                  String       @id @default(uuid()) @db.Uuid
+  assetId             String       @unique @map("asset_id") @db.Uuid
+  sysName             String?      @map("sys_name") @db.VarChar(255)
+  sysDescr            String?      @map("sys_descr") @db.VarChar(1000)
+  sysObjectId         String?      @map("sys_object_id") @db.VarChar(255)
+  firmwareVersion     String?      @map("firmware_version") @db.VarChar(160)
+  reportedPortCount   Int?         @map("reported_port_count")
+  lastDiscoveryAt     DateTime?    @map("last_discovery_at") @db.Timestamptz(6)
+  lastDiscoveryStatus DiscoveryStatus? @map("last_discovery_status")
+  asset               Asset        @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  ports               SwitchPort[]
+
+  @@map("switch_profiles")
+}
+
+model SwitchPort {
+  id                    String        @id @default(uuid()) @db.Uuid
+  switchId              String        @map("switch_id") @db.Uuid
+  ifIndex               Int           @map("if_index")
+  name                  String?       @db.VarChar(160)
+  alias                 String?       @db.VarChar(160)
+  description           String?       @db.VarChar(1000)
+  configuredVlanId      Int?          @map("configured_vlan_id")
+  configuredTaggedVlans Int[]         @default([]) @map("configured_tagged_vlans")
+  connectedDeviceLabel  String?       @map("connected_device_label") @db.VarChar(255)
+  version               Int           @default(1)
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  switch                SwitchProfile @relation(fields: [switchId], references: [id], onDelete: Restrict)
+  observations          PortObservation[]
+
+  @@unique([switchId, ifIndex])
+  @@index([switchId, name])
+  @@map("switch_ports")
+}
+
+model PortObservation {
+  id          String          @id @default(uuid()) @db.Uuid
+  portId      String          @map("port_id") @db.Uuid
+  source      DiscoverySource
+  observedAt  DateTime        @default(now()) @map("observed_at") @db.Timestamptz(6)
+  adminState  PortState       @default(UNKNOWN) @map("admin_state")
+  operState   PortState       @default(UNKNOWN) @map("oper_state")
+  vlanId      Int?            @map("vlan_id")
+  ipAddress   String?         @map("ip_address") @db.Inet
+  macAddress  String?         @map("mac_address") @db.VarChar(17)
+  speedMbps   Int?            @map("speed_mbps")
+  rawMetadata Json?           @map("raw_metadata") @db.JsonB
+  port        SwitchPort      @relation(fields: [portId], references: [id], onDelete: Restrict)
+
+  @@index([portId, observedAt(sort: Desc)])
+  @@index([observedAt(sort: Desc)])
+  @@map("port_observations")
+}
+
+model DiscoveryRun {
+  id                String          @id @default(uuid()) @db.Uuid
+  branchId          String          @map("branch_id") @db.Uuid
+  targetAssetId     String?         @map("target_asset_id") @db.Uuid
+  initiatedByUserId String?         @map("initiated_by_user_id") @db.Uuid
+  source            DiscoverySource
+  status            DiscoveryStatus @default(QUEUED)
+  startedAt         DateTime?       @map("started_at") @db.Timestamptz(6)
+  completedAt       DateTime?       @map("completed_at") @db.Timestamptz(6)
+  discoveredAssets  Int             @default(0) @map("discovered_assets")
+  updatedAssets     Int             @default(0) @map("updated_assets")
+  unchangedAssets   Int             @default(0) @map("unchanged_assets")
+  failedItems       Int             @default(0) @map("failed_items")
+  errorCode         String?         @map("error_code") @db.VarChar(100)
+  errorMessage      String?         @map("error_message") @db.VarChar(1000)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  branch            Branch          @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  targetAsset       Asset?          @relation(fields: [targetAssetId], references: [id], onDelete: Restrict)
+  initiatedBy       User?           @relation(fields: [initiatedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([branchId, createdAt(sort: Desc)])
+  @@index([status, createdAt])
+  @@map("discovery_runs")
 }
