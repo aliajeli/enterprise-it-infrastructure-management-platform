@@ -62,7 +62,7 @@ export default function DashboardPage() {
           <SectionLabel>Workspace</SectionLabel>
           {navigation.map(({ label, icon: Icon, active }) => (
             active ? (
-              <a key={label} href="/" className="sidebar-link" aria-current="page">
+              <Link key={label} href="/" className="sidebar-link" aria-current="page">
                 <Icon size={17} strokeWidth={1.8} />
                 <span>{label}</span>
               </Link>
