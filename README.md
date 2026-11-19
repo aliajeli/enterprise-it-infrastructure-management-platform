@@ -4,7 +4,7 @@
 
 **Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-The project is being implemented in reviewable milestones. The first milestone establishes the application workspace and initial web interface. The platform is not yet production-ready; authentication, API, database, Windows services, Agent, integrations, installer and release automation remain future milestones.
+The project is being implemented in reviewable milestones. **M0 — repository and application foundation is complete**; M1 will establish identity, access control and persistence. The platform is not yet production-ready; authentication, API, database, Windows services, Agent, integrations, installer and release automation remain future milestones.
 
 ## Application baseline
 

@@ -76,3 +76,8 @@
 - Optimized lockfile bootstrap to skip registry resolution once the lockfile is already tracked.
 - The committed-lockfile CI run passed npm ci, dependency-tree verification, ESLint, TypeScript and production build; the expanded test and audit gates are now being validated.
 - Refreshed and committed the npm lockfile after adding Vitest 5.1.1; the first npm ci attempt correctly detected the stale lockfile and failed closed. A new clean-runner validation is required against the refreshed lockfile.
+
+## 2026-11-19 — M0 completed
+- Completed M0 on Node.js 26.13.1/npm 11.20.0 with a committed npm v3 lockfile and a clean `npm ci` install.
+- GitHub Actions run 44491419345 passed dependency-tree verification, `npm audit --audit-level=high` (0 vulnerabilities), ESLint, TypeScript, Vitest (2 tests) and production build.
+- M0 acceptance criteria are met. M1 identity, access control and persistence is the next milestone; no production integration is claimed.

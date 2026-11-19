@@ -19,7 +19,7 @@
 
 ## Milestones
 
-### M0 — Repository and application foundation (in progress)
+### M0 — Repository and application foundation (completed 2026-11-19)
 
 - Establish a maintainable monorepo and strict frontend baseline.
 - Create the first real Next.js application shell with responsive navigation and truthful empty states.
@@ -29,7 +29,7 @@
 - Use the Next.js 16 ESLint flat-config integration; do not rely on the removed `next lint` command.
 - Reconcile the operational handover with the post-PR #2 repository state.
 
-**Exit criteria:** reproducible dependency installation with committed lockfile; successful typecheck and production build on a clean runner; no placeholder claims of connected infrastructure.
+**Exit criteria: PASS.** Committed npm v3 lockfile; clean Node.js 26.13.1/npm 11.20.0 runner; `npm ci`; `npm audit --audit-level=high` (0 vulnerabilities); dependency-tree verification; ESLint; TypeScript; two Vitest smoke tests; production build; and honest dashboard empty states. Evidence: GitHub Actions run [44491419345](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44491419345).
 
 ### M1 — Identity, access control and persistence
 
