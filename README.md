@@ -2,14 +2,43 @@
 
 ## Project status
 
-**Current phase:** Phase 2 — Architecture, Design, Documentation and Technical Validation Planning.
+**Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-This repository currently contains the Phase 2 project documentation baseline. The project has not entered Phase 3. No application implementation, production migrations, installers, production release automation, or Desktop Bridge PoC execution is authorized by this documentation transfer.
+The project is being implemented in reviewable milestones. **M0 — repository and application foundation is complete**; M1 will establish identity, access control and persistence. The platform is not yet production-ready; authentication, API, database, Windows services, Agent, integrations, installer and release automation remain future milestones.
+
+## Application baseline
+
+- **Web:** Next.js App Router, React, strict TypeScript and Tailwind CSS.
+- **Runtime:** Node.js 26 Active LTS.
+- **Database target:** PostgreSQL 18 (dedicated Windows service).
+- **ORM target:** Prisma ORM 7 GA; Prisma ORM 8 remains a release candidate and is not selected for production.
+- **Windows Agent target:** C# / .NET 10 LTS.
+- **Deployment target:** self-contained Windows installation with five independent Windows services.
+
+## Development
+
+The web application lives in `apps/web`.
+
+After installing the supported Node.js runtime and dependencies:
+
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run dev
+```
+
+The development server binds to `127.0.0.1`. The initial dashboard is an implementation-status shell; it does not display fabricated device or monitoring data.
+
+**Reproducibility status:** `package-lock.json` is committed. Use Node.js 26/npm 11 and `npm ci` for clean, deterministic installs. GitHub Actions validates dependency installation, dependency-tree integrity, lint, typecheck and production build; the committed-lockfile `npm ci` run is still pending.
 
 ## Documentation index
 
 ### Design and specifications
 
+- [Phase 3 implementation plan](PHASE3_PLAN.md)
 - [Architecture](ARCHITECTURE.md)
 - [Database design](DATABASE_DESIGN.md)
 - [API contract](API_DOCUMENTATION.md)
@@ -38,4 +67,6 @@ This repository currently contains the Phase 2 project documentation baseline. T
 - [File manifest](FINAL_FILE_MANIFEST.md)
 - [Checksums](SHA256SUMS.txt)
 
-All behavior described as proposed, planned, or not implemented remains design-only until implemented and independently validated.
+The Phase 2 checksum manifest predates the Phase 3 source tree and does not cover the new source files. Recompute it when the documentation baseline is formally retired; do not use it as an integrity gate for the current application tree.
+
+All behavior described as planned or not implemented remains unverified until implemented and independently validated.

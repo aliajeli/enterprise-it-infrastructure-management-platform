@@ -38,7 +38,7 @@
 - **Independently verified:** GitHub PR metadata reports [PR #1](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/1) **MERGED** at `2026-11-19T07:58:59Z`; its merge commit is `eb8b704f945ca4c5199d97a6a8c4bd286068cfbb`. GitHub commit metadata shows one parent (`f60676205bcf9ff7f5608f0e3b3074a76bdb3776`) and the squashed review changes. Remote `main` resolves to that SHA. Earlier entries describing PR #1 as open/unmerged are preserved as historical records.
 - **Independently verified:** authenticated repository metadata reports private visibility; the remote main tree is untruncated and contains 22 root files. There are zero releases, tags and workflows at reconciliation time.
 - **Owner-reported versus independently observed:** the owner confirmed deletion of `aliajeli/testing` on 2026-11-19. The prior independent unavailability checks (404 anonymously/authenticated and absence from the authenticated repository list) remain recorded as review evidence E-21; R1 does not claim to have witnessed the deletion. Deletion does not prove prior copies, clones, downloads or caches were recalled. Token revocation remains owner-reported, not independently reverified.
-- Reconciled current SECURITY_POLICY.md repository/exposure wording, the GUIDELINE.md maintained repository-location wrapper, DECISION_LOG.md supersession/custody status and HANDOVER.md operational snapshot; appended a dated supersession note to TRANSFER_STATUS.md. Historical review reports, earlier changelog entries and pre-transfer handover records remain unchanged.
+- Reconciled current SECURITY_POLICY.md repository/exposure wording, the GUIDELINE.md maintained repository-location wrapper, DECISION_LOG.md custody/supersession status and HANDOVER.md operational snapshot; appended a dated supersession note to TRANSFER_STATUS.md. Historical review reports, earlier changelog entries and pre-transfer handover records remain unchanged.
 - Preserved GUIDELINE.md immutable lines 6–1544 byte-for-byte and the source archive invariant (39181 bytes; SHA-256 `38634f573b0391402a1b58ad927d133fa0ad2ca6551c8ea66180daddd3e24b16`). All six owner-approved architectural decisions and their detailed elaborations remain unchanged. Recomputed FINAL_FILE_MANIFEST.md, then SHA256SUMS.txt last; integrity results accompany the R1 PR.
 - Documentation only: no application code, migrations, installers, workflows, settings, permissions, hooks, webhooks, branch protection or remote-branch deletion. No `.gitattributes` or Appendix B implementation (Q-02 undecided); Q-07 remains an owner decision. Phase 2 remains active; Phase 3 was not started and the Desktop Bridge PoC was not executed. Submit R1 for owner review; do not merge it.
 
@@ -46,3 +46,38 @@
 - Clarified archival measurement scopes in HANDOVER.md using exact baseline/PR-head Git blobs and a reproducible byte-comparison procedure: complete protected lines 6–1544 are 39,295 bytes; the embedded original prompt alone is 39,181 bytes. The earlier audit's assignment of 39,181 bytes to the complete line range was a scope-labeling error. The 114-byte difference consists of two marker lines and one separator LF, not altered source bytes. GUIDELINE.md is unchanged by this follow-up.
 - Replaced HANDOVER.md's temporary session-branch entry with PR #2 as the dated owner-review item, recorded the head SHA observed when preparing the snapshot, and required live GitHub PR/main verification before action. A snapshot cannot embed its own future commit SHA; the updated head is reported in PR #2 and Git history. Historical sections and all six architectural decisions remain unchanged.
 - Recomputed the manifest and then checksums last; repeated archival, decision-preservation, historical-record, checksum and relative-link checks. Documentation only; Phase 3 not started, Desktop Bridge PoC not executed, Q-02 not implemented, and PR #2 not merged.
+
+## 2026-11-19 — Phase 3 authorized; initial platform foundation
+- Owner explicitly authorized Phase 3 implementation.
+- Added the initial Next.js App Router web workspace using strict TypeScript and Tailwind CSS.
+- Added a responsive infrastructure overview shell with truthful empty states; no simulated inventory, monitoring or service health.
+- Added the Phase 3 milestone plan, refreshed the repository landing page and changelog, and added a current Phase 3 operational snapshot to HANDOVER.md.
+- Selected Node.js 26 Active LTS, Next.js 16.4.6, PostgreSQL 18 and Prisma ORM 7 GA as the initial compatibility baseline; exact dependency installation and clean-runner verification remain pending.
+- No API, database migration, Windows service, Agent, Desktop Bridge, installer, release workflow or production integration is claimed as implemented.
+- No repository settings, branch protection, hooks, webhooks or permissions were changed.
+
+## 2026-11-19 — M0 quality-gate scaffolding
+- Added an explicit ESLint CLI gate using the official Next.js 16 Core Web Vitals and TypeScript flat configurations.
+- Added root and web-workspace lint scripts and documented the local validation sequence.
+- Added a Node.js 26 runtime selector file.
+- Dependency installation, lockfile generation and execution of lint/typecheck/build remain pending a network-enabled Node.js 26 runner.
+- Added a native, keyboard-accessible mobile navigation disclosure menu and made the active Overview item a real navigation link.
+
+## 2026-11-19 — M0 validation and dependency lockfile bootstrap
+- Added a Node.js 26 GitHub Actions validation workflow covering dependency installation, dependency-tree verification, ESLint, TypeScript and production build.
+- Added a safe lockfile bootstrap job: dependency lifecycle scripts are disabled while generating the lockfile, and the workflow commits only the lockfile to the active feature branch.
+- Committed the generated npm v3 lockfile using Node.js 26.13.1/npm 11.20.0.
+- The first lint run found two internal anchor elements; both were replaced with Next.js Link components.
+- GitHub Actions run 44490452757 passed dependency installation, dependency-tree verification, lint, typecheck and production build for the application source. That run preceded the lockfile commit; a fresh npm ci run against the committed lockfile is still required.
+
+## 2026-11-19 — M0 unit and dependency-security gates
+- Added Vitest 5.1.1 and server-rendered dashboard smoke tests covering truthful empty states and navigation semantics.
+- Added a high-severity threshold npm dependency audit to the GitHub Actions validation workflow.
+- Optimized lockfile bootstrap to skip registry resolution once the lockfile is already tracked.
+- The committed-lockfile CI run passed npm ci, dependency-tree verification, ESLint, TypeScript and production build; the expanded test and audit gates are now being validated.
+- Refreshed and committed the npm lockfile after adding Vitest 5.1.1; the first npm ci attempt correctly detected the stale lockfile and failed closed. A new clean-runner validation is required against the refreshed lockfile.
+
+## 2026-11-19 — M0 completed
+- Completed M0 on Node.js 26.13.1/npm 11.20.0 with a committed npm v3 lockfile and a clean `npm ci` install.
+- GitHub Actions run 44491419345 passed dependency-tree verification, `npm audit --audit-level=high` (0 vulnerabilities), ESLint, TypeScript, Vitest (2 tests) and production build.
+- M0 acceptance criteria are met. M1 identity, access control and persistence is the next milestone; no production integration is claimed.
