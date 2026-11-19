@@ -131,6 +131,8 @@ function InventoryContent() {
     }
   }, [branchId, kind, search]);
 
+  // The effect starts asynchronous network loading; state updates occur after the request resolves.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     void loadBranches().catch((cause: unknown) => {
       setError(cause instanceof Error ? cause.message : "Could not load accessible branches.");
@@ -138,6 +140,8 @@ function InventoryContent() {
     });
   }, [loadBranches]);
 
+  // loadAssets performs asynchronous network I/O before updating the rendered inventory state.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadAssets(); }, [loadAssets]);
 
   const selectedBranch = useMemo(
