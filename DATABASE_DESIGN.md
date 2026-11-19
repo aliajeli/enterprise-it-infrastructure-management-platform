@@ -1,4 +1,29 @@
-# Initial database design — proposed, not a migration
+# Database design and implementation status
+
+The M1 identity foundation has an implemented Prisma schema and PostgreSQL migration. The broader infrastructure ERD below remains a proposed design; its device, monitoring, job, integration and deployment entities have not yet been migrated.
+
+## Implemented M1 schema
+
+Migration: `packages/database/prisma/migrations/20261119090000_identity_foundation/migration.sql`.
+
+Implemented tables:
+
+- `users`: normalized unique username, Argon2id hash, role/status, auth epoch and failed-login lockout state.
+- `sessions`: hashed opaque token, expiry, revocation, last-seen, auth-epoch snapshot and limited request metadata.
+- `recovery_codes`: hashed code, expiry and consumption state; no recovery endpoint yet.
+- `branches`: initial branch identity, status, soft-delete and version fields.
+- `user_branch_access`: grant/revoke history and branch scope.
+- `audit_events`: append-only security/audit history.
+
+Database-enforced controls:
+
+- Unique normalized username and unique session/recovery-code hashes.
+- Partial unique index permits only one active branch grant per user/branch.
+- Partial unique index prevents duplicate active branch codes while allowing soft-deleted codes to be reused.
+- PostgreSQL trigger rejects UPDATE and DELETE against audit events.
+- User and branch relations restrict hard deletion where historical references exist.
+
+The migration, generated Prisma 7.10.1 client and live PostgreSQL 18 integration test pass in GitHub Actions run 44495513578. The remaining ERD entities are design-only until their implementation milestones.
 
 ## Conventions
 PostgreSQL, Prisma, UUID primary keys, timestamptz in UTC, created_at and updated_at on mutable records, optimistic version where concurrent edits matter. Soft-delete operational assets using deleted_at; never cascade-delete operational history. Explicit nullable fields, constraints and enum checks are finalized in schema review. Secret ciphertext is never returned by general APIs. IP addresses use PostgreSQL inet or validated canonical text with a consistent Prisma mapping; document native-type limitations. Enforce IPv4/IPv6 and uniqueness according to management network/namespace rather than globally if networks can overlap. Time-zone aware user display. All text lengths and numeric ranges validated in both API and database.

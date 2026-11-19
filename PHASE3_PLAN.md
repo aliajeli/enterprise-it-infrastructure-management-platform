@@ -31,11 +31,22 @@
 
 **Exit criteria: PASS.** Committed npm v3 lockfile; clean Node.js 26.13.1/npm 11.20.0 runner; `npm ci`; `npm audit --audit-level=high` (0 vulnerabilities); dependency-tree verification; ESLint; TypeScript; two Vitest smoke tests; production build; and honest dashboard empty states. Evidence: GitHub Actions run [44491419345](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44491419345).
 
-### M1 — Identity, access control and persistence
+### M1 — Identity, access control and persistence (in progress)
 
-- Finalize Prisma schema and first reviewed migration for users, roles, permissions, sessions, audit events, branches and scoped access.
-- Implement secure login/logout, Argon2id password hashing, opaque HttpOnly sessions, CSRF/Origin protections, rate limiting and server-side RBAC.
-- Establish database backup/restore and migration safety before storing operational data.
+- Add the dedicated Fastify API workspace and Prisma 7.10.1 PostgreSQL adapter package.
+- Establish users, sessions, recovery codes, branches, branch-scoped access grants and append-only audit events.
+- Implement Argon2id password hashing, opaque HttpOnly sessions, strict Origin validation, login throttling, generic authentication failures and server-side authorization primitives.
+- Provide a one-time interactive bootstrap command for the first administrator; never seed default credentials.
+- Keep the exact operational permission matrix owner-pending; no branch/device mutation endpoints are enabled until that matrix is approved.
+- Add database migration validation against disposable PostgreSQL 18 in CI. Production backup/restore and Windows service identity remain later acceptance requirements.
+
+**Delivered in PR #4 (CI-verified; open, not merged):**
+- Fastify API and Prisma 7.10.1 database workspaces; first PostgreSQL migration for identity, sessions, branch grants and append-only audit events.
+- Argon2id login, opaque hashed sessions, logout, origin checks, rate limits, lockout, first-admin bootstrap CLI and initial branch-scope primitives.
+- Browser sign-in, session-gated dashboard shell and logout.
+- Linux/PostgreSQL 18 and Windows API/Argon2id validation pass in workflow run 44495513578.
+
+**M1 exit criteria still outstanding:** admin user management, password change/recovery, branch CRUD, owner-confirmed operator/viewer action matrix, production backup/restore evidence and Windows service integration. The current API has no operational mutation endpoints.
 
 ### M2 — Branch and inventory management
 

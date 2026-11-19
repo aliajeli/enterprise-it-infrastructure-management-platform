@@ -1,6 +1,39 @@
 # Project handover
 
-## Current snapshot — Phase 3 implementation (2026-11-19)
+## Current snapshot — M1 identity foundation (2026-11-19)
+
+**Snapshot observed:** 2026-11-19T09:23:26Z (UTC), after PR #4 creation and successful branch validation.
+
+| Item | Current verified state |
+|---|---|
+| Authoritative repository | `aliajeli/enterprise-it-infrastructure-management-platform` — Private |
+| Default branch | `main` at `46c3b2f7f61521e2b6afe098890275c583763b22` |
+| M0 | **Complete**; PR #3 merged at `2026-11-19T08:56:11Z` |
+| Current phase | **Phase 3 — M1 identity, authentication and persistence foundation** |
+| Active development branch | `phase3/identity-persistence` |
+| Current branch head | `f895f8021638311e7b8f6277354997968232ef42` |
+| Active pull request | [PR #4 — identity, authentication and persistence foundation](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4), open, not merged; base `main` |
+| Implemented scope | Fastify API workspace; Prisma 7.10.1 PostgreSQL adapter; first migration for users, sessions, recovery codes, branches, branch grants and audit events; append-only audit trigger; partial unique indexes; Argon2id; login/logout/session API; database-backed login lockout; rate limiting; strict Origin check; interactive one-time administrator bootstrap CLI; server-side branch-scope/admin capability primitives; browser login form, session guard and logout control |
+| CI validation | [Run 44495513578](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44495513578) **passed** on the current branch head. Linux: Node.js 26, PostgreSQL 18 migration, Prisma validate/generate, dependency tree, npm audit (0 vulnerabilities), lint, typecheck, 10 API tests including live PostgreSQL integration, 2 web tests and production build. Windows: Prisma client/database package build, API typecheck, 9 API tests, native Argon2id runtime and API build |
+| Dependency reproducibility | Root `package-lock.json` committed; clean `npm ci` passed. Prisma 7.10.1 selected after a high-severity audit finding in 7.9.1 dependencies; Prisma 8 remains a release candidate and is not used |
+| M1 remaining | User-management endpoints/UI; password change and recovery flows; final operator/viewer action matrix; branch CRUD; verified production backup/restore; Windows service packaging and service identities |
+| Not implemented | Background worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge, Store Commerce deployment, installer, updater and release automation |
+| Security boundaries | API binds to loopback; production cookie Secure flag must be enabled; TLS Edge must overwrite X-Forwarded-For. Exact operator/viewer operational permissions remain owner-pending; no operational mutation endpoints are exposed |
+| Repository administration | No repository settings, branch protections, permissions, hooks, webhooks or workflow administration settings changed |
+| Desktop Bridge | PoC not executed; remains a separately authorized task |
+| Release/production | No installer, tag, release or production deployment claimed |
+
+### Next actions
+
+1. Review and merge PR #4 after its PR-specific checks pass.
+2. Continue M1 with admin-only user management, first-login password change and account disable/revoke flows.
+3. Finalize and obtain owner confirmation for the operator/viewer action matrix before exposing operational mutations.
+4. Add branch CRUD and complete authorization tests.
+5. Add backup/restore verification and Windows service integration tests before production deployment.
+
+---
+
+## Historical snapshot — M0 foundation (2026-11-19)
 
 **Snapshot observed:** 2026-11-19T08:54:00Z (UTC). This section supersedes the earlier Phase 2 snapshot below; historical evidence and decisions remain preserved.
 

@@ -1,0 +1,154 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  VIEWER
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+
+  @@map("user_status")
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("branch_status")
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+  AGENT
+  WORKER
+
+  @@map("audit_actor_type")
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+  DENIED
+
+  @@map("audit_outcome")
+}
+
+model User {
+  id                    String             @id @default(uuid()) @db.Uuid
+  username              String             @db.VarChar(64)
+  usernameNormalized    String             @unique @map("username_normalized") @db.VarChar(64)
+  passwordHash          String             @map("password_hash") @db.VarChar(255)
+  role                  UserRole           @default(VIEWER)
+  status                UserStatus         @default(ACTIVE)
+  authEpoch             Int                @default(0) @map("auth_epoch")
+  failedLoginCount      Int                @default(0) @map("failed_login_count")
+  lockedUntil           DateTime?          @map("locked_until") @db.Timestamptz(6)
+  passwordChangedAt     DateTime?          @map("password_changed_at") @db.Timestamptz(6)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sessions              Session[]
+  recoveryCodes         RecoveryCode[]
+  auditEvents           AuditEvent[]       @relation("AuditActor")
+  branchAccesses        UserBranchAccess[] @relation("AccessUser")
+  grantedBranchAccesses UserBranchAccess[] @relation("AccessGrantor")
+
+  @@index([status, role])
+  @@map("users")
+}
+
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash") @db.Char(64)
+  authEpoch  Int       @map("auth_epoch")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+  lastSeenAt DateTime? @map("last_seen_at") @db.Timestamptz(6)
+  ipAddress  String?   @map("ip_address") @db.Inet
+  userAgent  String?   @map("user_agent") @db.VarChar(512)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([revokedAt, expiresAt])
+  @@map("sessions")
+}
+
+model RecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @unique @map("code_hash") @db.Char(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, consumedAt, expiresAt])
+  @@map("recovery_codes")
+}
+
+model Branch {
+  id        String             @id @default(uuid()) @db.Uuid
+  branchCode String            @map("branch_code") @db.VarChar(32)
+  name      String             @db.VarChar(160)
+  status    BranchStatus       @default(ACTIVE)
+  deletedAt DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  version   Int                @default(1)
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  accesses  UserBranchAccess[]
+
+  @@index([branchCode, deletedAt])
+  @@index([status, deletedAt])
+  @@map("branches")
+}
+
+model UserBranchAccess {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  branchId        String    @map("branch_id") @db.Uuid
+  grantedByUserId String?   @map("granted_by_user_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz(6)
+  user            User      @relation("AccessUser", fields: [userId], references: [id], onDelete: Restrict)
+  branch          Branch    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  grantedBy       User?     @relation("AccessGrantor", fields: [grantedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([userId, revokedAt])
+  @@index([branchId, revokedAt])
+  @@map("user_branch_access")
+}
+
+model AuditEvent {
+  id         String         @id @default(uuid()) @db.Uuid
+  occurredAt DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  actorUserId String?       @map("actor_user_id") @db.Uuid
+  actorType  AuditActorType @map("actor_type")
+  action     String         @db.VarChar(100)
+  objectType String         @map("object_type") @db.VarChar(100)
+  objectId   String?        @map("object_id") @db.VarChar(128)
+  outcome    AuditOutcome
+  requestId  String?        @map("request_id") @db.VarChar(128)
+  sourceIp   String?        @map("source_ip") @db.Inet
+  metadata   Json?          @db.JsonB
+  actor      User?          @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([occurredAt(sort: Desc)])
+  @@index([objectType, objectId, occurredAt(sort: Desc)])
+  @@index([actorUserId, occurredAt(sort: Desc)])
+  @@map("audit_events")
+}

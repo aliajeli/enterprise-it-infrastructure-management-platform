@@ -81,3 +81,20 @@
 - Completed M0 on Node.js 26.13.1/npm 11.20.0 with a committed npm v3 lockfile and a clean `npm ci` install.
 - GitHub Actions run 44491419345 passed dependency-tree verification, `npm audit --audit-level=high` (0 vulnerabilities), ESLint, TypeScript, Vitest (2 tests) and production build.
 - M0 acceptance criteria are met. M1 identity, access control and persistence is the next milestone; no production integration is claimed.
+
+## 2026-11-19 — M1 Prisma security patch update
+- Dependency audit found high-severity advisories in Prisma 7.9.1 transitive dependencies (deepmerge-ts and mysql2).
+- Updated the pinned Prisma 7 packages to 7.10.1, a patch release that updates dependencies with security advisories. Prisma 8 remains a release candidate and is not adopted.
+- Prisma 7.10.1 migration/schema validation and the refreshed lockfile must pass the complete CI gate before the M1 branch is considered validated.
+- Bound API proxy trust to loopback peers so rate limiting and audit IP attribution can use the reverse proxy's forwarded client IP. Documented that the edge proxy must overwrite X-Forwarded-For.
+- Added a disposable-PostgreSQL integration test for branch-grant partial uniqueness and append-only audit enforcement, plus a Windows runner smoke gate for the native Argon2id binding and API build.
+- Added an interactive, one-time administrator bootstrap CLI protected by a PostgreSQL advisory lock; it refuses to create an account if any user already exists and never accepts passwords in command-line arguments.
+- Added server-side branch-scope and administrator capability primitives. Operational permission mutations remain disabled pending owner approval of the exact role/action matrix.
+- Added a browser sign-in form, session-gated dashboard shell and logout control. The UI uses same-origin API routes and HttpOnly cookies; no session token is stored in browser storage.
+
+## 2026-11-19 — M1 identity foundation validated; PR #4 opened
+- Completed the first M1 implementation slice: dedicated Fastify API and Prisma 7.10.1 database packages, PostgreSQL identity/session/branch-grant/audit migration, Argon2id authentication, opaque HttpOnly sessions, login/logout, origin/rate-limit controls, one-time administrator bootstrap, branch-scope primitives and browser sign-in/session/logout flow.
+- Added live PostgreSQL integration coverage for migration compatibility, active branch-grant partial uniqueness and append-only audit enforcement.
+- Added a Windows runner smoke gate for Prisma generation/build, API typecheck, native Argon2id execution, tests and API build.
+- Validation run 44495513578 passed: npm audit reported zero vulnerabilities; 10 API and 2 web tests passed on Linux; 9 API tests passed on Windows with the database-only integration test skipped there; Linux production build and Windows API build passed.
+- Opened [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4) for owner review. It is not merged. M1 remains in progress; user management, password change/recovery, branch CRUD and the owner-confirmed operational role/action matrix remain outstanding.
