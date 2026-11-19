@@ -90,7 +90,7 @@ describe("credential vault cryptographic envelope", () => {
   it("accepts ordinary identifiers and rejects control characters in context", async () => {
     const keys = provider();
     await expect(encryptCredentialSecret("secret", context, keys)).resolves.toMatchObject({ formatVersion: 1 });
-    await expect(encryptCredentialSecret("secret", { ...context, assetId: "asset-\\u0001" }, keys))
+    await expect(encryptCredentialSecret("secret", { ...context, assetId: "asset-" + String.fromCharCode(1) }, keys))
       .rejects.toThrow("Invalid credential context: assetId.");
   });
 

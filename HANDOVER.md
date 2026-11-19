@@ -351,3 +351,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Corrected context validation to reject ASCII control characters by code point, and added a regression test for valid identifiers and control-character rejection.
 - Bumped root package version to `0.1.1` and synchronized the npm lockfile root metadata. This is source/version metadata only; no installer or Release was produced.
 - The correction requires fresh exact-head Linux/PostgreSQL and Windows CI before DPAPI implementation proceeds. Credential Vault remains unconnected to the API and must not be used for real equipment secrets.
+
+
+## 2026-11-19 — Credential Vault regression fixture follow-up
+- Windows CI on `e9084406dd300ba2c0412316fc799f68bb3dcba3` passed the six pre-existing envelope tests (20 tests passed overall) but exposed an error in the newly added control-character test fixture: it supplied a literal backslash-u sequence instead of an actual U+0001 character.
+- Updated the fixture to use `String.fromCharCode(1)`, ensuring the test exercises the intended control-character guard. Bumped root package/lockfile version to `0.1.2`.
+- This follow-up is pending exact-head Linux/PostgreSQL and Windows CI. No production key provider or Credential API is enabled.

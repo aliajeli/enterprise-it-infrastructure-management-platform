@@ -1,3 +1,9 @@
+## Unreleased — Credential Vault regression-fixture correction (2026-11-19)
+
+- Corrected the new control-character regression test to construct an actual U+0001 character with `String.fromCharCode(1)`; the previous fixture contained the six printable characters `\\u0001` and therefore did not exercise the intended rejection path.
+- CI for `e9084406dd300ba2c0412316fc799f68bb3dcba3` confirmed the original six encryption tests now pass on Windows, but this added regression test failed because its fixture was escaped incorrectly. Linux/PostgreSQL validation was still running when this follow-up was prepared.
+- Bumped the root package version to `0.1.2` and synchronized the npm lockfile. Fresh exact-head CI is required.
+
 ## Unreleased — Credential Vault context-validation correction (2026-11-19)
 
 - Fixed the control-character validation in the credential encryption context. The previous escaped character-class expression rejected valid identifiers such as `credential-1` on both Linux and Windows.
