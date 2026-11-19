@@ -311,7 +311,7 @@ export async function registerBranchRoutes(
       if (!actor) return;
       let restored;
       try {
-        return await db.$transaction(async (tx) => {
+        restored = await db.$transaction(async (tx) => {
         const changed = await tx.branch.updateMany({
           where: {
             id: request.params.branchId,
