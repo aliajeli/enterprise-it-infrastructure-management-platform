@@ -109,3 +109,21 @@ Implementation order:
 7. Only then consider independent recovery export/custody and credential database/API work.
 
 Until all gates pass: keep the adapter unregistered, keep Worker discovery handlers empty, do not store real equipment credentials, do not enable SNMP/SSH/ISAPI polling, and do not publish an installer or Release.
+
+
+## 10. Version 1 wire contract — frozen before helper implementation
+
+All integers are unsigned big-endian. Each frame is exactly:
+
+| Offset | Size | Field |
+|---:|---:|---|
+| 0 | 1 byte | Protocol version, exactly `1` |
+| 1 | 1 byte | Opcode |
+| 2 | 4 bytes | Payload length |
+| 6 | declared length | Payload |
+
+The maximum payload is 32 KiB. The complete frame must contain exactly the declared number of payload bytes; truncated frames, trailing bytes, unknown opcodes, unsupported versions and invalid UTF-8 registry payloads are rejected. No path, SID, ACL, command line or caller-selected operation parameter is carried in a frame.
+
+Request opcodes: `BEGIN_TRANSACTION=0x01`, `READ_REGISTRY=0x02`, `WRITE_REGISTRY_ATOMIC=0x03`, `END_TRANSACTION=0x04`. Response opcodes: `BEGIN_OK=0x81`, `READ_RESULT=0x82`, `WRITE_OK=0x83`, `END_OK=0x84`, `ERROR=0xff`. `READ_RESULT` begins with a one-byte status (`0` = registry found followed by exact UTF-8 JSON bytes; `1` = not found and no remaining bytes). `ERROR` contains exactly one stable error code byte; it never carries OS exception text, paths or registry content. Empty control responses have zero-length payloads.
+
+This commit adds only the Node-side framing codec and unit contract tests. The .NET helper does not yet implement these operations, the adapter is not registered, and no Windows filesystem ACL or atomic-write claim is made. The helper implementation must consume this exact contract and add Windows process/ACL integration tests before production registration.

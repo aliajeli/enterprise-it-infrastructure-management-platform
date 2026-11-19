@@ -429,3 +429,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - Both Push and PR validation on `8e877a8a4640987491a6a3584cec561b37059de4` failed at `npm ls --all`. The precise invalid entry was `node_modules/@prisma/streams-local`: lock metadata incorrectly said `0.1.12` while the resolved package tarball was `0.1.11` and `@prisma/dev` required `0.1.11`.
 - Windows API runtime smoke passed on that SHA, including DPAPI helper build and API build/tests.
 - Corrected only the third-party lock entry back to `0.1.11`; root package/lock metadata advances to `0.1.13`. Exact-head Linux/PostgreSQL and Windows CI must pass before implementation continues.
+
+
+## 2026-11-19 — Windows keyring protocol contract milestone
+- Exact-head CI for `12a44a5e83e2771ab176bca9564d6a05fa359618` passed both Push run [44597262204](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44597262204) and PR run [44597276046](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44597276046). Linux/Node.js 26/PostgreSQL 18 platform validation and Windows API runtime smoke passed; the Push lockfile bootstrap also passed.
+- Added the version-1 bounded binary frame codec and unit tests for the Windows keyring helper session. Frozen opcodes and frame semantics in `WINDOWS_KEYRING_STORAGE_DESIGN.md`.
+- This milestone does not implement the .NET storage operations, service SID/DACL validation, cross-process lock, durable atomic replace or Node storage adapter. No keyring is persisted in production and no real equipment credentials may be entered.
+- Root package and lockfile metadata advanced to `0.1.14`; no installer or Release was created.

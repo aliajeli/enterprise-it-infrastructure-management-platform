@@ -1,3 +1,10 @@
+## Unreleased — Windows keyring protocol contract (2026-11-19)
+
+- Added a bounded version-1 binary frame codec for the future Windows keyring helper session, with explicit transaction/read/atomic-write/end request and response opcodes.
+- Added unit coverage for UTF-8 payloads, exact frame lengths, truncated/trailing data, unknown versions/opcodes and payload bounds. The existing Linux and Windows CI workflows execute these API tests.
+- Froze the wire contract in `WINDOWS_KEYRING_STORAGE_DESIGN.md`. This is protocol groundwork only: no filesystem helper operation, ACL validation, process lock, atomic write, storage adapter or production registration exists yet.
+- Root package version metadata advanced to `0.1.14`; no installer or Release is created.
+
 ## Unreleased — DPAPI primitive validation milestone (2026-11-19)
 
 - Exact-head Push and PR validation both passed for `5067518791b0899f410fee8b76495028e11bd590`: Linux/Node.js 26/PostgreSQL 18 and Windows API runtime smoke, including .NET 10 DPAPI helper compilation and native Protect/Unprotect integration.
