@@ -61,3 +61,4 @@
 - Added root and web-workspace lint scripts and documented the local validation sequence.
 - Added a Node.js 26 runtime selector file.
 - Dependency installation, lockfile generation and execution of lint/typecheck/build remain pending a network-enabled Node.js 26 runner.
+- Added a native, keyboard-accessible mobile navigation disclosure menu and made the active Overview item a real navigation link.

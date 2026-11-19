@@ -2,7 +2,7 @@
 
 ## Current snapshot — Phase 3 implementation (2026-11-19)
 
-**Snapshot observed:** 2026-11-19T08:44:00Z (UTC). This section supersedes the earlier Phase 2 snapshot below; historical evidence and decisions remain preserved.
+**Snapshot observed:** 2026-11-19T08:46:00Z (UTC). This section supersedes the earlier Phase 2 snapshot below; historical evidence and decisions remain preserved.
 
 | Item | Current verified state |
 |---|---|
@@ -10,10 +10,10 @@
 | Default branch | `main` at `60b0e515896c6db1e3d3469f834866e76d0198ca` |
 | Current phase | **Phase 3 — Implementation**, explicitly authorized by the owner on 2026-11-19 |
 | Active development branch | `phase3/platform-foundation` |
-| Current implementation commit | `f57ce8cceadb9198122d8927395f0e8ca4398ef7` |
+| Current implementation commit | `f64eaa4c6a2d6e866d6dd754e43d5c0a41380e13` |
 | Active pull request | [PR #3 — initial platform web foundation](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/3), open, draft, base `main`; not merged |
 | First milestone | M0 — repository and application foundation, in progress |
-| Implemented scope | Initial Next.js App Router workspace, strict TypeScript configuration, Tailwind CSS integration, responsive infrastructure overview shell with truthful empty states, Phase 3 plan, refreshed landing page/changelog, ESLint 9 flat configuration using the official Next.js 16 Core Web Vitals and TypeScript presets, root/workspace lint scripts, and `.nvmrc` Node 26 selector |
+| Implemented scope | Initial Next.js App Router workspace, strict TypeScript configuration, Tailwind CSS integration, responsive infrastructure overview shell with truthful empty states, Phase 3 plan, refreshed landing page/changelog, ESLint 9 flat configuration using the official Next.js 16 Core Web Vitals and TypeScript presets, root/workspace lint scripts, and `.nvmrc` Node 26 selector, plus native keyboard-accessible mobile navigation for the workspace menu |
 | Not implemented | Authentication, API, database schema/migrations, Windows services, worker, Agent, monitoring, NVR/switch integrations, Desktop Bridge, installer, updater and release automation |
 | Dependency reproducibility | No generated `package-lock.json` yet. Exact dependencies are pinned in package manifests; clean installation and lockfile generation remain mandatory M0 exit criteria |
 | Validation | No dependency installation, typecheck, production build, lint, unit/integration test or Windows validation has been run for PR #3. Lint configuration is now committed, but has not yet been executed. PR remains draft and must not be merged/released until required checks pass |
