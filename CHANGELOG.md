@@ -1,3 +1,11 @@
+## 0.1.18 — Windows keyring storage helper implementation groundwork (2026-11-19)
+
+- Added a separate .NET 10 Windows keyring storage helper implementing the frozen v1 binary session protocol and fixed-path read/atomic-write operations.
+- Added fail-closed service-SID, protected DACL, exact ACE, and reparse-point checks through opened handles.
+- Added bounded JSON payload validation, exclusive cross-process lock-file ownership, durable same-directory replacement, and post-write verification.
+- Extended Windows CI to compile the new helper and added protocol malformed-frame regression tests.
+- This does not provision the service identity/storage ACLs, register the Node adapter, enable credential persistence, or qualify production use.
+
 ## Unreleased — Windows helper path validation portability (2026-11-19)
 
 - Corrected helper executable path validation to use Windows path semantics explicitly, independent of the host running the unit tests.

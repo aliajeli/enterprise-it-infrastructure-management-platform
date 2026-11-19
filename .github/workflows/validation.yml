@@ -138,6 +138,9 @@ jobs:
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
+      - name: Build Windows keyring storage helper
+        run: dotnet build apps/api/windows/keyring-storage-helper/CredentialVault.KeyringStorageHelper.csproj --configuration Release
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 

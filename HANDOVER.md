@@ -456,3 +456,11 @@ An earlier application-repository inspection reported an empty clone before the 
 - Corrected validation to use `node:path.win32.isAbsolute`, because this executable path is always a Windows path regardless of where the unit test runs. Added explicit regression coverage for absolute and relative Windows paths.
 - Root package/lockfile version metadata advanced to `0.1.17`. Fresh exact-head Push and PR CI are required; do not treat the fix as validated until both complete.
 - The Node transport remains deliberately unregistered. The .NET helper still lacks keyring storage operations, strict service-SID/DACL validation, cross-process locking and durable atomic replacement. No installer, Release or real credential storage is enabled.
+
+
+## 2026-11-19 — Windows keyring storage helper groundwork (v0.1.18)
+- CI on parent `f4829cbf35bb5a3ebb4ec07143c787abd12e6b4d` completed successfully for both Push and PR workflows, including Linux/PostgreSQL validation and Windows API runtime smoke.
+- Added separate .NET 10 project `apps/api/windows/keyring-storage-helper`; it implements the v1 session protocol, fixed ProgramData registry path, installer-provisioned lock-file requirement, service-SID-only runtime identity, exact protected owner/DACL validation, handle-based reparse checks, bounded JSON read/write, same-directory temporary file, flush-to-disk, write-through replacement and read-back verification.
+- The helper deliberately fails closed if the installer has not provisioned the dedicated service SID, directory, exact ACLs and lock file. It does not create or repair them.
+- Windows CI now compiles the new helper. Dedicated service-account integration tests, ACL tamper tests, two-process lock tests, crash/interrupted-write tests, and clean-VM provisioning are still outstanding. Compile success alone is not acceptance.
+- The Node client remains unregistered; no API composition wiring, real credential persistence, Worker discovery, installer or Release.

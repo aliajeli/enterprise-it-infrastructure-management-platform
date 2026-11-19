@@ -134,3 +134,19 @@ This commit adds only the Node-side framing codec and unit contract tests. The .
 Added a Windows-only, deliberately unregistered Node transport client for the frozen v1 protocol. It starts the helper without a shell or arguments, retains one helper process across the full keyring callback, serializes in-process transactions, rejects nested/out-of-transaction access, enforces frame bounds and operation ordering, and kills the helper on protocol/operation failure. Unit tests use an in-memory fake process to verify transaction framing and fail-closed boundaries.
 
 This is transport groundwork, not a usable storage adapter: the .NET helper still does not implement the storage opcodes, service SID and exact NTFS ACL verification are not implemented, no cross-process lock or atomic filesystem write exists, and the client is not registered. Do not enable credential persistence or enter real equipment credentials.
+
+
+## 12. First Windows helper implementation milestone (0.1.18)
+
+Added a separate .NET 10 Windows executable at `apps/api/windows/keyring-storage-helper`. It implements the frozen v1 session frame contract and fixed-purpose operations only: begin transaction, read the one fixed registry, atomically write bounded UTF-8 JSON, and end transaction. It accepts no path, SID, ACL, command, or environment-supplied storage override.
+
+Security behavior is intentionally fail-closed:
+- Requires exactly one service SID in the current process token; interactive users, LocalSystem without the dedicated service SID, and unrelated service identities fail.
+- Requires the installer-provisioned fixed ProgramData directory and lock file to exist. It does not create or repair them.
+- Uses a fixed lock file opened with exclusive sharing for the full helper session; process exit releases the OS handle.
+- Checks owner, protected DACL, exact two allow ACEs (service SID and SYSTEM), exact Full Control masks, and reparse-point status using opened handles.
+- Reads only the fixed registry path and bounds content to 32 KiB.
+- Creates a random same-directory temporary file with a protected explicit owner/DACL, flushes it to disk, replaces the destination using same-volume write-through move semantics, and verifies the committed file through a handle.
+- Uses a bounded idle read timeout and stable generic protocol errors; no exception details or filesystem paths are returned on stdout.
+
+This is an implementation milestone, not production acceptance. No installer provisioning for the service SID/directory/lock file exists yet; therefore the helper is expected to fail closed on an unprovisioned host. Windows CI currently builds the executable but does not yet run dedicated-service-SID ACL, multi-process contention, tamper, or crash-recovery integration tests. The Node transport remains unregistered. Do not enter real equipment credentials or enable discovery.

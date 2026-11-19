@@ -80,6 +80,13 @@ describe("Windows keyring storage helper transport", () => {
     expect(() => new WindowsKeyringStorageClient("relative\\\\helper.exe", "win32")).toThrow("absolute");
   });
 
+  it("rejects malformed, truncated, trailing and oversized protocol frames", () => {
+    expect(() => decodeKeyringFrame(Buffer.from([1, KeyringOpcode.BEGIN_TRANSACTION, 0, 0, 0, 1]))).toThrow();
+    expect(() => decodeKeyringFrame(Buffer.from([1, KeyringOpcode.BEGIN_TRANSACTION, 0, 0, 0, 0, 0]))).toThrow();
+    expect(() => encodeKeyringFrame(KeyringOpcode.WRITE_REGISTRY_ATOMIC, Buffer.alloc(32 * 1024 + 1))).toThrow();
+    expect(() => decodeKeyringFrame(Buffer.from([2, KeyringOpcode.BEGIN_TRANSACTION, 0, 0, 0, 0]))).toThrow();
+  });
+
   it("fails closed on non-Windows platforms and relative helper paths", () => {
     expect(() => new WindowsKeyringStorageClient("/tmp/helper", "linux")).toThrow("only on Windows");
     expect(() => new WindowsKeyringStorageClient("helper.exe", "win32")).toThrow("absolute");
