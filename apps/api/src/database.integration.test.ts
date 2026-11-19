@@ -20,10 +20,14 @@ const config: ApiConfig = {
 };
 
 function sessionCookie(response: {
-  headers: Record<string, string | string[] | undefined>;
+  headers: { "set-cookie"?: unknown };
 }): string {
   const header = response.headers["set-cookie"];
-  const value = Array.isArray(header) ? header[0] : header;
+  const value = Array.isArray(header)
+    ? header[0]
+    : typeof header === "string"
+      ? header
+      : "";
   return (value ?? "").split(";")[0] ?? "";
 }
 
