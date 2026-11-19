@@ -91,3 +91,10 @@
 - Added an interactive, one-time administrator bootstrap CLI protected by a PostgreSQL advisory lock; it refuses to create an account if any user already exists and never accepts passwords in command-line arguments.
 - Added server-side branch-scope and administrator capability primitives. Operational permission mutations remain disabled pending owner approval of the exact role/action matrix.
 - Added a browser sign-in form, session-gated dashboard shell and logout control. The UI uses same-origin API routes and HttpOnly cookies; no session token is stored in browser storage.
+
+## 2026-11-19 — M1 identity foundation validated; PR #4 opened
+- Completed the first M1 implementation slice: dedicated Fastify API and Prisma 7.10.1 database packages, PostgreSQL identity/session/branch-grant/audit migration, Argon2id authentication, opaque HttpOnly sessions, login/logout, origin/rate-limit controls, one-time administrator bootstrap, branch-scope primitives and browser sign-in/session/logout flow.
+- Added live PostgreSQL integration coverage for migration compatibility, active branch-grant partial uniqueness and append-only audit enforcement.
+- Added a Windows runner smoke gate for Prisma generation/build, API typecheck, native Argon2id execution, tests and API build.
+- Validation run 44495513578 passed: npm audit reported zero vulnerabilities; 10 API and 2 web tests passed on Linux; 9 API tests passed on Windows with the database-only integration test skipped there; Linux production build and Windows API build passed.
+- Opened [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4) for owner review. It is not merged. M1 remains in progress; user management, password change/recovery, branch CRUD and the owner-confirmed operational role/action matrix remain outstanding.

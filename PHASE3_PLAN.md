@@ -40,6 +40,14 @@
 - Keep the exact operational permission matrix owner-pending; no branch/device mutation endpoints are enabled until that matrix is approved.
 - Add database migration validation against disposable PostgreSQL 18 in CI. Production backup/restore and Windows service identity remain later acceptance requirements.
 
+**Delivered in PR #4 (CI-verified; open, not merged):**
+- Fastify API and Prisma 7.10.1 database workspaces; first PostgreSQL migration for identity, sessions, branch grants and append-only audit events.
+- Argon2id login, opaque hashed sessions, logout, origin checks, rate limits, lockout, first-admin bootstrap CLI and initial branch-scope primitives.
+- Browser sign-in, session-gated dashboard shell and logout.
+- Linux/PostgreSQL 18 and Windows API/Argon2id validation pass in workflow run 44495513578.
+
+**M1 exit criteria still outstanding:** admin user management, password change/recovery, branch CRUD, owner-confirmed operator/viewer action matrix, production backup/restore evidence and Windows service integration. The current API has no operational mutation endpoints.
+
 ### M2 — Branch and inventory management
 
 - Implement branches, branch links, common device identity and typed device records.

@@ -4,7 +4,7 @@
 
 **Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-The project is being implemented in reviewable milestones. **M0 — repository and application foundation is complete**; M1 is implementing identity, access control and persistence. The platform is not yet production-ready; authentication, API, database, Windows services, Agent, integrations, installer and release automation remain future milestones.
+The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is implemented and under review in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). M1 remains in progress: user management, password change/recovery and final operational permissions are not yet implemented. The platform is not production-ready; Windows services, Agent, monitoring, integrations, installer, updater and release automation remain future milestones.
 
 ## Application baseline
 
@@ -58,6 +58,8 @@ The development server binds to `127.0.0.1`. The initial dashboard is an impleme
 ## Documentation index
 
 ### Design and specifications
+
+- [M1 authentication and persistence design](M1_AUTHENTICATION_DESIGN.md)
 
 - [Phase 3 implementation plan](PHASE3_PLAN.md)
 - [Architecture](ARCHITECTURE.md)

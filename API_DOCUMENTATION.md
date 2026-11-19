@@ -1,6 +1,33 @@
-# Planned API contract — not implemented
+# API contract and implementation status
 
-This document defines boundaries and candidate route shapes for design review only; no endpoint, event, status code, authentication behavior or compatibility is implemented or tested. Exact resources, schemas and protocol versions require approval during implementation. Server-side RBAC is mandatory for every request and message; no secret is returned to the browser.
+The complete platform API described below is still a design target. The following M1 subset is implemented and CI-verified; all other candidate routes and event contracts remain planned, not implemented.
+
+## Implemented M1 API subset
+
+| Method | Route | Behavior |
+|---|---|---|
+| GET | /health/live | Process liveness only; does not imply readiness. |
+| GET | /health/ready | Checks database connectivity and presence of the initial users schema. |
+| POST | /api/v1/auth/login | Validates username/password and issues an opaque server-side session cookie. |
+| GET | /api/v1/session | Validates the cookie, session expiry/revocation, user status and auth epoch; returns a minimal principal. |
+| POST | /api/v1/auth/logout | Revokes the current session and clears its cookie. |
+
+Authentication implementation details:
+
+- Argon2id password hashing; 14–128 character password policy for initial credentials.
+- Generic invalid-credential response, dummy hash for unknown usernames, PostgreSQL-backed failed-login counter and 15-minute lockout after five consecutive failures.
+- Login route throttling of five attempts per 15 minutes per source IP; global API throttle of 120 requests per minute. The rate-limit store is process-local and assumes the current single API service instance.
+- 256-bit random session token; only its SHA-256 digest is stored in PostgreSQL.
+- HttpOnly, SameSite=Lax, Path=/ cookie; Secure in production; no Domain attribute; 12-hour absolute expiry.
+- Exact Origin validation for state-changing browser requests; CORS is not enabled.
+- API binds to loopback. Only loopback proxy peers are trusted for forwarded client IP; the TLS Edge must overwrite X-Forwarded-For.
+- The first administrator is created only through the interactive local bootstrap CLI.
+
+Not yet implemented: user-management endpoints, password change/recovery, branch CRUD, operational device APIs, WebSocket contracts, Agent enrollment, job operations, and final operator/viewer action permissions. Server-side authorization primitives exist, but no operational mutation endpoint is exposed.
+
+## Planned API contract
+
+The sections below define the future API boundaries and candidate route shapes; they are not a claim of implementation. Exact resources, schemas and protocol versions require approval during implementation. Server-side RBAC is mandatory for every request and message; no secret is returned to the browser.
 
 ## Transport, versions, authentication
 All external application HTTP and WebSocket traffic uses HTTPS/WSS through the Windows TLS edge; internal listeners are restricted and authenticated. Candidate prefix `/api/v1`, explicit content type, UTC timestamps, documented backward compatibility and deprecation. Login creates opaque Secure HttpOnly SameSite session cookies with CSRF/origin protections; password Argon2id, rate limiting, rotation/revocation and session expiration. Agent uses separate per-device enrolled identity over authenticated WSS, not human sessions. Proxy clients use separately provisioned scoped installation identities, not GitHub credentials. Admin/operator/viewer rights and branch/device scope checked server-side, including credential usage, update initiation, bridge capabilities and job operations.
