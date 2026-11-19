@@ -1,6 +1,34 @@
 # Project handover
 
-## Current snapshot — M2 inventory foundation (2026-11-19)
+## Current snapshot — M2 inventory UI (2026-11-19)
+
+**Snapshot observed:** 2026-11-19, branch `phase3/m2-inventory-ui`, PR [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), based on PR #7 head `e015919110a77cc13db0678113a88eae95166063`. PR #8 is Draft/open/unmerged. CI must be checked against its final head before treating this slice as validated.
+
+| Item | Verified state |
+|---|---|
+| Authoritative repository | `aliajeli/enterprise-it-infrastructure-management-platform` — Private |
+| M0 | Complete and merged |
+| M1 identity foundation | Merged — PR #4 |
+| M1 user/branch administration | PR #5 Draft/open/unmerged |
+| M1 lifecycle and approved role policy | PR #6 Draft/open/unmerged |
+| M2 inventory and switch-port API | PR #7 Draft/open/unmerged; CI passed on its exact head `e015919110a77cc13db0678113a88eae95166063` |
+| M2 inventory UI | PR #8 Draft/open/unmerged; branch selector, inventory list/search, asset registration, switch-port metadata and observation display added |
+| Accessible branch API | Added in PR #8; ADMIN sees active branches globally, OPERATOR/VIEWER see only active granted branches |
+| Not implemented | SNMP/SSH discovery, live switch configuration, Windows services, Worker, Windows Agent, monitoring, NVR integration, Desktop Bridge, Store Commerce deployment, installer, updater and release automation |
+| Release/production | No installer, release, tag or production deployment claimed |
+
+### Immediate next actions
+
+1. Verify all CI jobs on the exact current PR #8 head.
+2. Review the stacked PR chain #5 → #6 → #7 → #8; passing CI does not replace code review.
+3. Keep the PRs Draft/unmerged until the owner review and dependency order are resolved.
+4. Continue M2 with asset detail/edit flows and port metadata editing, then implement safe read-only discovery as a separate tested slice.
+
+---
+
+## Historical snapshot — M2 inventory foundation (2026-11-19)
+
+## Historical snapshot — M2 inventory foundation (2026-11-19)
 
 **Snapshot observed:** 2026-11-19, development branch `phase3/m2-inventory-foundation` at CI-verified head `5d3aec16b760c1e5318297409a29fb7bb0135821`, based on CI-verified M1 review head `ebc349cffd35c50a91f3c18c219821acf0d53391`. PR #7 is Draft/open/unmerged. This is a development handover, not a production-readiness assertion.
 
