@@ -1,3 +1,10 @@
+## Unreleased — DPAPI helper memory and allocator correction (2026-11-19)
+
+- Corrected native allocation cleanup in the DPAPI helper: unmanaged input/entropy buffers use `FreeHGlobal`, while DPAPI-owned output uses `LocalFree` after zeroization.
+- Expanded cleanup so request frame, copied KEK, derived entropy and output buffers are zeroed on malformed requests and exception paths as well as successful operations.
+- Updated the installation-binding integration test to assert the helper's generic nonzero-exit failure.
+- Corrected trailing literal escape characters in root package/lock JSON files and bumped root package version to `0.1.5`.
+
 ## Unreleased — Windows DPAPI helper protocol (2026-11-19)
 
 - Added a fixed-purpose .NET 10 Windows helper for DPAPI machine-scope Protect/Unprotect of 32-byte KEKs. It uses a bounded length-prefixed binary stdin/stdout protocol; no shell, arguments, environment secrets or temporary plaintext files.

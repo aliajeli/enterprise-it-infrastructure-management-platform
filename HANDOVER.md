@@ -373,3 +373,11 @@ An earlier application-repository inspection reported an empty clone before the 
 - Windows CI now builds the helper and runs DPAPI round-trip / installation-binding integration tests. Non-Windows test runs verify fail-closed behavior and skip the native integration test.
 - This is a DPAPI primitive only, not a production key provider. No installer-created service identity or ACL verification, persistent key registry, atomic rotation, independent recovery export or clean-host restore drill exists. No Credential DB/API or real-device credential use is enabled.
 - Root version metadata is `0.1.4`; no installer/Release was created.
+
+
+## 2026-11-19 — DPAPI helper native-memory correction
+- Corrected allocator pairing in the .NET helper: HGlobal input/entropy buffers are freed with `FreeHGlobal`; DPAPI-owned output is released with `LocalFree` after zeroization.
+- Request frame, copied key, entropy and output buffers are now zeroed in an outer finally path, including malformed requests.
+- Updated the cross-installation integration test for the helper's generic nonzero-exit failure.
+- Normalized root package/lock JSON file endings and bumped root version metadata to `0.1.5`.
+- Fresh Windows helper build/runtime and Linux validation are required. No production keyring or recovery is enabled.

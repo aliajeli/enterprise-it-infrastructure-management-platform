@@ -38,7 +38,7 @@ describe("Windows DPAPI helper boundary", () => {
       helperPath,
       "b3d5c7e9-2345-4bcd-9efa-2345678901bc",
     );
-    await expect(otherInstallation.unprotect(protectedKey)).rejects.toThrow("DPAPI operation failed.");
+    await expect(otherInstallation.unprotect(protectedKey)).rejects.toThrow("DPAPI helper failed.");
 
     key.fill(0);
     restored.fill(0);

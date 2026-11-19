@@ -18,6 +18,9 @@ internal static class Program
     {
         byte status = 2;
         byte[] output = [];
+        byte[] frame = [];
+        byte[] payload = [];
+        byte[] entropy = [];
         try
         {
             using var input = Console.OpenStandardInput();
@@ -28,7 +31,7 @@ internal static class Program
             if (frameLength < 8 || frameLength > MaxFrameBytes)
                 throw new InvalidDataException();
 
-            var frame = new byte[frameLength];
+            frame = new byte[frameLength];
             await ReadExactly(input, frame);
             if (frame[0] != ProtocolVersion)
                 throw new InvalidDataException();
@@ -49,8 +52,8 @@ internal static class Program
             var sid = WindowsIdentity.GetCurrent().User?.Value
                 ?? throw new InvalidOperationException();
             var entropyText = "EnterpriseIT.CredentialVault.DPAPI.v1|" + sid + "|" + installationId;
-            var entropy = SHA256.HashData(Encoding.UTF8.GetBytes(entropyText));
-            var payload = frame.AsSpan(8 + installationLength, payloadLength).ToArray();
+            entropy = SHA256.HashData(Encoding.UTF8.GetBytes(entropyText));
+            payload = frame.AsSpan(8 + installationLength, payloadLength).ToArray();
 
             try
             {
@@ -63,9 +66,6 @@ internal static class Program
             }
             finally
             {
-                CryptographicOperations.ZeroMemory(frame);
-                CryptographicOperations.ZeroMemory(payload);
-                CryptographicOperations.ZeroMemory(entropy);
             }
 
             var response = new byte[5 + output.Length];
@@ -98,6 +98,9 @@ internal static class Program
         }
         finally
         {
+            CryptographicOperations.ZeroMemory(frame);
+            CryptographicOperations.ZeroMemory(payload);
+            CryptographicOperations.ZeroMemory(entropy);
             CryptographicOperations.ZeroMemory(output);
         }
     }
@@ -179,7 +182,9 @@ internal static class Program
             finally
             {
                 ZeroUnmanaged(sourcePointer, source.Length);
+                Marshal.FreeHGlobal(sourcePointer);
                 ZeroUnmanaged(entropyPointer, entropy.Length);
+                Marshal.FreeHGlobal(entropyPointer);
                 if (output.Data != IntPtr.Zero)
                 {
                     ZeroUnmanaged(output.Data, output.Length);
@@ -194,7 +199,6 @@ internal static class Program
             var zeros = new byte[length];
             Marshal.Copy(zeros, 0, pointer, length);
             CryptographicOperations.ZeroMemory(zeros);
-            Marshal.FreeHGlobal(pointer);
         }
     }
 }
