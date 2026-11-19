@@ -26,3 +26,7 @@ These tiers supersede any reading that real hardware is a universal blocker for 
 ## Worker queue validation requirements
 
 The first Worker slice includes unit tests for retry backoff and attempt limits. Before any discovery handler is enabled, add PostgreSQL integration tests for concurrent `SKIP LOCKED` claims, single-owner leases, heartbeat expiry, stale-worker completion rejection, crash recovery, retry exhaustion, cancellation races and transaction rollback. Run the Worker on the target Windows VM as an independently supervised service and verify readiness, graceful shutdown, restart and database outage recovery. The current empty-handler worker must never claim queued jobs.
+
+
+## Worker queue PostgreSQL integration coverage — 2026-11-19
+The Worker suite now includes disposable-PostgreSQL integration tests for concurrent single-run claims, owner-bound heartbeat/completion, stale lease rejection (including cancellation acknowledgement), expired-lease recovery and reclaim, retry requeue followed by max-attempt failure, cancellation precedence over retry exhaustion, and transaction rollback. These tests are gated on a `DATABASE_URL` containing `/platform_test`; they must be observed passing on the exact CI head before the queue foundation is considered validated. No handler is enabled by this test work.
