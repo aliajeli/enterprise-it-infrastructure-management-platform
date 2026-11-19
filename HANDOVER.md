@@ -443,3 +443,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Added an unregistered Node helper-session transport client and fake-process tests. It holds a single helper session for a storage callback and validates protocol state.
 - The .NET helper does not yet implement the storage opcodes. Service SID/NTFS ACL verification, cross-process lock, durable atomic replace, installer provisioning and production registration remain unimplemented. Keep Credential Vault test-only; no real equipment credentials, installer or Release.
 - Root version metadata advanced to `0.1.15`.
+
+
+## 2026-11-19 — helper-session lifecycle correction
+- Follow-up review of `89c0dc8dc96f5700c1227f3009326b9b6e8690f7` found that successful transaction completion needed to send the explicit END opcode, and helper startup failures must release the local queue. Corrected both and added an END assertion.
+- This is still only an unregistered transport client; the .NET helper storage operations, ACL, cross-process lock, atomic write and installer provisioning remain absent.
+- Root version metadata advanced to `0.1.16`.

@@ -1,3 +1,9 @@
+## Unreleased — keyring helper-session lifecycle correction (2026-11-19)
+
+- Corrected transaction completion so END is sent after a successful callback, while callback/helper failures abort the session. Helper startup failures now release the in-process transaction queue.
+- Added an assertion that the helper receives END on successful completion.
+- Root package version metadata advanced to `0.1.16`; no installer or Release is created.
+
 ## Unreleased — Windows keyring helper-session transport (2026-11-19)
 
 - Added an unregistered Windows-only Node transport client for the v1 helper protocol. It retains one child process across a complete storage transaction, serializes local transactions, rejects nested/out-of-transaction operations and fails closed on protocol errors.

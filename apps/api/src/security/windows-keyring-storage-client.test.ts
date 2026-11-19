@@ -8,6 +8,7 @@ class FakeHelper extends EventEmitter {
   readonly stdin = new PassThrough();
   readonly stdout = new PassThrough();
   killed = false;
+  ended = false;
   private transaction = false;
 
   constructor() {
@@ -33,6 +34,7 @@ class FakeHelper extends EventEmitter {
           case KeyringOpcode.END_TRANSACTION:
             if (!this.transaction) throw new Error("bad end");
             this.transaction = false;
+            this.ended = true;
             response = encodeKeyringFrame(KeyringOpcode.END_OK);
             break;
           default: throw new Error("unknown");
@@ -61,6 +63,7 @@ describe("Windows keyring storage helper transport", () => {
       await client.writeAtomic('{"formatVersion":1}');
     });
     expect(helper.killed).toBe(false);
+    expect(helper.ended).toBe(true);
   });
 
   it("rejects access outside a transaction and nested transactions", async () => {

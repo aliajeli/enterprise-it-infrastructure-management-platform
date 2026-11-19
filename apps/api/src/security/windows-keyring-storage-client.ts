@@ -176,23 +176,25 @@ export class WindowsKeyringStorageClient implements CredentialKeyringStorage {
     let release!: () => void;
     this.tail = new Promise<void>((resolve) => { release = resolve; });
     await previous;
-    const child = this.spawnHelper(this.helperPath);
-    const channel = new FrameChannel(child);
-    const transaction = new WindowsKeyringTransaction(child, channel);
+    let transaction: WindowsKeyringTransaction | undefined;
+    let callbackCompleted = false;
     try {
+      const child = this.spawnHelper(this.helperPath);
+      const channel = new FrameChannel(child);
+      transaction = new WindowsKeyringTransaction(child, channel);
       await transaction.begin();
-      return await this.context.run(transaction, operation);
+      const result = await this.context.run(transaction, operation);
+      callbackCompleted = true;
+      return result;
     } catch (error) {
-      transaction.abort();
+      transaction?.abort();
       throw error;
     } finally {
-      try {
-        if (this.context.getStore() === transaction) await transaction.end();
-        else {
-          // The async context is not active here; a successful callback is tracked below.
-        }
-      } catch {
-        transaction.abort();
+      if (transaction && callbackCompleted) {
+        try { await transaction.end(); }
+        catch { transaction.abort(); }
+      } else {
+        transaction?.abort();
       }
       release();
     }
