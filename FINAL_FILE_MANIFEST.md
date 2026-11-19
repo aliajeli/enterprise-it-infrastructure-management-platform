@@ -1,6 +1,6 @@
 # Final Phase 2 file manifest — primary repository (recomputed 2026-11-19)
 
-Recomputed against the current primary-repository tree after the 2026-11-19 review, as directed by `TRANSFER_STATUS.md` ("Recompute and validate checksums before using them as an integrity gate"). Changes from the transferred source-package manifest: the archival line-ending repair of `GUIDELINE.md` restored its original source-package hash; the `README.md` entry reflects the landing-page rewrite recorded in `TRANSFER_STATUS.md`; `TRANSFER_STATUS.md` and `PHASE2_REVIEW_2026-11-19.md` are now covered; and entries for files edited by the review (`HANDOVER.md`, `CHANGELOG.md`) were refreshed. The pre-repair source-package values are preserved in commit `f60676205bcf9ff7f5608f0e3b3074a76bdb3776`.
+Recomputed against the current primary-repository tree after the 2026-11-19 review, as directed by `TRANSFER_STATUS.md` ("Recompute and validate checksums before using them as an integrity gate"). Changes from the transferred source-package manifest: the archival line-ending repair of `GUIDELINE.md` restored its original source-package hash; the `README.md` entry reflects the landing-page rewrite recorded in `TRANSFER_STATUS.md`; `TRANSFER_STATUS.md` and `PHASE2_REVIEW_2026-11-19.md` are now covered; and entries for files edited by the review (`HANDOVER.md`, `CHANGELOG.md`) were refreshed. The pre-repair source-package values are preserved in commit `f60676205bcf9ff7f5608f0e3b3074a76bdb3776`. Recomputed a second time the same day after the owner-authorized corrections (same file set; refreshed hashes for `HANDOVER.md`, `CHANGELOG.md` and `PHASE2_REVIEW_2026-11-19.md`).
 
 The table lists every root file except this manifest and `SHA256SUMS.txt`. `SHA256SUMS.txt` covers all files except itself, including this manifest. Neither file contains its own hash. Hashes prove byte integrity, not publisher authenticity. Verify with `sha256sum -c SHA256SUMS.txt` at the repository root.
 
@@ -9,7 +9,7 @@ The table lists every root file except this manifest and `SHA256SUMS.txt`. `SHA2
 | `AGENT_SPECIFICATION.md` | 7052 | `1d84172534d09d157120f6ea8b7175744bab5f7b8bbc8acc2223c51146e9af3e` |
 | `API_DOCUMENTATION.md` | 5764 | `d76899da66b0a5fbfebc52d9cbd73b08c3e033d59447c40c239ca8a9ed17468e` |
 | `ARCHITECTURE.md` | 26027 | `e48d188c941403e1925292c661801b32c0f44f82f15eb976094ed31b4c29cec6` |
-| `CHANGELOG.md` | 2965 | `7fdbc9c8c64860701b4148ddd0dd601b7c97e6e1133fd6973903e60c52565baf` |
+| `CHANGELOG.md` | 4240 | `aacff26537e5a8cbad7ed266a1e47700a8cd49f2d5157dfd4f4bfadd7a67e1fc` |
 | `DATABASE_DESIGN.md` | 21032 | `3a3c395001f2f1688caccc8490baea92e2dc96193c5049ffce6467e1e70cd486` |
 | `DECISION_LOG.md` | 10370 | `a6a93897a0452530fa6536e356c564f4c91c8ab4c24f13514ba3191ee71a0c52` |
 | `DEPLOYMENT_WORKFLOWS.md` | 11319 | `da3df32d3ca2d623dd2793601f061ecadddaabd29507a83f5bfac4b6a326bcb3` |
@@ -17,9 +17,9 @@ The table lists every root file except this manifest and `SHA256SUMS.txt`. `SHA2
 | `DOCUMENTATION_REVIEW_REPORT.md` | 26091 | `c530c2b91e7c04941c29070d73cb43430f34bd7fbb856c92208eb2c3323cd6ec` |
 | `FINAL_HANDOVER_REPORT.md` | 6616 | `f121a8df4ae1336f99703f6658bc889dae46069283695df44c6c6a066ec19d68` |
 | `GUIDELINE.md` | 55234 | `2a14f8415a53a0c28c572d371938149e5559cfee6d07bf33be578f52597db657` |
-| `HANDOVER.md` | 11811 | `34fd86006182c6ee1478ca54d6bbcef5b657931abe82674965730162f0128ead` |
+| `HANDOVER.md` | 11853 | `866bad6b6c4cea0b3cbabfdda1f4b0468782222749629e9b5c9819016a885b0f` |
 | `NETWORK_REQUIREMENTS.md` | 3748 | `13e75ba3ad254ea128e088c62e721315540f1f7bb591a015ca4d55546f5f1a7e` |
-| `PHASE2_REVIEW_2026-11-19.md` | 44362 | `8de6dc47d552a8b74773508af370c365c1de33941de83e943ae5fd7e2a628082` |
+| `PHASE2_REVIEW_2026-11-19.md` | 59923 | `158a43655ea24274bb5d2275f203d5ade6d7019e86a29c073b2bfeb65f5dc065` |
 | `README.md` | 1704 | `a0a3718822d46ae5f31cf709fe24a5ac59bb43af88d515ae37ceaa18ecff6bb2` |
 | `RELEASE_PROCESS.md` | 4875 | `9c2c3a5ad3582a09664658b314b51bad7a49ac5e5df9f019236b0f72c69ee251` |
 | `SECURITY_POLICY.md` | 13920 | `f9a01d573bf138f725107270f987b0916ac186884a1ed5b449c530d37e7ba3dc` |
