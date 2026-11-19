@@ -185,3 +185,9 @@
 - Added disposable-PostgreSQL integration tests for concurrent claims, lease ownership, stale-worker rejection, lease recovery/reclaim, retry exhaustion, cancellation precedence and transaction rollback.
 - The preceding Worker foundation CI run (commit `356c5b5`, run `44572613928`) passed all three jobs. Validation of these follow-up fixes and integration tests is pending on their exact commit head.
 - Discovery handlers remain disabled; no SNMP/SSH/ISAPI/Agent network activity, installer or release is enabled by this change.
+
+
+## Unreleased — Worker integration test isolation
+- PostgreSQL CI exposed test interference caused by globally-scoped queue claiming across test cases. Integration tests now clean up their branch's runs before each case and assert that the intended run was actually claimed.
+- Lease recovery assertions validate the target run rather than assuming no other eligible expired lease exists in the disposable database.
+- The first integration run failed (4/11 Worker integration tests); follow-up CI on commit `4ca9fd7` is pending. No passing claim is made until the exact head completes successfully.
