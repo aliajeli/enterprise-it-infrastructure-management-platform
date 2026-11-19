@@ -14,7 +14,7 @@
 | M1 completion work | [PR #6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), Draft/open/unmerged, based on PR #5; branch lifecycle and administrator password recovery added |
 | Branch lifecycle | Edit with optimistic version; soft archive; restore; audit events; archive revokes grants and restore does not reinstate them |
 | Password recovery | ADMIN-issued one-time temporary password for active non-admin users; no-store response, forced change, session revocation, auth epoch increment and audit |
-| CI for completion work | [Run 44516741144](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44516741144) **passed** on exact code/workflow head `a92763634276d04fe3c29e9341d11aafa10d0813`: platform validation, Windows API runtime smoke, lockfile bootstrap, PostgreSQL integration, disposable backup/restore smoke, lint, typecheck and production build all succeeded. This handover-only commit changes no runtime code; a fresh run is still required to validate the exact latest documentation head. Earlier intermediate runs were cancelled or failed during backup-smoke development and are not treated as successful evidence |
+| CI for completion work | [Run 44516741144](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44516741144) **passed** on exact head `d1ed6d209a33e9923a376c7769bbc2491fcfaa68` in [run 44517063564](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44517063564): platform validation, Windows API runtime smoke, lockfile bootstrap, PostgreSQL integration, disposable backup/restore smoke, lint, typecheck and production build all succeeded. Earlier intermediate runs were cancelled or failed during backup-smoke development and are not treated as successful evidence |
 | M1 remaining acceptance gates | Owner-confirmed OPERATOR/VIEWER action matrix; clean target-Windows validation of service identities/ACL/startup/API integration; production PostgreSQL encrypted backup/restore and key-recovery evidence; final code review and green CI |
 | Not implemented | Five Windows services, Background Worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge PoC, Store Commerce deployment, installer, updater and release automation |
 | Security boundaries | All user/branch management routes remain ADMIN-only. OPERATOR/VIEWER operational mutation rights are not enabled. No ADMIN creation/promotion via API |
@@ -28,7 +28,7 @@
 - Archiving is transactional: mark inactive/deleted, revoke active branch grants, and append audit event.
 - Restore makes the branch active but intentionally leaves old grants revoked; an administrator must reassign access.
 - Password reset is deliberately admin-mediated because no verified email/SMS recovery channel exists. Self-service recovery is not exposed.
-- PostgreSQL integration tests passed for these paths on run 44516741144. The custom-format PostgreSQL backup/restore smoke test also passed on that run. The explicit PostgreSQL host was added to `pg_restore` after the initial backup-smoke failure; the corrected run passed.
+- PostgreSQL integration tests passed for these paths on run 44516741144. The custom-format PostgreSQL backup/restore smoke test also passed on that run. The explicit PostgreSQL host was added to `pg_restore` after the initial backup-smoke failure; the corrected backup/restore smoke passed on run 44517063564.
 
 ### Owner decision still required
 
