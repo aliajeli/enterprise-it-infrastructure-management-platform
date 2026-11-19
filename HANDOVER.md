@@ -279,3 +279,11 @@ An earlier application-repository inspection reported an empty clone before the 
 - Commits after the last validated CI head: `5c2cb8f`, `3600961`, `1691302`. Their validation is pending; do not describe these fixes/tests as CI-passing until a run for the exact current head succeeds.
 - PR #8 remains Draft and unmerged. Worker has no discovery handlers and its source allow-list remains empty. No network polling, credential vault, enqueue API, Windows Worker service, installer or Release is available yet.
 - Next action: wait for the current head's CI, inspect logs on failure, then add any missing queue race tests and reconcile this handover with the exact result. Do not merge or publish an installer/release without owner approval and required platform gates.
+
+
+## 2026-11-19 — PostgreSQL integration test failure analysis
+- CI run [44576334911](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44576334911) on `3ee4a787` completed with failure in Worker unit/integration tests. Windows API runtime smoke and lockfile bootstrap passed; Platform validation reached Unit tests and failed 4 of 11 Worker integration tests.
+- Root cause in the tests: the queue claim API is global (no branch filter), but cases shared queued rows in one branch. Later tests sometimes claimed an earlier test's row instead of the row they had just created. This produced misleading LEASE_LOST / cancellation failures and a lease-pair check violation when the test mutated an unclaimed row.
+- Corrected test isolation with per-test cleanup and explicit assertions that each claim returns the intended run. Lease recovery count assertion now allows additional eligible rows, while still verifying the target run's recovered state.
+- Follow-up commit: `4ca9fd786eb1820db99e0a7745079908c418ccad`. CI run [44576830667](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44576830667) is currently in progress; exact-head results are not yet known.
+- Do not claim the PostgreSQL queue tests pass until run 44576830667 (or a later exact-head run) succeeds. Worker remains fail-closed with no discovery handlers enabled.
