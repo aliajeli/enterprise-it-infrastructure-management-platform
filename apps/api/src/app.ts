@@ -20,7 +20,7 @@ export async function buildApp({
 }: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({
     logger,
-    trustProxy: false,
+    trustProxy: "loopback",
     bodyLimit: 16 * 1024,
   });
 

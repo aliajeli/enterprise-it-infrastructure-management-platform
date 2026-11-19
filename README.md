@@ -17,7 +17,7 @@ The project is being implemented in reviewable milestones. **M0 — repository a
 
 ## Development
 
-The web application lives in `apps/web`, the API service in `apps/api`, and the Prisma database package in `packages/database`.
+The web application lives in `apps/web`, the API service in `apps/api`, and the Prisma database package in `packages/database`. In local development, the Next.js server proxies same-origin `/api` requests to the loopback API service.
 
 After installing the supported Node.js runtime and dependencies:
 

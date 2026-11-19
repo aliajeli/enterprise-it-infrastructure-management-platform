@@ -6,7 +6,7 @@
 
 - The Next.js application is the browser-facing UI only.
 - The Fastify API is a separate service and binds to loopback by default (127.0.0.1:13001).
-- The TLS Edge / reverse proxy is the only externally reachable entry point. The browser uses same-origin /api routes; API CORS is not opened.
+- The TLS Edge / reverse proxy is the only externally reachable entry point. The browser uses same-origin /api routes; API CORS is not opened. In local development, Next.js rewrites proxy /api and /health to the loopback API.
 - PostgreSQL is accessed through the dedicated database package and Prisma 7.10.1's PostgreSQL driver adapter.
 
 ## Authentication controls
@@ -20,6 +20,7 @@
 - Session cookies are HttpOnly, SameSite=Lax, Path=/, Secure in production and have no Domain attribute. Production uses the __Host-platform_session prefix.
 - Sessions have a 12-hour absolute lifetime. authEpoch allows password/status/role changes to invalidate every prior session.
 - State-changing browser requests require an exact configured Origin. CORS is not enabled.
+- Fastify trusts forwarded client IP information only from loopback peers. The TLS Edge must overwrite X-Forwarded-For; it must not append an untrusted client-supplied chain. The API remains bound to 127.0.0.1.
 - Authentication events are written to the audit log. Passwords, session secrets and raw tokens must never be logged.
 
 ## Persistence model
