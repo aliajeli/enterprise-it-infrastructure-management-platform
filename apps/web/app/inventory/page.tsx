@@ -89,6 +89,10 @@ function InventoryContent() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [editAssetForm, setEditAssetForm] = useState({ assetCode: "", name: "", primaryIp: "", hostname: "", macAddress: "", vendor: "", model: "", location: "", description: "", status: "ACTIVE" });
+  const [editingPort, setEditingPort] = useState<Port | null>(null);
+  const [editPortForm, setEditPortForm] = useState({ name: "", alias: "", description: "", configuredVlanId: "", configuredTaggedVlans: "", connectedDeviceLabel: "" });
   const [selectedSwitch, setSelectedSwitch] = useState<Asset | null>(null);
   const [ports, setPorts] = useState<Port[]>([]);
   const [portsLoading, setPortsLoading] = useState(false);
@@ -201,6 +205,90 @@ function InventoryContent() {
       setError(cause instanceof Error ? cause.message : "Could not create asset.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function beginEditAsset(asset: Asset) {
+    setEditingAsset(asset);
+    setEditAssetForm({
+      assetCode: asset.assetCode, name: asset.name, primaryIp: asset.primaryIp ?? "",
+      hostname: asset.hostname ?? "", macAddress: asset.macAddress ?? "",
+      vendor: asset.vendor ?? "", model: asset.model ?? "", location: asset.location ?? "",
+      description: asset.description ?? "", status: asset.status,
+    });
+    setError("");
+  }
+
+  async function saveAsset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingAsset) return;
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      await requestJson(`/api/v1/inventory/assets/${editingAsset.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ version: editingAsset.version, ...editAssetForm }),
+      });
+      setEditingAsset(null);
+      setNotice("Asset details updated.");
+      await loadAssets();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not update asset.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function beginEditPort(port: Port) {
+    setEditingPort(port);
+    setEditPortForm({
+      name: port.name ?? "", alias: port.alias ?? "", description: port.description ?? "",
+      configuredVlanId: port.configuredVlanId?.toString() ?? "",
+      configuredTaggedVlans: port.configuredTaggedVlans.join(", "),
+      connectedDeviceLabel: port.connectedDeviceLabel ?? "",
+    });
+    setError("");
+  }
+
+  async function savePort(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedSwitch || !editingPort) return;
+    const vlan = editPortForm.configuredVlanId ? Number(editPortForm.configuredVlanId) : undefined;
+    const tagged = editPortForm.configuredTaggedVlans.trim()
+      ? editPortForm.configuredTaggedVlans.split(",").map((value) => Number(value.trim()))
+      : [];
+    if ((vlan !== undefined && (!Number.isInteger(vlan) || vlan < 1 || vlan > 4094)) ||
+        tagged.some((value) => !Number.isInteger(value) || value < 1 || value > 4094) ||
+        new Set(tagged).size !== tagged.length) {
+      setError("VLAN IDs must be unique integers between 1 and 4094.");
+      return;
+    }
+    setPortSaving(true);
+    setError("");
+    try {
+      await requestJson(`/api/v1/inventory/assets/${selectedSwitch.id}/switch-ports/${editingPort.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          version: editingPort.version,
+          name: editPortForm.name,
+          alias: editPortForm.alias,
+          description: editPortForm.description,
+          configuredVlanId: vlan,
+          configuredTaggedVlans: tagged,
+          connectedDeviceLabel: editPortForm.connectedDeviceLabel,
+        }),
+      });
+      const payload = await requestJson<{ ports: Port[] }>(
+        `/api/v1/inventory/assets/${selectedSwitch.id}/switch-ports`,
+      );
+      setPorts(payload.ports);
+      setEditingPort(null);
+      setNotice("Switch-port metadata updated. No switch configuration was changed.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not update switch-port metadata.");
+    } finally {
+      setPortSaving(false);
     }
   }
 
@@ -329,7 +417,7 @@ function InventoryContent() {
                       <td className="px-4 py-4"><p className="font-mono text-slate-300">{asset.primaryIp ?? "—"}</p><p className="mt-1 text-[10px] text-slate-500">{asset.hostname ?? asset.macAddress ?? "No hostname / MAC"}</p></td>
                       <td className="px-4 py-4 text-slate-300">{[asset.vendor, asset.model].filter(Boolean).join(" ") || "—"}</td>
                       <td className="px-4 py-4 text-slate-400">{asset.location ?? "—"}</td>
-                      <td className="px-4 py-4">{asset.kind === "SWITCH" ? <button type="button" onClick={() => void openSwitch(asset)} className="inline-flex items-center gap-1.5 rounded-md border border-blue-400/25 bg-blue-400/10 px-2.5 py-1.5 text-[10px] font-medium text-blue-200 hover:bg-blue-400/20"><Cable size={13} /> {asset.switch?.portCount ?? 0} ports</button> : <span className="text-slate-600">—</span>}</td>
+                      <td className="px-4 py-4"><div className="flex items-center gap-2">{asset.kind === "SWITCH" && <button type="button" onClick={() => void openSwitch(asset)} className="inline-flex items-center gap-1.5 rounded-md border border-blue-400/25 bg-blue-400/10 px-2.5 py-1.5 text-[10px] font-medium text-blue-200 hover:bg-blue-400/20"><Cable size={13} /> {asset.switch?.portCount ?? 0} ports</button>}<button type="button" onClick={() => beginEditAsset(asset)} className="rounded-md border border-slate-700 px-2.5 py-1.5 text-[10px] text-slate-300 hover:bg-slate-800">Edit</button></div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -360,12 +448,33 @@ function InventoryContent() {
         </div>
       )}
 
+      {editingAsset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
+          <section role="dialog" aria-modal="true" aria-labelledby="edit-asset-title" className="my-8 w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl sm:p-7">
+            <div className="flex items-center justify-between"><div><p className="text-[10px] uppercase tracking-widest text-blue-300">Inventory</p><h3 id="edit-asset-title" className="mt-1 text-lg font-semibold text-white">Edit equipment</h3></div><button type="button" onClick={() => setEditingAsset(null)} aria-label="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"><X size={18} /></button></div>
+            <form onSubmit={saveAsset} className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label><span className={labelClass}>Asset code *</span><input required minLength={2} maxLength={64} value={editAssetForm.assetCode} onChange={(event) => setEditAssetForm({ ...editAssetForm, assetCode: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Display name *</span><input required minLength={2} maxLength={160} value={editAssetForm.name} onChange={(event) => setEditAssetForm({ ...editAssetForm, name: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Management IP</span><input value={editAssetForm.primaryIp} onChange={(event) => setEditAssetForm({ ...editAssetForm, primaryIp: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Hostname</span><input value={editAssetForm.hostname} onChange={(event) => setEditAssetForm({ ...editAssetForm, hostname: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>MAC address</span><input value={editAssetForm.macAddress} onChange={(event) => setEditAssetForm({ ...editAssetForm, macAddress: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Status</span><select value={editAssetForm.status} onChange={(event) => setEditAssetForm({ ...editAssetForm, status: event.target.value })} className={inputClass}><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option><option value="RETIRED">Retired</option></select></label>
+              <label><span className={labelClass}>Vendor</span><input value={editAssetForm.vendor} onChange={(event) => setEditAssetForm({ ...editAssetForm, vendor: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Model</span><input value={editAssetForm.model} onChange={(event) => setEditAssetForm({ ...editAssetForm, model: event.target.value })} className={inputClass} /></label>
+              <label className="sm:col-span-2"><span className={labelClass}>Physical location</span><input value={editAssetForm.location} onChange={(event) => setEditAssetForm({ ...editAssetForm, location: event.target.value })} className={inputClass} /></label>
+              <label className="sm:col-span-2"><span className={labelClass}>Description</span><textarea rows={3} value={editAssetForm.description} onChange={(event) => setEditAssetForm({ ...editAssetForm, description: event.target.value })} className={inputClass} /></label>
+              <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setEditingAsset(null)} className="rounded-lg border border-slate-700 px-4 py-2 text-xs text-slate-300">Cancel</button><button disabled={saving} className="rounded-lg bg-blue-500 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save changes"}</button></div>
+            </form>
+          </section>
+        </div>
+      )}
+
       {selectedSwitch && (
         <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
           <section role="dialog" aria-modal="true" aria-labelledby="switch-ports-title" className="my-8 w-full max-w-5xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl sm:p-7">
             <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-widest text-blue-300">Switch inventory</p><h3 id="switch-ports-title" className="mt-1 text-lg font-semibold text-white">{selectedSwitch.name}</h3><p className="mt-1 text-xs text-slate-500">{selectedSwitch.primaryIp ?? "No management IP"} · {selectedSwitch.vendor ?? ""} {selectedSwitch.model ?? ""}</p></div><button type="button" onClick={() => setSelectedSwitch(null)} aria-label="Close switch ports" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"><X size={18} /></button></div>
             <div className="mt-5 overflow-x-auto rounded-xl border border-slate-800">
-              {portsLoading ? <div className="p-8 text-center text-sm text-slate-400">Loading switch ports…</div> : ports.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No port metadata recorded yet.</div> : <table className="w-full min-w-[720px] text-left text-xs"><thead className="bg-slate-900 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">Interface</th><th className="px-4 py-3">Alias / device</th><th className="px-4 py-3">Configured VLAN</th><th className="px-4 py-3">Observed state</th><th className="px-4 py-3">Observed IP / MAC</th></tr></thead><tbody className="divide-y divide-slate-800">{ports.map((port) => { const observation = port.observations[0]; return <tr key={port.id}><td className="px-4 py-3"><p className="font-mono text-slate-200">{port.name ?? `ifIndex ${port.ifIndex}`}</p><p className="mt-1 text-[10px] text-slate-600">Index {port.ifIndex}</p></td><td className="px-4 py-3"><p className="text-slate-200">{port.alias ?? "—"}</p><p className="mt-1 text-[10px] text-slate-500">{port.connectedDeviceLabel ?? port.description ?? "—"}</p></td><td className="px-4 py-3 text-slate-300">{port.configuredVlanId ?? "—"}{port.configuredTaggedVlans.length ? ` / tagged ${port.configuredTaggedVlans.join(", ")}` : ""}</td><td className="px-4 py-3"><span className={observation?.operState === "UP" ? "text-emerald-300" : observation?.operState === "DOWN" ? "text-rose-300" : "text-slate-500"}>{observation?.operState ?? "Not observed"}</span><p className="mt-1 text-[10px] text-slate-600">{observation ? `${observation.source} · ${new Date(observation.observedAt).toLocaleString()}` : "No observation"}</p></td><td className="px-4 py-3 font-mono text-[10px] text-slate-400">{observation?.ipAddress ?? "—"}<p className="mt-1">{observation?.macAddress ?? "—"}</p></td></tr>; })}</tbody></table>}
+              {portsLoading ? <div className="p-8 text-center text-sm text-slate-400">Loading switch ports…</div> : ports.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No port metadata recorded yet.</div> : <table className="w-full min-w-[720px] text-left text-xs"><thead className="bg-slate-900 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">Interface</th><th className="px-4 py-3">Alias / device</th><th className="px-4 py-3">Configured VLAN</th><th className="px-4 py-3">Observed state</th><th className="px-4 py-3">Observed IP / MAC</th></tr></thead><tbody className="divide-y divide-slate-800">{ports.map((port) => { const observation = port.observations[0]; return <tr key={port.id}><td className="px-4 py-3"><p className="font-mono text-slate-200">{port.name ?? `ifIndex ${port.ifIndex}`}</p><p className="mt-1 text-[10px] text-slate-600">Index {port.ifIndex}</p></td><td className="px-4 py-3"><p className="text-slate-200">{port.alias ?? "—"}</p><p className="mt-1 text-[10px] text-slate-500">{port.connectedDeviceLabel ?? port.description ?? "—"}</p><button type="button" onClick={() => beginEditPort(port)} className="mt-2 rounded-md border border-slate-700 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-800">Edit metadata</button></td><td className="px-4 py-3 text-slate-300">{port.configuredVlanId ?? "—"}{port.configuredTaggedVlans.length ? ` / tagged ${port.configuredTaggedVlans.join(", ")}` : ""}</td><td className="px-4 py-3"><span className={observation?.operState === "UP" ? "text-emerald-300" : observation?.operState === "DOWN" ? "text-rose-300" : "text-slate-500"}>{observation?.operState ?? "Not observed"}</span><p className="mt-1 text-[10px] text-slate-600">{observation ? `${observation.source} · ${new Date(observation.observedAt).toLocaleString()}` : "No observation"}</p></td><td className="px-4 py-3 font-mono text-[10px] text-slate-400">{observation?.ipAddress ?? "—"}<p className="mt-1">{observation?.macAddress ?? "—"}</p></td></tr>; })}</tbody></table>}
             </div>
             <div className="mt-5 rounded-xl border border-slate-700/70 bg-slate-900/40 p-4">
               <h4 className="text-xs font-semibold text-slate-200">Add port metadata</h4>
@@ -380,6 +489,24 @@ function InventoryContent() {
                 <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-3"><p className="text-[10px] text-slate-500">This stores inventory metadata only. It does not configure the physical switch.</p><button disabled={portSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{portSaving && <LoaderCircle size={14} className="animate-spin" />} Save port metadata</button></div>
               </form>
             </div>
+          </section>
+        </div>
+      )}
+
+      {editingPort && selectedSwitch && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/70 p-4">
+          <section role="dialog" aria-modal="true" aria-labelledby="edit-port-title" className="my-8 w-full max-w-xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl sm:p-7">
+            <div className="flex items-center justify-between"><div><p className="text-[10px] uppercase tracking-widest text-blue-300">Switch port · ifIndex {editingPort.ifIndex}</p><h3 id="edit-port-title" className="mt-1 text-lg font-semibold text-white">Edit port metadata</h3></div><button type="button" onClick={() => setEditingPort(null)} aria-label="Close" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"><X size={18} /></button></div>
+            <form onSubmit={savePort} className="mt-5 grid gap-3 sm:grid-cols-2">
+              <label><span className={labelClass}>Interface name</span><input value={editPortForm.name} onChange={(event) => setEditPortForm({ ...editPortForm, name: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Alias</span><input value={editPortForm.alias} onChange={(event) => setEditPortForm({ ...editPortForm, alias: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Access VLAN</span><input type="number" min="1" max="4094" value={editPortForm.configuredVlanId} onChange={(event) => setEditPortForm({ ...editPortForm, configuredVlanId: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Tagged VLANs</span><input value={editPortForm.configuredTaggedVlans} onChange={(event) => setEditPortForm({ ...editPortForm, configuredTaggedVlans: event.target.value })} className={inputClass} placeholder="7, 30, 40" /></label>
+              <label><span className={labelClass}>Connected device</span><input value={editPortForm.connectedDeviceLabel} onChange={(event) => setEditPortForm({ ...editPortForm, connectedDeviceLabel: event.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Description</span><input value={editPortForm.description} onChange={(event) => setEditPortForm({ ...editPortForm, description: event.target.value })} className={inputClass} /></label>
+              <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" onClick={() => setEditingPort(null)} className="rounded-lg border border-slate-700 px-4 py-2 text-xs text-slate-300">Cancel</button><button disabled={portSaving} className="rounded-lg bg-blue-500 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{portSaving ? "Saving…" : "Save changes"}</button></div>
+            </form>
+            <p className="mt-3 text-[10px] text-slate-500">Metadata only. No physical switch configuration is sent.</p>
           </section>
         </div>
       )}
