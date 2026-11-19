@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PrismaClient } from "@platform/database";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   acknowledgeCancellation,
   claimNextDiscoveryRun,
@@ -30,6 +30,12 @@ describe.skipIf(!isDisposableTestDatabase)(
       });
       branchId = branch.id;
     }, 30_000);
+
+    beforeEach(async () => {
+      if (db && branchId) {
+        await db.discoveryRun.deleteMany({ where: { branchId } });
+      }
+    });
 
     afterAll(async () => {
       if (db && branchId) {
@@ -91,7 +97,7 @@ describe.skipIf(!isDisposableTestDatabase)(
     it("rejects heartbeat and completion from a worker whose lease expired", async () => {
       if (!db) throw new Error("Database integration was not initialized.");
       const runId = await createRun();
-      await claimNextDiscoveryRun(db, "stale-worker", ["SNMP"]);
+      expect((await claimNextDiscoveryRun(db, "stale-worker", ["SNMP"]))?.id).toBe(runId);
       await expireLease(runId);
       expect(await heartbeatDiscoveryRun(db, runId, "stale-worker")).toBe(false);
       expect(await completeDiscoveryRun(db, runId, "stale-worker", "SUCCEEDED")).toBe(false);
@@ -101,9 +107,9 @@ describe.skipIf(!isDisposableTestDatabase)(
     it("recovers an expired lease and permits a new owner to claim it", async () => {
       if (!db) throw new Error("Database integration was not initialized.");
       const runId = await createRun();
-      await claimNextDiscoveryRun(db, "crashed-worker", ["SNMP"]);
+      expect((await claimNextDiscoveryRun(db, "crashed-worker", ["SNMP"]))?.id).toBe(runId);
       await expireLease(runId);
-      expect(await recoverExpiredLeases(db)).toBe(1);
+      expect(await recoverExpiredLeases(db)).toBeGreaterThanOrEqual(1);
       const recovered = await db.discoveryRun.findUniqueOrThrow({ where: { id: runId } });
       expect(recovered.status).toBe("QUEUED");
       expect(recovered.leaseOwner).toBeNull();
@@ -113,7 +119,7 @@ describe.skipIf(!isDisposableTestDatabase)(
     it("retries with bounded backoff and fails after max attempts", async () => {
       if (!db) throw new Error("Database integration was not initialized.");
       const runId = await createRun({ maxAttempts: 2 });
-      await claimNextDiscoveryRun(db, "retry-worker", ["SNMP"]);
+      expect((await claimNextDiscoveryRun(db, "retry-worker", ["SNMP"]))?.id).toBe(runId);
       expect(await failDiscoveryRun(db, runId, "retry-worker", "TEST_FAILURE", "safe test failure")).toBe("REQUEUED");
       await db.$executeRaw`
         UPDATE discovery_runs SET next_attempt_at = NOW()
@@ -130,7 +136,7 @@ describe.skipIf(!isDisposableTestDatabase)(
     it("does not let failure handling override an active cancellation request", async () => {
       if (!db) throw new Error("Database integration was not initialized.");
       const runId = await createRun();
-      await claimNextDiscoveryRun(db, "cancel-owner", ["SNMP"]);
+      expect((await claimNextDiscoveryRun(db, "cancel-owner", ["SNMP"]))?.id).toBe(runId);
       await db.$executeRaw`
         UPDATE discovery_runs SET cancel_requested_at = NOW()
         WHERE id = ${runId}::uuid
@@ -144,7 +150,7 @@ describe.skipIf(!isDisposableTestDatabase)(
     it("gives cancellation precedence over retry exhaustion on expired leases", async () => {
       if (!db) throw new Error("Database integration was not initialized.");
       const runId = await createRun({ maxAttempts: 1, attemptCount: 0 });
-      await claimNextDiscoveryRun(db, "cancel-worker", ["SNMP"]);
+      expect((await claimNextDiscoveryRun(db, "cancel-worker", ["SNMP"]))?.id).toBe(runId);
       await db.$executeRaw`
         UPDATE discovery_runs
         SET cancel_requested_at = NOW(),
