@@ -1,3 +1,11 @@
+## Unreleased — PostgreSQL Worker queue CI validation (2026-11-19)
+
+- Corrected queue integration test isolation so each test clears only its own branch-scoped discovery runs and asserts the exact run ID returned by claim.
+- Recorded the prior CI failure (4 integration-test failures caused by globally shared queue fixtures) and its test-isolation correction; no queue semantics were changed to mask test interference.
+- Verified exact head `d2e15169d2d7cd12c7590e5ebe0aeef9b635a437` with GitHub Actions run [44576967674](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44576967674): all three jobs passed — Node.js 26/PostgreSQL 18 platform validation, Windows API runtime smoke, and npm lockfile bootstrap.
+- Worker remains fail-closed with an empty source-handler allow-list. No discovery job is claimed, no network device is contacted, and no credential vault or discovery API is implemented.
+- PR #8 remains Draft/open/unmerged. No installer, tag, GitHub Release or production deployment was created.
+
 ## Unreleased — inventory CI repair and guarded SNMP discovery design
 
 - Fixed React Hooks ESLint failures by deferring inventory data-loading calls from effects to a microtask.

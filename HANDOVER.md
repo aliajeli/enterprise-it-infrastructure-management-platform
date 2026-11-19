@@ -1,6 +1,34 @@
 # Project handover
 
-## Current snapshot — CI-verified M2 inventory UI and SNMP safety design (2026-11-19)
+## Current verified snapshot — Worker queue foundation CI passed (2026-11-19)
+
+**Authoritative branch:** `phase3/m2-inventory-ui`  
+**Verified head before this handover refresh:** `d2e15169d2d7cd12c7590e5ebe0aeef9b635a437`  
+**PR:** [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8) — Draft, open, unmerged; stacked on Draft PR #7.
+
+| Area | Verified state |
+|---|---|
+| M2 inventory UI/API | Branch-scoped inventory, asset and switch-port metadata editing, optimistic concurrency and audit events are implemented in this branch. |
+| Worker queue | PostgreSQL-backed atomic claim, owner-bound leases/heartbeat, expired-lease recovery, bounded retries and cancellation/finalization primitives are implemented. |
+| Queue safety | No task handlers are registered; the supported-source allow-list is empty. Worker does not claim or execute discovery jobs and does not contact network devices. |
+| Worker tests | PostgreSQL integration coverage includes concurrent claims, lease ownership/expiry, recovery, retry exhaustion and cancellation/failure races; test isolation was corrected in commit `4ca9fd7`. |
+| Exact-head CI | Push workflow run [44576967674](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44576967674) passed on exact head `d2e15169d2d7cd12c7590e5ebe0aeef9b635a437`; all three jobs passed: Node.js 26/PostgreSQL 18 platform validation, Windows API runtime smoke, and npm lockfile bootstrap. |
+| Not implemented | Credential vault, discovery enqueue/cancel API, SNMP/SSH/ISAPI handlers, live device polling, Windows services/Agent, monitoring integrations, installer, updater and release automation. |
+| Release/production | No installer, GitHub Release, production deployment or real-device compatibility is claimed. |
+
+### Next implementation gates
+
+1. Resolve and implement recoverable server-side credential encryption consistent with the owner-approved DPAPI-wrapped AES-key direction. Machine-bound key recovery and rotation must be designed and tested before storing production secrets.
+2. Add explicit branch-scoped discovery create/cancel endpoints, RBAC, target registration validation, idempotency and audit. Do not enqueue executable discovery until the credential and target policy gates pass.
+3. Add SNMPv3 read-only transport for one explicitly registered target, simulator tests and conservative rate/circuit-breaker behavior. No port scans, subnet sweeps, NAT changes, SNMP SET or automatic MikroTik firewall changes.
+4. Validate supported Cisco/MikroTik models and firmware on actual hardware before compatibility claims.
+5. Keep PR #8 Draft/unmerged and do not publish an installer or Release until the independent clean-Windows install/readiness gates in `VERSIONING_POLICY.md` pass.
+
+---
+
+# Project handover
+
+## Historical snapshot — CI-verified M2 inventory UI before Worker queue validation (2026-11-19)
 
 **Snapshot observed:** branch `phase3/m2-inventory-ui`, PR [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), head `e324d6a47fc232421488c330528bc1784fac9f94`. PR #8 remains Draft/open/unmerged and is stacked on Draft PR #7.
 
