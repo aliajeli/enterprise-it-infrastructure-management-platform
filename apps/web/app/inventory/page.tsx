@@ -104,10 +104,17 @@ function InventoryContent() {
   });
 
   const loadBranches = useCallback(async () => {
-    const payload = await requestJson<{ branches: Branch[] }>("/api/v1/branches/accessible");
-    setBranches(payload.branches);
-    setBranchId((current) => current && payload.branches.some((branch) => branch.id === current)
-      ? current : payload.branches[0]?.id ?? "");
+    try {
+      const payload = await requestJson<{ branches: Branch[] }>("/api/v1/branches/accessible");
+      setBranches(payload.branches);
+      setBranchId((current) => current && payload.branches.some((branch) => branch.id === current)
+        ? current : payload.branches[0]?.id ?? "");
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not load accessible branches.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const loadAssets = useCallback(async () => {
@@ -131,17 +138,8 @@ function InventoryContent() {
     }
   }, [branchId, kind, search]);
 
-  // The effect starts asynchronous network loading; state updates occur after the request resolves.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    void loadBranches().catch((cause: unknown) => {
-      setError(cause instanceof Error ? cause.message : "Could not load accessible branches.");
-      setLoading(false);
-    });
-  }, [loadBranches]);
+  useEffect(() => { void loadBranches(); }, [loadBranches]);
 
-  // loadAssets performs asynchronous network I/O before updating the rendered inventory state.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void loadAssets(); }, [loadAssets]);
 
   const selectedBranch = useMemo(
