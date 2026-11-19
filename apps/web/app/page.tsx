@@ -70,6 +70,11 @@ export default function DashboardPage() {
                 <Icon size={17} strokeWidth={1.8} />
                 <span>{label}</span>
               </Link>
+            ) : label === "Device inventory" ? (
+              <Link key={label} href="/inventory" className="sidebar-link">
+                <Icon size={17} strokeWidth={1.8} />
+                <span>{label}</span>
+              </Link>
             ) : (
               <div
                 key={label}
@@ -130,11 +135,18 @@ export default function DashboardPage() {
                   <span>Overview</span>
                 </Link>
                 {navigation.slice(1).map(({ label, icon: Icon }) => (
-                  <div key={label} className="sidebar-link is-disabled" aria-disabled="true">
-                    <Icon size={17} strokeWidth={1.8} />
-                    <span>{label}</span>
-                    <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-600">Planned</span>
-                  </div>
+                  label === "Device inventory" ? (
+                    <Link key={label} href="/inventory" className="sidebar-link">
+                      <Icon size={17} strokeWidth={1.8} />
+                      <span>{label}</span>
+                    </Link>
+                  ) : (
+                    <div key={label} className="sidebar-link is-disabled" aria-disabled="true">
+                      <Icon size={17} strokeWidth={1.8} />
+                      <span>{label}</span>
+                      <span className="ml-auto text-[9px] uppercase tracking-wider text-slate-600">Planned</span>
+                    </div>
+                  )
                 ))}
                 <p className="px-3 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">Operations</p>
                 {operations.map(({ label, icon: Icon }) => (
