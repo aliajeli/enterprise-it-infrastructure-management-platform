@@ -386,3 +386,9 @@ An earlier application-repository inspection reported an empty clone before the 
 ## 2026-11-19 — DPAPI helper test path portability
 - Adjusted the non-native helper path fixture to use the current host's absolute path. This allows the Node.js constructor/fail-closed tests to run on Linux while retaining the Windows native helper integration test.
 - Bumped root version and lockfile metadata to `0.1.6`. Fresh CI required.
+
+
+## 2026-11-19 — DPAPI response framing correction
+- Windows native integration exposed a response parser assumption: it incorrectly required the DPAPI-protected blob to be 32 bytes. Protected DPAPI blobs are variable length; only the unprotected KEK must be exactly 32 bytes.
+- Node helper now accepts a bounded variable-length Protect result and continues to require exactly 32 bytes after Unprotect. Bumped root version/lock metadata to `0.1.7`.
+- Fresh Linux/PostgreSQL and Windows helper/runtime CI is required before proceeding.

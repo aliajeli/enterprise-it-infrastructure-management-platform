@@ -75,3 +75,6 @@ The implementation design and security gates are recorded in [WINDOWS_DPAPI_PROV
 
 ## Windows DPAPI helper primitive — 2026-11-19
 A fixed-purpose .NET 10 helper and Node.js binary-IPC client now provide a DPAPI machine-scope primitive for 32-byte KEKs. The helper derives optional entropy internally from a domain separator, installation identifier and current Windows SID; it accepts no command-line arguments and uses no shell, environment secrets or temporary plaintext files. Windows CI builds the helper and runs a DPAPI round-trip/installation-binding test. This does **not** constitute a production key provider: service identity provisioning, installer-owned ACLs and ACL verification, persistent keyring/version registry, atomic rotation, independent recovery export and clean-host restore drill remain absent. Keep credential persistence and live use disabled.
+
+
+The initial Windows integration test exposed and corrected a framing assumption: DPAPI-protected blobs are variable length, whereas the decrypted KEK is exactly 32 bytes. The Node protocol parser now applies those distinct bounds. Exact-head CI is required before treating this helper primitive as verified.

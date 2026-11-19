@@ -1,3 +1,9 @@
+## Unreleased — DPAPI protected-blob framing correction (2026-11-19)
+
+- Fixed Node.js DPAPI response validation: DPAPI Protect returns a variable-length protected blob, while Unprotect must return exactly 32 bytes. The protocol parser now enforces bounded variable output for Protect and exact key length for Unprotect.
+- Windows CI exposed the mismatch in the first native round-trip test; this correction is pending fresh exact-head validation.
+- Bumped root package version to `0.1.7` and synchronized lockfile metadata.
+
 ## Unreleased — DPAPI test path portability (2026-11-19)
 
 - Fixed the helper-path fixture in the platform-independent Node.js test to use a host-native absolute path, so the constructor test can execute on both Linux and Windows.

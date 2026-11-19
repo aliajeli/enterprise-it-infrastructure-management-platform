@@ -28,7 +28,7 @@ function encodeRequest(operation: number, installationId: string, key: Buffer): 
   return frame;
 }
 
-function decodeResponse(frame: Buffer): Buffer {
+function decodeResponse(frame: Buffer, operation: number): Buffer {
   if (frame.length < 9) throw new Error("DPAPI helper protocol failure.");
   const length = frame.readUInt32BE(0);
   if (length !== frame.length - 4 || length > MAX_FRAME_BYTES) {
@@ -36,7 +36,13 @@ function decodeResponse(frame: Buffer): Buffer {
   }
   const status = frame.readUInt8(4);
   const payloadLength = frame.readUInt32BE(5);
-  if (payloadLength !== length - 5 || status !== 0 || payloadLength !== KEY_BYTES) {
+  if (
+    payloadLength !== length - 5 ||
+    status !== 0 ||
+    payloadLength < 1 ||
+    payloadLength > MAX_FRAME_BYTES ||
+    (operation === OP_UNPROTECT && payloadLength !== KEY_BYTES)
+  ) {
     throw new Error("DPAPI operation failed.");
   }
   return Buffer.from(frame.subarray(9));
@@ -118,7 +124,7 @@ export class WindowsDpapiProtector {
         }
         const response = Buffer.concat(chunks);
         try {
-          finish(undefined, decodeResponse(response));
+          finish(undefined, decodeResponse(response, operation));
         } catch {
           finish(new Error("DPAPI helper protocol failure."));
         } finally {
