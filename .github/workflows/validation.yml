@@ -89,7 +89,7 @@ jobs:
           export PGPASSWORD=platform_test_password
           pg_dump -h 127.0.0.1 -U platform -d platform_test --format=custom --no-owner --no-privileges --file="$RUNNER_TEMP/platform-m1.dump"
           createdb -h 127.0.0.1 -U platform platform_restore_test
-          pg_restore --exit-on-error --no-owner --no-privileges --dbname=platform_restore_test "$RUNNER_TEMP/platform-m1.dump"
+          pg_restore --host=127.0.0.1 --username=platform --exit-on-error --no-owner --no-privileges --dbname=platform_restore_test "$RUNNER_TEMP/platform-m1.dump"
           psql -h 127.0.0.1 -U platform -d platform_restore_test -Atqc 'SELECT (SELECT COUNT(*) FROM "users") > 0 AND (SELECT COUNT(*) FROM "branches") > 0 AND (SELECT COUNT(*) FROM "audit_events") > 0' | grep -qx t
           migration_count="$(psql -h 127.0.0.1 -U platform -d platform_restore_test -Atqc 'SELECT COUNT(*) FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL')"
           test "$migration_count" -gt 0
