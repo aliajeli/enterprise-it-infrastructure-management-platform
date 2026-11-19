@@ -117,3 +117,12 @@ ALTER TABLE "port_observations" ADD CONSTRAINT "port_observations_port_id_fkey" 
 ALTER TABLE "discovery_runs" ADD CONSTRAINT "discovery_runs_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "branches"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "discovery_runs" ADD CONSTRAINT "discovery_runs_target_asset_id_fkey" FOREIGN KEY ("target_asset_id") REFERENCES "assets"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "discovery_runs" ADD CONSTRAINT "discovery_runs_initiated_by_user_id_fkey" FOREIGN KEY ("initiated_by_user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+CREATE FUNCTION prevent_port_observation_mutation() RETURNS trigger
+LANGUAGE plpgsql AS 'BEGIN
+  RAISE EXCEPTION ''port_observations is append-only'';
+END;';
+CREATE TRIGGER "port_observations_append_only"
+  BEFORE UPDATE OR DELETE ON "port_observations"
+  FOR EACH ROW EXECUTE FUNCTION prevent_port_observation_mutation();

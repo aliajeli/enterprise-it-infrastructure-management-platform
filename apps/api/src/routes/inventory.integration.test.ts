@@ -156,6 +156,23 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
     expect(updateAsset.statusCode).toBe(200);
     expect(updateAsset.json().asset.version).toBe(2);
 
+    const observation = await db.portObservation.create({
+      data: {
+        portId,
+        source: "SNMP",
+        adminState: "UP",
+        operState: "UP",
+        vlanId: 7,
+        speedMbps: 1000,
+      },
+    });
+    await expect(
+      db.portObservation.update({
+        where: { id: observation.id },
+        data: { operState: "DOWN" },
+      }),
+    ).rejects.toThrow(/append-only/);
+
     const staleUpdate = await app.inject({
       method: "PATCH",
       url: `/api/v1/inventory/assets/${switchAssetId}`,
@@ -163,5 +180,13 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
       payload: { version: 1, location: "stale write" },
     });
     expect(staleUpdate.statusCode).toBe(409);
+
+    await db.branch.update({ where: { id: branchId }, data: { status: "INACTIVE" } });
+    const archivedBranchRead = await app.inject({
+      method: "GET",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports`,
+      headers: { cookie: operatorCookie },
+    });
+    expect(archivedBranchRead.statusCode).toBe(404);
   });
 });

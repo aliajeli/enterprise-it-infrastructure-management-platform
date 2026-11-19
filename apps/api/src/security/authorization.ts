@@ -79,6 +79,17 @@ export async function requireBranchAction(
   const session = await requirePlatformAction(db, config, request, reply, action);
   if (!session) return null;
 
+  const activeBranch = await db.branch.findFirst({
+    where: { id: branchId, status: "ACTIVE", deletedAt: null },
+    select: { id: true },
+  });
+  if (!activeBranch) {
+    reply.code(404).send({
+      error: { code: "RESOURCE_NOT_FOUND", message: "The requested resource was not found." },
+    });
+    return null;
+  }
+
   const allowed = await hasBranchActionAccess(
     db,
     { id: session.user.id, role: session.user.role },
