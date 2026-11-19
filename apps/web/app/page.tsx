@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AuthGuard } from "./components/auth-guard";
 import { LogoutButton } from "./components/logout-button";
+import { AdminNavLink } from "./components/admin-nav-link";
 import {
   Activity,
   Bell,
@@ -94,6 +95,7 @@ export default function DashboardPage() {
               <span>{label}</span>
             </div>
           ))}
+          <AdminNavLink />
         </nav>
 
         <div className="mt-auto rounded-xl border border-slate-700/50 bg-slate-900/70 p-3">

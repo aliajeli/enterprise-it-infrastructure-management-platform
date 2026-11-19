@@ -6,6 +6,8 @@ import type { PrismaClient } from "@platform/database";
 import type { ApiConfig } from "./config.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerUserRoutes } from "./routes/users.js";
+import { registerBranchRoutes } from "./routes/branches.js";
 
 export interface BuildAppOptions {
   db: PrismaClient;
@@ -81,7 +83,17 @@ export async function buildApp({
     });
   });
 
+  app.addHook("onSend", async (request, reply, payload) => {
+    if (request.url.startsWith("/api/v1/")) {
+      reply.header("cache-control", "no-store, private");
+      reply.header("pragma", "no-cache");
+    }
+    return payload;
+  });
+
   await registerHealthRoutes(app, db);
   await registerAuthRoutes(app, db, config);
+  await registerUserRoutes(app, db, config);
+  await registerBranchRoutes(app, db, config);
   return app;
 }

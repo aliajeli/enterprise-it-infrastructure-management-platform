@@ -3,17 +3,20 @@ import type { PrismaClient } from "@platform/database";
 import type { ApiConfig } from "../config.js";
 import {
   hashPassword,
+  isValidPassword,
   normalizeUsername,
   verifyPassword,
 } from "../security/credentials.js";
 import {
+  clearSessionCookie,
+  setSessionCookie,
+} from "../security/session-cookie.js";
+import { resolveSession } from "../security/session.js";
+import {
   digestIdentifier,
-  digestSessionToken,
   issueSessionToken,
 } from "../security/session-token.js";
 
-const SESSION_COOKIE_PRODUCTION = "__Host-platform_session";
-const SESSION_COOKIE_DEVELOPMENT = "platform_session";
 const DUMMY_PASSWORD = "Dummy-Password-For-Timing-Equalization-Only-2026!";
 const dummyPasswordHash = hashPassword(DUMMY_PASSWORD);
 
@@ -22,35 +25,9 @@ interface LoginBody {
   password: string;
 }
 
-function sessionCookieName(config: ApiConfig): string {
-  return config.cookieSecure
-    ? SESSION_COOKIE_PRODUCTION
-    : SESSION_COOKIE_DEVELOPMENT;
-}
-
-function setSessionCookie(
-  reply: FastifyReply,
-  config: ApiConfig,
-  token: string,
-  expiresAt: Date,
-): void {
-  reply.setCookie(sessionCookieName(config), token, {
-    httpOnly: true,
-    secure: config.cookieSecure,
-    sameSite: "lax",
-    path: "/",
-    expires: expiresAt,
-    maxAge: config.sessionTtlSeconds,
-  });
-}
-
-function clearSessionCookie(reply: FastifyReply, config: ApiConfig): void {
-  reply.clearCookie(sessionCookieName(config), {
-    httpOnly: true,
-    secure: config.cookieSecure,
-    sameSite: "lax",
-    path: "/",
-  });
+interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
 }
 
 function invalidCredentials(reply: FastifyReply) {
@@ -66,11 +43,13 @@ function publicUser(user: {
   id: string;
   username: string;
   role: string;
+  mustChangePassword: boolean;
 }) {
   return {
     id: user.id,
     username: user.username,
     role: user.role,
+    mustChangePassword: user.mustChangePassword,
   };
 }
 
@@ -121,12 +100,7 @@ export async function registerAuthRoutes(
   app.post<{ Body: LoginBody }>(
     "/api/v1/auth/login",
     {
-      config: {
-        rateLimit: {
-          max: 5,
-          timeWindow: "15 minutes",
-        },
-      },
+      config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
       schema: {
         body: {
           type: "object",
@@ -184,6 +158,7 @@ export async function registerAuthRoutes(
           data: {
             failedLoginCount: 0,
             lockedUntil: null,
+            lastLoginAt: now,
           },
         });
 
@@ -216,50 +191,18 @@ export async function registerAuthRoutes(
       });
 
       setSessionCookie(reply, config, token, expiresAt);
-      return reply.code(200).send({ user: publicUser(user), expiresAt });
+      return reply.code(200).send({
+        user: publicUser(user),
+        expiresAt,
+      });
     },
   );
 
   app.get("/api/v1/session", async (request, reply) => {
-    const token = request.cookies[sessionCookieName(config)];
-    if (!token) {
+    const session = await resolveSession(db, config, request, reply);
+    if (!session) {
       return reply.code(401).send({
         error: { code: "UNAUTHENTICATED", message: "Authentication required." },
-      });
-    }
-
-    const session = await db.session.findUnique({
-      where: { tokenHash: digestSessionToken(token) },
-      include: { user: true },
-    });
-    const now = new Date();
-
-    if (
-      !session ||
-      session.revokedAt ||
-      session.expiresAt <= now ||
-      session.user.status !== "ACTIVE" ||
-      session.authEpoch !== session.user.authEpoch
-    ) {
-      if (session && !session.revokedAt) {
-        await db.session.updateMany({
-          where: { id: session.id, revokedAt: null },
-          data: { revokedAt: now },
-        });
-      }
-      clearSessionCookie(reply, config);
-      return reply.code(401).send({
-        error: { code: "UNAUTHENTICATED", message: "Authentication required." },
-      });
-    }
-
-    if (
-      !session.lastSeenAt ||
-      now.getTime() - session.lastSeenAt.getTime() >= 5 * 60 * 1_000
-    ) {
-      await db.session.update({
-        where: { id: session.id },
-        data: { lastSeenAt: now },
       });
     }
 
@@ -270,37 +213,136 @@ export async function registerAuthRoutes(
   });
 
   app.post("/api/v1/auth/logout", async (request, reply) => {
-    const token = request.cookies[sessionCookieName(config)];
-    if (token) {
-      const session = await db.session.findUnique({
-        where: { tokenHash: digestSessionToken(token) },
-        include: { user: true },
-      });
-
-      if (session && !session.revokedAt) {
-        const now = new Date();
-        await db.$transaction(async (tx) => {
-          await tx.session.updateMany({
-            where: { id: session.id, revokedAt: null },
-            data: { revokedAt: now },
-          });
-          await tx.auditEvent.create({
-            data: {
-              actorUserId: session.userId,
-              actorType: "USER",
-              action: "AUTH_LOGOUT",
-              objectType: "session",
-              objectId: session.id,
-              outcome: "SUCCESS",
-              requestId: request.id,
-              sourceIp: request.ip,
-            },
-          });
+    const session = await resolveSession(db, config, request, reply);
+    if (session) {
+      const now = new Date();
+      await db.$transaction(async (tx) => {
+        await tx.session.updateMany({
+          where: { id: session.id, revokedAt: null },
+          data: { revokedAt: now },
         });
-      }
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: session.userId,
+            actorType: "USER",
+            action: "AUTH_LOGOUT",
+            objectType: "session",
+            objectId: session.id,
+            outcome: "SUCCESS",
+            requestId: request.id,
+            sourceIp: request.ip,
+          },
+        });
+      });
     }
 
     clearSessionCookie(reply, config);
     return reply.code(204).send();
   });
+
+  app.post<{ Body: ChangePasswordBody }>(
+    "/api/v1/auth/change-password",
+    {
+      config: { rateLimit: { max: 5, timeWindow: "15 minutes" } },
+      schema: {
+        body: {
+          type: "object",
+          required: ["currentPassword", "newPassword"],
+          additionalProperties: false,
+          properties: {
+            currentPassword: { type: "string", minLength: 1, maxLength: 128 },
+            newPassword: { type: "string", minLength: 14, maxLength: 128 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const session = await resolveSession(db, config, request, reply);
+      if (!session) {
+        return reply.code(401).send({
+          error: { code: "UNAUTHENTICATED", message: "Authentication required." },
+        });
+      }
+
+      if (!isValidPassword(request.body.newPassword)) {
+        return reply.code(400).send({
+          error: {
+            code: "PASSWORD_POLICY_REJECTED",
+            message: "New password does not meet the password policy.",
+          },
+        });
+      }
+
+      const currentMatches = await verifyPassword(
+        request.body.currentPassword,
+        (await db.user.findUniqueOrThrow({ where: { id: session.user.id } }))
+          .passwordHash,
+      );
+      if (!currentMatches) {
+        await db.auditEvent.create({
+          data: {
+            actorUserId: session.user.id,
+            actorType: "USER",
+            action: "AUTH_PASSWORD_CHANGE_FAILED",
+            objectType: "user",
+            objectId: session.user.id,
+            outcome: "FAILURE",
+            requestId: request.id,
+            sourceIp: request.ip,
+          },
+        });
+        return reply.code(401).send({
+          error: {
+            code: "CURRENT_PASSWORD_INVALID",
+            message: "Current password is incorrect.",
+          },
+        });
+      }
+
+      if (request.body.currentPassword === request.body.newPassword) {
+        return reply.code(400).send({
+          error: {
+            code: "PASSWORD_UNCHANGED",
+            message: "New password must differ from the current password.",
+          },
+        });
+      }
+
+      const newHash = await hashPassword(request.body.newPassword);
+      const now = new Date();
+
+      await db.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: {
+            passwordHash: newHash,
+            passwordChangedAt: now,
+            mustChangePassword: false,
+            authEpoch: { increment: 1 },
+            failedLoginCount: 0,
+            lockedUntil: null,
+          },
+        });
+        await tx.session.updateMany({
+          where: { userId: session.user.id, revokedAt: null },
+          data: { revokedAt: now },
+        });
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: session.user.id,
+            actorType: "USER",
+            action: "AUTH_PASSWORD_CHANGED",
+            objectType: "user",
+            objectId: session.user.id,
+            outcome: "SUCCESS",
+            requestId: request.id,
+            sourceIp: request.ip,
+          },
+        });
+      });
+
+      clearSessionCookie(reply, config);
+      return reply.code(204).send();
+    },
+  );
 }

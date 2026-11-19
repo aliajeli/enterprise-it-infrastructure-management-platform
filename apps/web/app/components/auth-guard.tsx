@@ -23,6 +23,12 @@ export function AuthGuard({ children }: { children: ReactNode }) {
           return;
         }
 
+        const payload = await response.json();
+        if (payload.user?.mustChangePassword) {
+          router.replace("/change-password");
+          return;
+        }
+
         if (active) setAuthenticated(true);
       } catch {
         router.replace("/login");

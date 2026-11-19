@@ -115,6 +115,8 @@ describe("authentication API", () => {
       role: "VIEWER",
       status: "ACTIVE",
       authEpoch: 0,
+      mustChangePassword: false,
+      lastLoginAt: null,
       failedLoginCount: 0,
       lockedUntil: null,
     };
@@ -150,6 +152,7 @@ describe("authentication API", () => {
       id: expect.any(String),
       username: "operator.one",
       role: "VIEWER",
+      mustChangePassword: false,
     });
     expect(login.json().user).not.toHaveProperty("passwordHash");
 
