@@ -85,13 +85,8 @@ jobs:
         with:
           node-version: 26
 
-      - name: Generate lockfile without executing package scripts
-        run: |
-          if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
-            echo "Lockfile is already tracked; no bootstrap required."
-            exit 0
-          fi
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Generate or refresh lockfile without executing package scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Commit and push lockfile when newly generated
         env:
