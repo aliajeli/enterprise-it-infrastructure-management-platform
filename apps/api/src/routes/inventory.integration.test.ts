@@ -80,6 +80,22 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
 
   it("enforces branch scope and role policy for assets and switch-port metadata", async () => {
     if (!app) throw new Error("Inventory integration API was not initialized.");
+
+    const operatorBranches = await app.inject({
+      method: "GET",
+      url: "/api/v1/branches/accessible",
+      headers: { cookie: operatorCookie },
+    });
+    expect(operatorBranches.statusCode).toBe(200);
+    expect(operatorBranches.json().branches.map((branch: { id: string }) => branch.id)).toEqual([branchId]);
+
+    const viewerBranches = await app.inject({
+      method: "GET",
+      url: "/api/v1/branches/accessible",
+      headers: { cookie: viewerCookie },
+    });
+    expect(viewerBranches.statusCode).toBe(200);
+    expect(viewerBranches.json().branches.map((branch: { id: string }) => branch.id)).toEqual([branchId]);
     const createSwitch = await app.inject({
       method: "POST",
       url: "/api/v1/inventory/assets",
