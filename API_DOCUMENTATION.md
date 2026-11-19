@@ -37,7 +37,11 @@ Authentication implementation details:
 - API binds to loopback. Only loopback proxy peers are trusted for forwarded client IP; the TLS Edge must overwrite X-Forwarded-For.
 - The first administrator is created only through the interactive local bootstrap CLI.
 
-Not yet implemented: operational device APIs, WebSocket contracts, Agent enrollment, job operations, and final owner-confirmed operator/viewer action permissions. Admin password recovery is implemented as an administrator-issued one-time temporary credential; self-service recovery is not implemented because no verified recovery channel is configured. Server-side authorization primitives exist, but no operational mutation endpoint is exposed.
+Not yet implemented: operational device APIs, WebSocket contracts, Agent enrollment and job operations. The owner-approved OPERATOR/VIEWER action matrix is recorded in `M1_USER_MANAGEMENT_DESIGN.md` and enforced as a server-side `PlatformAction` policy primitive with unit coverage; no operational mutation endpoint is exposed yet. Admin password recovery is implemented as an administrator-issued one-time temporary credential; self-service recovery is not implemented because no verified recovery channel is configured.
+
+## Approved role/action policy for future operational APIs
+
+The policy is enforced server-side; UI visibility is never an authorization boundary. Every branch-owned operation must require both the action capability and an active grant for the target branch. ADMIN has global scope. OPERATOR is limited to inventory read/write, switch-port/VLAN metadata read/write, and non-destructive inventory discovery/sync. VIEWER is read-only for inventory and switch metadata. OPERATOR and VIEWER cannot change live device configuration, initiate remote sessions, use stored credentials, create/execute deployments, manage users/branches/settings, or force-close Store Commerce. Force-close additionally requires explicit per-operation approval and a warning even for ADMIN. The policy helper exists, but each future route, WebSocket event and job handler must enforce it before access or side effects.
 
 ## Planned API contract
 

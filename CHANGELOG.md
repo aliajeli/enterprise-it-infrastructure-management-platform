@@ -118,3 +118,10 @@
 - Fixed Prisma relation-connect semantics for branch/grantor provisioning and corrected Node response-header typing in the integration test.
 - GitHub Actions run 44504888903 passed all three validation jobs, including Linux/PostgreSQL 18 and Windows native Argon2id runtime validation.
 - Opened [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) as Draft for review. It is not merged. M1 remains in progress pending code review, the owner-confirmed operational role/action matrix, complete branch lifecycle, password recovery and production/Windows service validation.
+
+
+## 2026-11-19 — Owner-approved operational role/action matrix
+- Recorded the owner's ADMIN/OPERATOR/VIEWER permissions: ADMIN global administration; OPERATOR branch-scoped inventory and switch-port/VLAN metadata editing plus non-destructive discovery/sync; VIEWER branch-scoped read-only inventory/metadata.
+- Explicitly denied OPERATOR remote sessions, stored credential use, live device configuration, deployments and Store Commerce force-close. Force-close requires separate explicit approval and warning even for ADMIN.
+- Added a closed server-side `PlatformAction` policy and branch-action authorization helper requiring both capability and active branch grant.
+- Expanded unit tests to cover allowed and denied actions for all roles and branch-scope enforcement. Operational endpoints remain unimplemented and must enforce the policy when introduced.

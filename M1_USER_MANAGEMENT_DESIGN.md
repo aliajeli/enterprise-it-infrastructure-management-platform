@@ -1,14 +1,15 @@
 # M1 — User lifecycle and administration design
 
-**Status:** M1 application scope implemented in the completion branch; automated CI and PostgreSQL integration evidence pending. Owner confirmation of the final OPERATOR/VIEWER action matrix and real Windows/production operational evidence remain explicit acceptance gates.
+**Status:** Owner-approved role/action matrix recorded on 2026-11-19. Server-side policy primitives and role-matrix tests are included in the M1 completion branch. Operational inventory/device endpoints remain unimplemented; Windows and production database evidence remain outstanding.
 
 ## Role boundary
 
 - **ADMIN:** global branch scope; only role allowed to provision users, change non-admin user roles/status, reset non-admin passwords, and manage branch records and branch grants.
-- **OPERATOR:** assigned-branch scope. Read-only in M1. No device, network, remote-session, credential, deployment or force-close mutation is enabled until the owner confirms the action matrix.
-- **VIEWER:** assigned-branch read-only scope.
+- **OPERATOR:** assigned-branch scope. May create/edit inventory records and switch-port/VLAN metadata and run non-destructive discovery and synchronization. Cannot change live device configuration, start remote sessions, use stored credentials, create/execute deployments, or force-close Store Commerce by default.
+- **VIEWER:** assigned-branch read-only access to inventory and switch metadata; no mutation or operational action.
+- **ADMIN:** global scope and all declared platform capabilities, including user/branch/settings administration and privileged operational actions. Destructive Store Commerce force-close still requires a separate explicit per-operation approval and warning; the ADMIN role alone is not that approval.
 - The API does not permit creating or promoting users to ADMIN. The first ADMIN is created by the one-time local bootstrap CLI. Additional ADMIN promotion remains a separately controlled owner procedure.
-- This is a conservative technical baseline, not a final owner-approved operational permission matrix.
+- This matrix is owner-approved on 2026-11-19. It defines policy only; it does not claim that the future operational modules or endpoints are already implemented.
 
 ## User provisioning and lifecycle
 
@@ -35,6 +36,9 @@
 ## API controls
 
 - Every user/branch management endpoint resolves the server-side session and checks role ADMIN. Client-side route hiding is not an authorization control.
+- Operational authorization is expressed through a closed `PlatformAction` union and a single server-side role policy. Branch-owned requests must pass both `canPerformAction` and `hasBranchScope` via `hasBranchActionAccess`; a role capability never bypasses branch assignment.
+- OPERATOR and VIEWER grants are effective only for active, non-archived branches and unrevoked grants. ADMIN has global branch scope.
+- The policy helper is not a substitute for route enforcement: each future operational HTTP route and WebSocket/job command must call the appropriate authorization helper before reading or mutating resources.
 - State-changing requests also pass the exact Origin check and API rate limit.
 - User-list responses never include password hashes or temporary passwords.
 - Temporary credentials are returned only by the relevant create/reset response with `Cache-Control: no-store`; API responses are globally marked private/no-store.
@@ -44,7 +48,7 @@
 
 ## Remaining M1 acceptance gates
 
-1. Owner confirms the exact OPERATOR versus VIEWER action matrix before any operational permission is exposed.
+1. Enforce the approved action policy in each operational route, WebSocket event and durable job handler as those modules are implemented; policy primitives and unit tests alone do not expose operational APIs.
 2. Backup/restore is exercised against the intended production PostgreSQL service, including encryption/key recovery, restore to a clean instance, consistency checks and evidence capture. CI integration is not a substitute for production evidence.
 3. Windows service identities, ACLs, startup dependencies and API/database integration are validated on a clean target Windows VM. The five-service production topology is not yet implemented, so this cannot be truthfully marked complete here.
 4. Final PR review and green CI on the exact completion branch head.
@@ -53,5 +57,5 @@
 
 - User self-registration, MFA, self-service password recovery, and external email/SMS delivery.
 - Creating or promoting additional ADMIN users through the API.
-- Operator permissions to initiate deployments, remote sessions, credential use, device configuration or force-close actions until owner confirmation.
+- Operator permissions to initiate deployments, remote sessions, credential use, live device configuration or force-close actions (explicitly denied by the approved matrix).
 - Production backup/restore or Windows service compatibility claims without target-environment evidence.

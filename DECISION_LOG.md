@@ -98,3 +98,15 @@ The following historical statements state or imply that the temporary mirror is 
 - [TRANSFER_STATUS.md](TRANSFER_STATUS.md) — "This transfer does not certify that every historical copy in the temporary public mirror or its Git history has been sanitized."
 - [HANDOVER.md](HANDOVER.md) — pre-transfer historical sections describing the mirror (retained verbatim; the current snapshot section at the top records the deletion).
 - [DOCUMENTATION_REVIEW_REPORT.md](DOCUMENTATION_REVIEW_REPORT.md), [FINAL_HANDOVER_REPORT.md](FINAL_HANDOVER_REPORT.md) — mirror-era review records.
+
+
+## Owner-approved role/action matrix — 19 November 2026
+
+The owner explicitly approved the following distinction between ADMIN, OPERATOR and VIEWER. This decision governs all future inventory, switch, device, monitoring, remote-session, credential and deployment modules.
+
+- **ADMIN:** global branch scope; user, branch, permission and settings administration; all declared platform actions. Store Commerce force-close still requires explicit per-operation approval and a warning; role membership alone is not approval.
+- **OPERATOR:** only within actively assigned branches; may read/write inventory records and switch-port/VLAN metadata and run non-destructive discovery and synchronization. Denied by default: live device configuration changes, remote sessions, stored credential use, deployment creation/execution, Store Commerce force-close, user/branch/settings administration.
+- **VIEWER:** only within actively assigned branches; read-only inventory and switch-port/VLAN metadata. No mutations or operational actions.
+- **Enforcement:** authorization must be checked server-side for every HTTP request, WebSocket event and durable job handler. Branch-owned operations require both the action capability and an active, non-revoked grant on an active branch. Client-side hiding is not security.
+- **Implementation boundary:** the closed action policy and unit tests may be implemented in M1. Operational endpoints and modules remain unimplemented until their own milestones; this decision does not claim those features exist.
+- **Status:** owner-approved; policy implementation and unit tests are being added to PR #6. No PR merge or repository settings change is authorized by this decision.

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AuthGuard } from "./components/auth-guard";
 import { LogoutButton } from "./components/logout-button";
 import { AdminNavLink } from "./components/admin-nav-link";
+import { RoleAccessSummary } from "./components/role-access-summary";
 import {
   Activity,
   Bell,
@@ -164,7 +165,8 @@ export default function DashboardPage() {
         </header>
 
         <div className="mx-auto max-w-[1500px] px-5 py-8 sm:px-8 sm:py-10">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <RoleAccessSummary />
+          <div className="mt-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1 text-[11px] font-medium text-blue-200">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
