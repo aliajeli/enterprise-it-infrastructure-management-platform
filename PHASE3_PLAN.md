@@ -145,3 +145,10 @@ No device compatibility or live discovery is claimed until target hardware tests
 The separate `apps/worker` workspace now contains the first durable queue primitives over existing `DiscoveryRun` records: atomic `SKIP LOCKED` claim, worker-owned lease, heartbeat, expired-lease recovery, bounded exponential retry, cancellation acknowledgement and owner-bound completion. The Prisma schema and additive migration add lease/attempt/cancellation metadata and indexes.
 
 **Safety gate:** the Worker currently registers no task handlers. Its supported-source allow-list is intentionally empty, so it cannot claim or execute discovery jobs. No SNMP/SSH/ISAPI/Agent transport, credential vault, enqueue/cancel API, Windows service registration or real-device access is implemented. Keep this as infrastructure foundation only. Before enabling any handler, add PostgreSQL concurrency/lease integration tests, API authorization and audit, encrypted credential handling, per-target network limits and simulator/hardware validation.
+
+
+### Credential Vault continuation — key material hygiene and DPAPI design gate (2026-11-19)
+- Exact-head CI passed on `4c2315d47b7d8e1e13e4221a838880ba6da14d3f` for both Push and PR validation, including Windows API runtime smoke and Linux/PostgreSQL platform validation.
+- Credential envelope crypto now zeroes caller-owned KEK buffers returned by the provider as well as local copies. Added tests for successful encrypt/decrypt zeroization and invalid key-version failure.
+- Added `WINDOWS_DPAPI_PROVIDER_DESIGN.md` defining the .NET helper protocol, DPAPI machine scope, service-SID entropy, ACL provisioning, keyring rotation and independent recovery/clean-host restore.
+- Next implementation gate is the helper protocol and Windows DPAPI integration under a dedicated service identity. No DPAPI provider or keyring is currently implemented. Credential DB/API/RBAC/audit work remains blocked on verified key protection and recovery.

@@ -357,3 +357,11 @@ An earlier application-repository inspection reported an empty clone before the 
 - Windows CI on `e9084406dd300ba2c0412316fc799f68bb3dcba3` passed the six pre-existing envelope tests (20 tests passed overall) but exposed an error in the newly added control-character test fixture: it supplied a literal backslash-u sequence instead of an actual U+0001 character.
 - Updated the fixture to use `String.fromCharCode(1)`, ensuring the test exercises the intended control-character guard. Bumped root package/lockfile version to `0.1.2`.
 - This follow-up is pending exact-head Linux/PostgreSQL and Windows CI. No production key provider or Credential API is enabled.
+
+
+## 2026-11-19 — Credential key-buffer hygiene and DPAPI design
+- CI for exact head `4c2315d47b7d8e1e13e4221a838880ba6da14d3f` passed both Push and PR workflows, including Windows API runtime smoke and Linux/Node.js 26/PostgreSQL 18 platform validation.
+- Hardened `CredentialKeyProvider` ownership semantics. The crypto core now zeroes provider-returned KEK buffers and local copies on encrypt/decrypt, including invalid key-version failure. Added regression tests.
+- Added `WINDOWS_DPAPI_PROVIDER_DESIGN.md` with a bounded .NET helper/stdin-stdout binary protocol, fixed machine-scope DPAPI, service SID-derived entropy, installer-owned ACL requirements, atomic keyring/rotation and independent recovery custody/clean-host restore requirements.
+- This is not yet a DPAPI implementation. No production key provider, persistent credential model/API, independent recovery export, installer ACL provisioning or clean-machine restore drill exists. Keep Credential Vault disconnected and do not enter real equipment secrets.
+- Root package version and lockfile metadata are now `0.1.3`; this is source metadata only. No installer or Release was created.

@@ -24,9 +24,13 @@ export interface CredentialKey {
 }
 
 /**
- * The platform-specific provider must return a 32-byte KEK protected at rest
- * by Windows DPAPI (service identity + machine scope) and implement recovery.
- * This interface intentionally has no environment-variable or file fallback.
+ * Provider methods must return caller-owned Buffer instances. The crypto core
+ * copies and zeroes those returned buffers after use; providers must not return
+ * references to internal keyring buffers.
+ *
+ * A production provider must protect 32-byte KEKs at rest with Windows DPAPI,
+ * enforce service-identity ACLs, and implement independent recovery. This
+ * interface intentionally has no environment-variable or plaintext fallback.
  */
 export interface CredentialKeyProvider {
   getCurrentKey(): Promise<CredentialKey>;
@@ -115,15 +119,19 @@ export async function encryptCredentialSecret(
   }
 
   const current = await keyProvider.getCurrentKey();
-  validateKeyVersion(current.version);
-  const kek = Buffer.from(current.key);
+  // Provider contract: this is a caller-owned buffer, never a shared keyring reference.
+  const providerKey = current.key;
+  const kek = Buffer.from(providerKey);
   const dataKey = randomBytes(KEY_BYTES);
   const dataNonce = randomBytes(NONCE_BYTES);
   const wrapNonce = randomBytes(NONCE_BYTES);
   const plaintextBytes = Buffer.from(plaintext, "utf8");
 
   try {
-    if (kek.length !== KEY_BYTES) throw new Error("Credential KEK must be exactly 32 bytes.");
+    validateKeyVersion(current.version);
+    if (!Buffer.isBuffer(providerKey) || kek.length !== KEY_BYTES) {
+      throw new Error("Credential KEK must be exactly 32 bytes.");
+    }
     const encrypted = encryptAesGcm(plaintextBytes, dataKey, dataNonce, aad(context, "data", current.version));
     const wrapped = encryptAesGcm(dataKey, kek, wrapNonce, aad(context, "data-key", current.version));
     return {
@@ -137,6 +145,7 @@ export async function encryptCredentialSecret(
       wrapAuthTag: wrapped.authTag.toString("base64"),
     };
   } finally {
+    providerKey.fill(0);
     kek.fill(0);
     dataKey.fill(0);
     plaintextBytes.fill(0);
@@ -149,6 +158,7 @@ export async function decryptCredentialSecret(
   keyProvider: CredentialKeyProvider,
 ): Promise<string> {
   validateContext(context);
+  let providerKey: Buffer | undefined;
   let kek: Buffer | undefined;
   let dataKey: Buffer | undefined;
   let plaintext: Buffer | undefined;
@@ -157,7 +167,9 @@ export async function decryptCredentialSecret(
     validateKeyVersion(record.keyVersion);
     const resolved = await keyProvider.getKey(record.keyVersion);
     if (!resolved) throw new CredentialDecryptionError();
-    kek = Buffer.from(resolved);
+    // Provider contract: resolved is a caller-owned Buffer and is zeroed below.
+    providerKey = resolved;
+    kek = Buffer.from(providerKey);
     if (kek.length !== KEY_BYTES) throw new CredentialDecryptionError();
     const wrappedDataKey = decodeBase64(record.wrappedDataKey, KEY_BYTES);
     const wrapNonce = decodeBase64(record.wrapNonce, NONCE_BYTES);
@@ -173,6 +185,7 @@ export async function decryptCredentialSecret(
   } catch {
     throw new CredentialDecryptionError();
   } finally {
+    providerKey?.fill(0);
     kek?.fill(0);
     dataKey?.fill(0);
     plaintext?.fill(0);

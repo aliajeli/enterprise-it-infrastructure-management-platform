@@ -94,6 +94,39 @@ describe("credential vault cryptographic envelope", () => {
       .rejects.toThrow("Invalid credential context: assetId.");
   });
 
+  it("zeroes provider-owned key buffers after encryption and decryption", async () => {
+    const backing = Buffer.alloc(32, 11);
+    let encryptKey: Buffer | undefined;
+    let decryptKey: Buffer | undefined;
+    const keys: CredentialKeyProvider = {
+      async getCurrentKey() {
+        encryptKey = Buffer.from(backing);
+        return { version: "test-kek-v1", key: encryptKey };
+      },
+      async getKey() {
+        decryptKey = Buffer.from(backing);
+        return decryptKey;
+      },
+    };
+    const encrypted = await encryptCredentialSecret("secret", context, keys);
+    expect(encryptKey?.every((byte) => byte === 0)).toBe(true);
+    expect(await decryptCredentialSecret(encrypted, context, keys)).toBe("secret");
+    expect(decryptKey?.every((byte) => byte === 0)).toBe(true);
+    expect(backing.every((byte) => byte === 11)).toBe(true);
+  });
+
+  it("zeroes provider key material when key-version validation fails", async () => {
+    const provided = Buffer.alloc(32, 13);
+    const keys: CredentialKeyProvider = {
+      async getCurrentKey() {
+        return { version: "invalid version", key: provided };
+      },
+      async getKey() { return null; },
+    };
+    await expect(encryptCredentialSecret("secret", context, keys)).rejects.toThrow("Invalid credential key version.");
+    expect(provided.every((byte) => byte === 0)).toBe(true);
+  });
+
   it("rejects empty and oversized secrets before encryption", async () => {
     const keys = provider();
     await expect(encryptCredentialSecret("", context, keys)).rejects.toThrow();
