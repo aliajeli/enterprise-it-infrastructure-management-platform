@@ -1,3 +1,10 @@
+## Unreleased — M2 inventory editing
+
+- Added asset editing for asset code, name, management IP, MAC, hostname, status, vendor, model, physical location and description. Updates use the existing branch-scoped API, optimistic version checks and audit events.
+- Added switch-port metadata editing for interface name, alias, description, access/tagged VLANs and connected-device label. Updates use optimistic version checks and do not configure the physical switch.
+- Follow-up commits: `6fb36a9334555bed3bad08af6dc99c730dafaa80` and `e1afdf8b1e064d8d246a55ff861bb71d1af2b8f9`.
+- Validation is pending: no commit status checks or PR-triggered workflow runs are currently returned for the latest head. Do not treat this UI slice as CI-verified until checks pass on the exact head.
+
 ## Unreleased — M2 inventory workspace
 
 - Added a responsive, authenticated inventory page with active-branch selection, equipment search/type filters, asset registration and switch-port metadata entry.
