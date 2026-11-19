@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { AuthGuard } from "../components/auth-guard";
 import { LogoutButton } from "../components/logout-button";
 import {
@@ -62,11 +62,13 @@ const inputClass = "w-full rounded-lg border border-slate-700 bg-slate-950/70 px
 const labelClass = "mb-1.5 block text-[11px] font-medium text-slate-400";
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (init?.body && !headers.has("content-type")) headers.set("content-type", "application/json");
   const response = await fetch(url, {
     ...init,
     credentials: "same-origin",
     cache: "no-store",
-    headers: { ...(init?.headers ?? {}), ...(init?.body ? { "content-type": "application/json" } : {}) },
+    headers,
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as { error?: { message?: string } } | null;
@@ -160,7 +162,7 @@ function InventoryContent() {
     }
   }
 
-  async function createAsset(event: React.FormEvent<HTMLFormElement>) {
+  async function createAsset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!branchId) return;
     setSaving(true);
