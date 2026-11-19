@@ -150,3 +150,10 @@ Security behavior is intentionally fail-closed:
 - Uses a bounded idle read timeout and stable generic protocol errors; no exception details or filesystem paths are returned on stdout.
 
 This is an implementation milestone, not production acceptance. No installer provisioning for the service SID/directory/lock file exists yet; therefore the helper is expected to fail closed on an unprovisioned host. Windows CI currently builds the executable but does not yet run dedicated-service-SID ACL, multi-process contention, tamper, or crash-recovery integration tests. The Node transport remains unregistered. Do not enter real equipment credentials or enable discovery.
+
+
+## 13. Fail-closed process smoke and service SID token resolution (0.1.21)
+
+The helper resolves the dedicated service SID from either the token's User SID or token Groups, deduplicates it, and requires exactly one unique `S-1-5-80-...` identity. It never falls back to LocalSystem or an interactive user identity.
+
+Windows CI now launches the built helper as a separate process on the unprovisioned hosted runner, sends a BEGIN frame, and verifies the exact generic ERROR response, non-zero process exit, and empty stderr. This confirms the helper rejects the runner's unprovisioned identity/storage context without leaking diagnostics. It is not a substitute for integration tests under the installer-provisioned service identity.

@@ -141,6 +141,30 @@ jobs:
       - name: Build Windows keyring storage helper
         run: dotnet build apps/api/windows/keyring-storage-helper/CredentialVault.KeyringStorageHelper.csproj --configuration Release
 
+      - name: Verify unprovisioned keyring helper fails closed
+        shell: pwsh
+        run: |
+          $dll = "apps/api/windows/keyring-storage-helper/bin/Release/net10.0-windows/CredentialVault.KeyringStorageHelper.dll"
+          $start = [System.Diagnostics.ProcessStartInfo]::new()
+          $start.FileName = "dotnet"
+          $start.ArgumentList.Add($dll)
+          $start.UseShellExecute = $false
+          $start.RedirectStandardInput = $true
+          $start.RedirectStandardOutput = $true
+          $start.RedirectStandardError = $true
+          $process = [System.Diagnostics.Process]::Start($start)
+          $request = [byte[]](1, 1, 0, 0, 0, 0)
+          $process.StandardInput.BaseStream.Write($request, 0, $request.Length)
+          $process.StandardInput.Close()
+          $responseStream = [System.IO.MemoryStream]::new()
+          $process.StandardOutput.BaseStream.CopyTo($responseStream)
+          $stderr = $process.StandardError.ReadToEnd()
+          $process.WaitForExit()
+          $response = $responseStream.ToArray()
+          if ($process.ExitCode -eq 0 -or $response.Length -ne 7 -or $response[0] -ne 1 -or $response[1] -ne 255 -or $response[2] -ne 0 -or $response[3] -ne 0 -or $response[4] -ne 0 -or $response[5] -ne 1 -or $response[6] -ne 1 -or $stderr.Length -ne 0) {
+            throw "Unprovisioned keyring helper did not fail closed with the generic binary error contract."
+          }
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 

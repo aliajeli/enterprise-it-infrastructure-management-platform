@@ -177,9 +177,12 @@ internal static class Program
     private static SecurityIdentifier GetServiceSid()
     {
         using var id=WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
-        var found=id.Groups?.OfType<SecurityIdentifier>().Where(x=>x.Value.StartsWith("S-1-5-80-",StringComparison.Ordinal)).ToArray() ?? [];
-        if(found.Length!=1) throw new UnauthorizedAccessException();
-        return found[0];
+        var found=new List<SecurityIdentifier>();
+        if(id.User is SecurityIdentifier user && user.Value.StartsWith("S-1-5-80-",StringComparison.Ordinal)) found.Add(user);
+        found.AddRange(id.Groups?.OfType<SecurityIdentifier>().Where(x=>x.Value.StartsWith("S-1-5-80-",StringComparison.Ordinal)) ?? []);
+        var unique=found.GroupBy(x=>x.Value,StringComparer.Ordinal).Select(x=>x.First()).ToArray();
+        if(unique.Length!=1) throw new UnauthorizedAccessException();
+        return unique[0];
     }
 
     private static void VerifyAcl(SafeFileHandle h,SecurityIdentifier expected)

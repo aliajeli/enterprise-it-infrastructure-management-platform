@@ -1,3 +1,9 @@
+## 0.1.21 — Verify fail-closed helper startup (2026-11-19)
+
+- Hardened service SID resolution to recognize a dedicated service SID represented as either the process user SID or an enabled token group, deduplicating the same SID.
+- Added a Windows CI process-level smoke test that sends BEGIN to the actual built helper on an unprovisioned runner and requires a generic binary ERROR response, non-zero exit and empty stderr.
+- The test does not provision storage or enable credential persistence.
+
 ## 0.1.20 — Resolve nullable analysis in Windows helper (2026-11-19)
 
 - Made the transaction-held lock dereference explicit after the fail-closed transaction guard.

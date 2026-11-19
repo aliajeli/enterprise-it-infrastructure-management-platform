@@ -474,3 +474,9 @@ An earlier application-repository inspection reported an empty clone before the 
 ## 2026-11-19 — Windows helper nullable compile correction (v0.1.20)
 - The first P/Invoke syntax correction on `c0ede7b69d464750d0d17bc0e2d07cb563057c83` passed the previous syntax location but exposed two nullable-analysis errors: the compiler could not infer the transaction guard's non-null guarantee for `heldLock`, and `RawSecurityDescriptor.Owner` is nullable.
 - Added an explicit null-forgiving dereference only after `RequireLock()`, and an explicit null-owner rejection before SID equality. No storage behavior was broadened.
+
+
+## 2026-11-19 — Service SID token resolution and fail-closed smoke (v0.1.21)
+- Updated service SID resolution to consider both the token User SID and token Groups, then require exactly one unique S-1-5-80 service SID. This supports dedicated virtual service accounts while still rejecting ordinary interactive identities and ambiguous tokens.
+- Added a Windows CI process smoke test for the actual built helper: on an unprovisioned runner, BEGIN must return exactly the stable one-byte generic ERROR frame, a non-zero exit code and no stderr diagnostics.
+- This is a fail-closed protocol smoke test only. It does not validate installer provisioning, the real dedicated service SID ACLs, concurrent processes, crash recovery or power-loss durability.
