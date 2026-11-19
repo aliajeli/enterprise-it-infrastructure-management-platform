@@ -142,9 +142,15 @@ function InventoryContent() {
     }
   }, [branchId, kind, search]);
 
-  useEffect(() => { void loadBranches(); }, [loadBranches]);
+  // Defer data loading to a microtask so effects schedule external work rather
+  // than synchronously invoking functions that enqueue React state updates.
+  useEffect(() => {
+    void Promise.resolve().then(loadBranches);
+  }, [loadBranches]);
 
-  useEffect(() => { void loadAssets(); }, [loadAssets]);
+  useEffect(() => {
+    void Promise.resolve().then(loadAssets);
+  }, [loadAssets]);
 
   const selectedBranch = useMemo(
     () => branches.find((branch) => branch.id === branchId),
