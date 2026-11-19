@@ -2,7 +2,7 @@
 
 ## Current snapshot — M1 lifecycle completion (2026-11-19)
 
-**Snapshot observed:** 2026-11-19, development branch `phase3/m1-completion` at `4f99330ffe5d61c862c196bfa2b0d6e6c59dddb7`. This is a development handover, not a production-readiness assertion.
+**Snapshot observed:** 2026-11-19, development branch `phase3/m1-completion`; role-policy implementation commit `6be6e63b66930a454e1c7e87587a3882796de8e7` is CI-verified. This is a development handover, not a production-readiness assertion.
 
 | Item | Verified state |
 |---|---|
@@ -14,10 +14,10 @@
 | M1 completion work | [PR #6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), Draft/open/unmerged, based on PR #5; branch lifecycle and administrator password recovery added |
 | Branch lifecycle | Edit with optimistic version; soft archive; restore; audit events; archive revokes grants and restore does not reinstate them |
 | Password recovery | ADMIN-issued one-time temporary password for active non-admin users; no-store response, forced change, session revocation, auth epoch increment and audit |
-| CI for completion work | [Run 44516741144](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44516741144) **passed** on exact head `d1ed6d209a33e9923a376c7769bbc2491fcfaa68` in [run 44517063564](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44517063564): platform validation, Windows API runtime smoke, lockfile bootstrap, PostgreSQL integration, disposable backup/restore smoke, lint, typecheck and production build all succeeded. Earlier intermediate runs were cancelled or failed during backup-smoke development and are not treated as successful evidence |
-| M1 remaining acceptance gates | Owner-confirmed OPERATOR/VIEWER action matrix; clean target-Windows validation of service identities/ACL/startup/API integration; production PostgreSQL encrypted backup/restore and key-recovery evidence; final code review and green CI |
+| CI for completion work | [Run 44527431429](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44527431429) **passed** on exact role-policy head `6be6e63b66930a454e1c7e87587a3882796de8e7`: Node.js 26 / PostgreSQL 18 validation, Prisma generation/migrations, dependency audit, lint, typecheck, role/action unit tests, PostgreSQL integration, disposable backup/restore smoke, production build, Windows API runtime smoke and lockfile bootstrap all succeeded. Earlier completion baseline runs remain historical evidence |
+| M1 / platform acceptance gates | Role/action matrix owner-approved and policy helper tested; clean target-Windows validation of service identities/ACL/startup/API integration; production PostgreSQL encrypted backup/restore and key-recovery evidence; final code review. Future operational endpoints must enforce the policy per request/job/event |
 | Not implemented | Five Windows services, Background Worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge PoC, Store Commerce deployment, installer, updater and release automation |
-| Security boundaries | All user/branch management routes remain ADMIN-only. OPERATOR/VIEWER operational mutation rights are not enabled. No ADMIN creation/promotion via API |
+| Security boundaries | User/branch management routes remain ADMIN-only. Owner-approved role policy is centralized in `PlatformAction`; OPERATOR is branch-scoped inventory/metadata editor plus safe discovery/sync; VIEWER is branch-scoped read-only; ADMIN is global. No operational device endpoints exist yet; no ADMIN creation/promotion via API |
 | Repository administration | No repository settings, branch protections, permissions, hooks, webhooks or workflow administration settings changed |
 | Desktop Bridge | PoC not executed; separate authorization remains required |
 | Release/production | No installer, tag, release or production deployment claimed |
@@ -30,17 +30,16 @@
 - Password reset is deliberately admin-mediated because no verified email/SMS recovery channel exists. Self-service recovery is not exposed.
 - PostgreSQL integration tests passed for these paths on run 44516741144. The custom-format PostgreSQL backup/restore smoke test also passed on that run. The explicit PostgreSQL host was added to `pg_restore` after the initial backup-smoke failure; the corrected backup/restore smoke passed on run 44517063564.
 
-### Owner decision still required
+### Owner-approved role/action matrix — 2026-11-19
 
-The only product-policy decision that cannot safely be inferred from code is the operational distinction between OPERATOR and VIEWER. Until confirmed, both remain read-only for infrastructure resources. The conservative role model is documented in `M1_USER_MANAGEMENT_DESIGN.md`.
+The owner approved ADMIN global administration and platform capabilities; OPERATOR branch-scoped inventory and switch-port/VLAN metadata read/write plus non-destructive discovery/sync; and VIEWER branch-scoped read-only inventory/metadata. OPERATOR is denied live device configuration, remote sessions, stored credentials, deployments and Store Commerce force-close. Force-close requires separate explicit per-operation approval and warning even for ADMIN. The server-side `PlatformAction` policy and branch-scope helper are implemented and CI-tested; future operational routes, WebSocket events and job handlers must enforce them. No operational device endpoint is claimed implemented.
 
 ### Next actions
 
-1. Wait for the final branch-head CI run and fix any failures.
-2. Open a follow-up Draft PR targeting `phase3/m1-user-management`; keep PR #5 and the follow-up unmerged until owner review.
-3. Collect Windows service and PostgreSQL backup/restore evidence in the intended environment.
-4. Confirm the OPERATOR/VIEWER action matrix before enabling operational actions.
-5. Only after M1 acceptance, start M2 inventory and switch-port management.
+1. Keep PR #5 and PR #6 Draft/open/unmerged pending owner code review; no merge is performed here.
+2. Collect clean target-Windows service identity/ACL/startup/API integration evidence when the five-service implementation is available.
+3. Collect production PostgreSQL encrypted backup/restore and key-recovery evidence; CI disposable restore is not production evidence.
+4. After M1 acceptance, begin M2 inventory and switch-port management, applying the approved role policy at every server-side entry point.
 
 ---
 
