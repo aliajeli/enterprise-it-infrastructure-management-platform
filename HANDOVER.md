@@ -464,3 +464,8 @@ An earlier application-repository inspection reported an empty clone before the 
 - The helper deliberately fails closed if the installer has not provisioned the dedicated service SID, directory, exact ACLs and lock file. It does not create or repair them.
 - Windows CI now compiles the new helper. Dedicated service-account integration tests, ACL tamper tests, two-process lock tests, crash/interrupted-write tests, and clean-VM provisioning are still outstanding. Compile success alone is not acceptance.
 - The Node client remains unregistered; no API composition wiring, real credential persistence, Worker discovery, installer or Release.
+
+
+## 2026-11-19 — Helper compile correction (v0.1.19)
+- Windows CI on `5637432dcaf4253d7e12eb214b20932e6f3574ec` compiled the existing DPAPI helper but failed compiling the new keyring storage helper at the CreateFileW P/Invoke declaration (CS1001).
+- Moved `EntryPoint="CreateFileW"` into the `DllImport` attribute. This is a compile-only correction; the new helper remains unregistered and has not passed dedicated Windows identity/ACL/process integration tests.

@@ -1,3 +1,8 @@
+## 0.1.19 — Fix Windows keyring helper P/Invoke declaration (2026-11-19)
+
+- Corrected the CreateFileW P/Invoke EntryPoint placement found by the first Windows helper compile.
+- No storage semantics or registration behavior changed; helper remains unregistered and production-gated.
+
 ## 0.1.18 — Windows keyring storage helper implementation groundwork (2026-11-19)
 
 - Added a separate .NET 10 Windows keyring storage helper implementing the frozen v1 binary session protocol and fixed-path read/atomic-write operations.

@@ -241,7 +241,7 @@ internal static class Program
     [StructLayout(LayoutKind.Sequential)] private struct SecurityAttributes{public int Length;public IntPtr SecurityDescriptor;[MarshalAs(UnmanagedType.Bool)]public bool InheritHandle;}
     [StructLayout(LayoutKind.Sequential)] private struct FileAttributeTagInfo{public uint FileAttributes;public uint ReparseTag;}
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] private static extern SafeFileHandle CreateFile(string n,uint a,uint s,IntPtr sa,uint d,uint f,IntPtr t);
-    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] private static extern SafeFileHandle CreateFileWithSecurity(string n,uint a,uint s,ref SecurityAttributes sa,uint d,uint f,IntPtr t,EntryPoint="CreateFileW");
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true,EntryPoint="CreateFileW")] private static extern SafeFileHandle CreateFileWithSecurity(string n,uint a,uint s,ref SecurityAttributes sa,uint d,uint f,IntPtr t);
     [DllImport("kernel32.dll",SetLastError=true)] private static extern bool GetFileInformationByHandleEx(SafeFileHandle h,int c,out FileAttributeTagInfo i,int z);
     [DllImport("advapi32.dll",SetLastError=true)] private static extern uint GetSecurityInfo(SafeFileHandle h,uint t,uint i,out IntPtr o,out IntPtr g,out IntPtr d,out IntPtr s,out IntPtr p);
     [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true,EntryPoint="ConvertStringSecurityDescriptorToSecurityDescriptorW")] private static extern bool ConvertSddl(string s,uint r,out IntPtr p,out uint z);
