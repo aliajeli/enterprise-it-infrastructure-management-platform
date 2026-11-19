@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   Activity,
   Bell,
@@ -12,7 +13,7 @@ import {
   Router,
   Search,
   Server,
-  Settings2,
+  Settings,
   ShieldCheck,
   Workflow,
 } from "lucide-react";
@@ -33,7 +34,7 @@ const operations = [
   { label: "Security & access", icon: ShieldCheck },
 ];
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <p className="px-3 pb-2 pt-6 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-500">
       {children}
@@ -138,7 +139,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-slate-700/50 bg-slate-900/50 px-3 py-2 text-xs text-slate-400">
-              <Settings2 size={14} />
+              <Settings size={14} />
               Initial setup in progress
             </div>
           </div>
