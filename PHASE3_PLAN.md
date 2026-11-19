@@ -164,3 +164,10 @@ The separate `apps/worker` workspace now contains the first durable queue primit
 - Exact-head `5067518791b0899f410fee8b76495028e11bd590` passed Push run `44590138482` and PR run `44590153726`.
 - Windows CI built the .NET 10 helper and passed native DPAPI Protect/Unprotect and installation-identity binding. Linux/PostgreSQL validation passed.
 - Next milestone: installer/service identity + NTFS ACL provisioning/verification, persistent versioned keyring, atomic rotation and independently protected recovery/clean-host restore. Credential persistence/API remains blocked until those are implemented and tested.
+
+
+### Credential Vault continuation — versioned keyring core (2026-11-19)
+- Added a keyring core over the DPAPI protector boundary: initialize-once random 256-bit KEK, protected-blob persistence contract, read-back verification, versioned retrieval and serialized rotation.
+- Rotation preserves every prior key version and has a bounded 64-entry capacity. No key retirement is implemented.
+- Tests cover idempotent initialization, old-key retention, concurrent rotations, malformed/missing registry rejection and capacity handling.
+- Remaining gates: concrete Windows storage adapter with ACL verification and atomic durable replacement; independent recovery export/custody and clean-host restore; reference-aware audited retirement; then Prisma Credential records/API/RBAC/audit.

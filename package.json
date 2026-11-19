@@ -1,16 +1,10 @@
 {
   "name": "enterprise-it-infrastructure-management-platform",
   "private": true,
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Centralized enterprise IT infrastructure management platform",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "engines": {
-    "node": ">=26.0.0",
-    "npm": ">=11.0.0"
-  },
+  "workspaces": ["apps/*", "packages/*"],
+  "engines": { "node": ">=26.0.0", "npm": ">=11.0.0" },
   "scripts": {
     "dev": "npm run dev --workspace @platform/web",
     "dev:api": "npm run dev --workspace @platform/api",

@@ -85,3 +85,10 @@ The DPAPI protocol now distinguishes input/output sizes: Protect accepts a 32-by
 
 ## DPAPI primitive CI evidence — 2026-11-19
 Exact-head CI passed on `5067518791b0899f410fee8b76495028e11bd590`: Push run [44590138482](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44590138482) and PR run [44590153726](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44590153726). Windows compiled the .NET helper and passed native Protect/Unprotect plus installation-identity binding; Linux/PostgreSQL platform validation passed. This verifies the helper primitive only. It does not verify service account isolation, NTFS ACLs, persistent key storage, rotation, recovery, or production deployment.
+
+
+### Credential Vault — versioned keyring core (2026-11-19)
+- Added a testable keyring core with DPAPI-protected KEK blobs, read-back verification, versioned lookup and serialized rotation.
+- Old versions are retained; no deletion/retirement API exists. Rotation fails closed at 64 entries rather than discarding keys.
+- Storage requires a process-safe exclusive lock, durable same-directory atomic replacement and installer-provisioned ACL verification. No concrete filesystem adapter is registered; tests use in-memory storage only.
+- Independent recovery, ACL provisioning/verification, credential persistence and production key-provider registration remain unimplemented. Do not enter real equipment secrets.

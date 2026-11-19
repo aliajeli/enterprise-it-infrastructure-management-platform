@@ -264,3 +264,11 @@
 - PostgreSQL CI exposed test interference caused by globally-scoped queue claiming across test cases. Integration tests now clean up their branch's runs before each case and assert that the intended run was actually claimed.
 - Lease recovery assertions validate the target run rather than assuming no other eligible expired lease exists in the disposable database.
 - The first integration run failed (4/11 Worker integration tests); follow-up CI on commit `4ca9fd7` is pending. No passing claim is made until the exact head completes successfully.
+
+## Unreleased — Credential keyring core
+- Added a versioned keyring core behind explicit DPAPI-protector and storage contracts.
+- Added initialize-once behavior, protected 256-bit KEKs, read-back verification, versioned key retrieval and serialized rotation.
+- Rotation preserves every prior key version and fails closed at a bounded 64-version capacity; no automatic key retirement is provided.
+- Added tests for initialization idempotency, old-key retention, concurrent rotation, malformed registry rejection and capacity handling.
+- No concrete filesystem adapter, ACL verification/provisioning, independent recovery or clean-host restore drill exists yet. This is not a production key store; do not enter real equipment secrets.
+- Root version metadata advanced to 0.1.11. No installer or Release is produced under the approved bootstrap exception.
