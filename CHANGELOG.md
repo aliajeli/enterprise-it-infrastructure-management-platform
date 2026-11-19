@@ -75,3 +75,4 @@
 - Added a high-severity threshold npm dependency audit to the GitHub Actions validation workflow.
 - Optimized lockfile bootstrap to skip registry resolution once the lockfile is already tracked.
 - The committed-lockfile CI run passed npm ci, dependency-tree verification, ESLint, TypeScript and production build; the expanded test and audit gates are now being validated.
+- Refreshed and committed the npm lockfile after adding Vitest 5.1.1; the first npm ci attempt correctly detected the stale lockfile and failed closed. A new clean-runner validation is required against the refreshed lockfile.
