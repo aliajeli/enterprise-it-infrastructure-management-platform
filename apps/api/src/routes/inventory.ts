@@ -39,6 +39,22 @@ interface CreateAssetBody {
   };
 }
 
+
+interface UpdateAssetBody {
+  version: number;
+  assetCode?: string;
+  name?: string;
+  status?: "ACTIVE" | "INACTIVE" | "RETIRED";
+  hostname?: string;
+  primaryIp?: string;
+  macAddress?: string;
+  vendor?: string;
+  model?: string;
+  serialNumber?: string;
+  location?: string;
+  description?: string;
+}
+
 interface CreatePortBody {
   ifIndex: number;
   name?: string;
@@ -273,6 +289,99 @@ export async function registerInventoryRoutes(
           return created;
         });
         return reply.code(201).send({ asset });
+      } catch (error) {
+        if (isPrismaCode(error, "P2002")) {
+          return reply.code(409).send({ error: { code: "ASSET_CODE_EXISTS", message: "This asset code is already used in the branch." } });
+        }
+        throw error;
+      }
+    },
+  );
+
+
+  app.patch<{ Params: { assetId: string }; Body: UpdateAssetBody }>(
+    "/api/v1/inventory/assets/:assetId",
+    {
+      schema: {
+        params: { type: "object", required: ["assetId"], properties: { assetId: { type: "string", format: "uuid" } } },
+        body: {
+          type: "object", required: ["version"], additionalProperties: false,
+          properties: {
+            version: { type: "integer", minimum: 1 },
+            assetCode: { type: "string", minLength: 2, maxLength: 64 },
+            name: { type: "string", minLength: 2, maxLength: 160 },
+            status: { type: "string", enum: ["ACTIVE", "INACTIVE", "RETIRED"] },
+            hostname: { type: "string", maxLength: 255 },
+            primaryIp: { type: "string", maxLength: 64 },
+            macAddress: { type: "string", maxLength: 17 },
+            vendor: { type: "string", maxLength: 120 },
+            model: { type: "string", maxLength: 120 },
+            serialNumber: { type: "string", maxLength: 160 },
+            location: { type: "string", maxLength: 255 },
+            description: { type: "string", maxLength: 2000 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const existing = await db.asset.findFirst({
+        where: { id: request.params.assetId, deletedAt: null },
+        select: { id: true, branchId: true, kind: true },
+      });
+      if (!existing) {
+        return reply.code(404).send({ error: { code: "ASSET_NOT_FOUND", message: "Asset not found." } });
+      }
+      const actor = await requireBranchAction(db, config, request, reply, existing.branchId, "inventory.write");
+      if (!actor) return;
+      const body = request.body;
+      const assetCode = body.assetCode?.trim().toUpperCase();
+      const primaryIp = body.primaryIp?.trim();
+      const macAddress = body.macAddress?.trim().toLowerCase();
+      if ((assetCode !== undefined && !/^[A-Z0-9][A-Z0-9._-]{1,63}$/.test(assetCode)) ||
+          (primaryIp !== undefined && isIP(primaryIp) === 0) ||
+          (macAddress !== undefined && !validMac(macAddress))) {
+        return reply.code(400).send({ error: { code: "INVALID_ASSET", message: "Asset fields are invalid." } });
+      }
+      try {
+        const updated = await db.$transaction(async (tx) => {
+          const changed = await tx.asset.updateMany({
+            where: { id: existing.id, version: body.version, deletedAt: null },
+            data: {
+              ...(assetCode !== undefined ? { assetCode } : {}),
+              ...(body.name !== undefined ? { name: body.name.trim() } : {}),
+              ...(body.status !== undefined ? { status: body.status } : {}),
+              ...(body.hostname !== undefined ? { hostname: clean(body.hostname, 255) ?? null } : {}),
+              ...(primaryIp !== undefined ? { primaryIp } : {}),
+              ...(macAddress !== undefined ? { macAddress } : {}),
+              ...(body.vendor !== undefined ? { vendor: clean(body.vendor, 120) ?? null } : {}),
+              ...(body.model !== undefined ? { model: clean(body.model, 120) ?? null } : {}),
+              ...(body.serialNumber !== undefined ? { serialNumber: clean(body.serialNumber, 160) ?? null } : {}),
+              ...(body.location !== undefined ? { location: clean(body.location, 255) ?? null } : {}),
+              ...(body.description !== undefined ? { description: clean(body.description, 2000) ?? null } : {}),
+              version: { increment: 1 },
+            },
+          });
+          if (changed.count !== 1) return null;
+          const asset = await tx.asset.findUniqueOrThrow({ where: { id: existing.id } });
+          await tx.auditEvent.create({
+            data: {
+              actorUserId: actor.user.id,
+              actorType: "USER",
+              action: "ASSET_UPDATED",
+              objectType: "asset",
+              objectId: asset.id,
+              outcome: "SUCCESS",
+              requestId: request.id,
+              sourceIp: request.ip,
+              metadata: { branchId: asset.branchId, version: asset.version },
+            },
+          });
+          return asset;
+        });
+        if (!updated) {
+          return reply.code(409).send({ error: { code: "ASSET_VERSION_CONFLICT", message: "Asset changed or no longer exists. Refresh and retry." } });
+        }
+        return reply.send({ asset: updated });
       } catch (error) {
         if (isPrismaCode(error, "P2002")) {
           return reply.code(409).send({ error: { code: "ASSET_CODE_EXISTS", message: "This asset code is already used in the branch." } });
