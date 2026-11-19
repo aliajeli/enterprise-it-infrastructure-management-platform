@@ -96,6 +96,40 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  windows-api-smoke:
+    name: Windows API runtime smoke
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://platform:placeholder@127.0.0.1:5432/platform?schema=public
+      API_HOST: 127.0.0.1
+      API_PORT: 13001
+      PUBLIC_ORIGIN: http://127.0.0.1:3000
+      COOKIE_SECURE: "false"
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate and compile Prisma database package
+        run: npm run build --workspace @platform/database
+
+      - name: Typecheck API and tests
+        run: npm run typecheck --workspace @platform/api
+
+      - name: Run API and Argon2id tests on Windows
+        run: npm test --workspace @platform/api
+
+      - name: Build API service
+        run: npm run build --workspace @platform/api
+
   lockfile-bootstrap:
     name: Bootstrap npm lockfile
     if: github.event_name == 'push'

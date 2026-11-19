@@ -47,7 +47,7 @@ The database supports ADMIN, OPERATOR and VIEWER. Branch grants are persisted se
 - No default username/password and no seeded production account.
 - A one-time, local administrator bootstrap command is required before production use; it must run interactively, refuse to run if any user already exists, and never accept a password in command-line arguments or logs. This command is not implemented yet.
 - prisma migrate deploy is the deployment migration command. Never run migrate reset against an existing environment.
-- CI applies migrations to a disposable PostgreSQL 18 service. Production migration must be preceded by a verified backup and restore test.
+- CI applies migrations to a disposable PostgreSQL 18 service and verifies partial branch-grant uniqueness plus the append-only audit trigger. A Windows runner separately validates the native Argon2id binding, API typecheck and API build. Production migration must be preceded by a verified backup and restore test.
 - Database credentials remain server-side and are not copied to the browser or Windows Agent.
 
 ## Current API surface

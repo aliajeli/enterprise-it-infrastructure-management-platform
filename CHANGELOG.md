@@ -87,3 +87,4 @@
 - Updated the pinned Prisma 7 packages to 7.10.1, a patch release that updates dependencies with security advisories. Prisma 8 remains a release candidate and is not adopted.
 - Prisma 7.10.1 migration/schema validation and the refreshed lockfile must pass the complete CI gate before the M1 branch is considered validated.
 - Bound API proxy trust to loopback peers so rate limiting and audit IP attribution can use the reverse proxy's forwarded client IP. Documented that the edge proxy must overwrite X-Forwarded-For.
+- Added a disposable-PostgreSQL integration test for branch-grant partial uniqueness and append-only audit enforcement, plus a Windows runner smoke gate for the native Argon2id binding and API build.
