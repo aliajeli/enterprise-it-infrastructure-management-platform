@@ -1,35 +1,46 @@
 # Project handover
 
-## Current snapshot — M1 user and branch administration (2026-11-19)
+## Current snapshot — M1 lifecycle completion (2026-11-19)
 
-**Snapshot observed:** 2026-11-19T10:32:30Z (UTC), after PR #5 documentation reconciliation and successful validation run 44506332790.
+**Snapshot observed:** current development branch `phase3/m1-completion`; final head SHA is recorded by GitHub after the last documentation commit. This is a development handover, not a production-readiness assertion.
 
-| Item | Current verified state |
+| Item | Verified state |
 |---|---|
 | Authoritative repository | `aliajeli/enterprise-it-infrastructure-management-platform` — Private |
-| Default branch | `main` at `b7dc102bc7293817d10022176ac7fe5627d015ca` |
-| M0 | **Complete and merged** — PR #3 merged at 2026-11-19T08:56:11Z |
-| M1 identity foundation | **Merged** — PR #4 merged at 2026-11-19T09:26:44Z |
-| M1 user and branch administration | **Implemented; awaiting review** — [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5), Draft, open, not merged |
-| Active development branch | `phase3/m1-user-management` |
-| Branch head | `562451d4383d0ce153f99d103072b4023e585a8e` |
-| PR #5 scope | Admin-only user provisioning/listing, temporary first-login credentials, password-change enforcement, branch creation/listing and per-user branch-grant replacement, role/status changes with session invalidation, self-disable protection, audit events, PostgreSQL lifecycle integration coverage |
-| CI validation | [Run 44506332790](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44506332790) **passed** on code head `949fe73111e642bbd8d590cbed170619b7c95330`; subsequent commits `7dc51ab` and `562451d` changed documentation only. All three jobs passed: Node.js 26 / PostgreSQL 18 platform validation; Windows API runtime smoke including native Argon2id; npm lockfile bootstrap |
-| Current review state | PR #5 is mergeable; GitHub currently reports mergeable state `unstable`. It remains Draft and has not been merged |
-| M1 still outstanding | Owner-confirmed operator/viewer action matrix; full branch lifecycle (edit/archive/restore); password recovery; production backup/restore evidence; Windows service identity/integration |
-| Not implemented | Background worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge, Store Commerce deployment, installer, updater and release automation |
-| Security boundaries | API binds to loopback; production cookie Secure flag must be enabled; TLS Edge must overwrite X-Forwarded-For. Operational permissions remain restricted to the implemented admin-only management routes |
+| Default branch | `main` at `b7dc102bc7293817d10022176ac7fe5627d015ca` at last verified baseline |
+| M0 | Complete and merged — PR #3 |
+| M1 identity foundation | Merged — PR #4 |
+| M1 user/branch administration | Implemented on PR #5 branch; PR #5 remains Draft/open/unmerged |
+| M1 completion work | New branch `phase3/m1-completion`, based on PR #5 work; branch lifecycle and admin password recovery added; follow-up PR not yet opened pending exact-head CI validation |
+| Branch lifecycle | Edit with optimistic version; soft archive; restore; audit events; archive revokes grants and restore does not reinstate them |
+| Password recovery | ADMIN-issued one-time temporary password for active non-admin users; no-store response, forced change, session revocation, auth epoch increment and audit |
+| CI for completion work | Pending final exact-head validation. Earlier source commits triggered CI runs that were cancelled by subsequent pushes; do not treat those cancelled runs as evidence |
+| M1 remaining acceptance gates | Owner-confirmed OPERATOR/VIEWER action matrix; clean target-Windows validation of service identities/ACL/startup/API integration; production PostgreSQL encrypted backup/restore and key-recovery evidence; final code review and green CI |
+| Not implemented | Five Windows services, Background Worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge PoC, Store Commerce deployment, installer, updater and release automation |
+| Security boundaries | All user/branch management routes remain ADMIN-only. OPERATOR/VIEWER operational mutation rights are not enabled. No ADMIN creation/promotion via API |
 | Repository administration | No repository settings, branch protections, permissions, hooks, webhooks or workflow administration settings changed |
-| Desktop Bridge | PoC not executed; remains a separately authorized task |
+| Desktop Bridge | PoC not executed; separate authorization remains required |
 | Release/production | No installer, tag, release or production deployment claimed |
+
+### M1 completion implementation details
+
+- Branch edits require the current version and return conflict on stale writes.
+- Archiving is transactional: mark inactive/deleted, revoke active branch grants, and append audit event.
+- Restore makes the branch active but intentionally leaves old grants revoked; an administrator must reassign access.
+- Password reset is deliberately admin-mediated because no verified email/SMS recovery channel exists. Self-service recovery is not exposed.
+- PostgreSQL integration tests were added for these paths; results must be checked on the final branch head before calling the implementation CI-verified.
+
+### Owner decision still required
+
+The only product-policy decision that cannot safely be inferred from code is the operational distinction between OPERATOR and VIEWER. Until confirmed, both remain read-only for infrastructure resources. The conservative role model is documented in `M1_USER_MANAGEMENT_DESIGN.md`.
 
 ### Next actions
 
-1. Complete PR #5 review, especially authorization boundaries, transaction behavior, audit coverage and branch-grant lifecycle.
-2. Keep PR #5 Draft until review findings and any required corrections are resolved.
-3. Do not expose operational device/network mutation actions until the owner confirms the exact operator/viewer action matrix.
-4. After M1 acceptance, begin M2 device and switch inventory, preserving manual switch-port/VLAN/IP/device metadata.
-5. Keep production backup/restore and Windows service validation as explicit pre-production gates.
+1. Wait for the final branch-head CI run and fix any failures.
+2. Open a follow-up Draft PR targeting `phase3/m1-user-management`; keep PR #5 and the follow-up unmerged until owner review.
+3. Collect Windows service and PostgreSQL backup/restore evidence in the intended environment.
+4. Confirm the OPERATOR/VIEWER action matrix before enabling operational actions.
+5. Only after M1 acceptance, start M2 inventory and switch-port management.
 
 ---
 
