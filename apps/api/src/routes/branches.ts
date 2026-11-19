@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@platform/database";
 import type { ApiConfig } from "../config.js";
-import { requireAdmin } from "../security/authorization.js";
+import { requireAdmin, requirePlatformAction } from "../security/authorization.js";
 
 interface CreateBranchBody {
   branchCode: string;
@@ -56,6 +56,25 @@ export async function registerBranchRoutes(
 
     const branches = await db.branch.findMany({
       orderBy: [{ deletedAt: "asc" }, { branchCode: "asc" }],
+      select: branchSelect,
+    });
+    return reply.send({ branches });
+  });
+
+  // Return only active branches visible to the signed-in inventory user.
+  app.get("/api/v1/branches/accessible", async (request, reply) => {
+    const actor = await requirePlatformAction(db, config, request, reply, "inventory.read");
+    if (!actor) return;
+
+    const branches = await db.branch.findMany({
+      where: {
+        status: "ACTIVE",
+        deletedAt: null,
+        ...(actor.user.role === "ADMIN"
+          ? {}
+          : { accesses: { some: { userId: actor.user.id, revokedAt: null } } }),
+      },
+      orderBy: { branchCode: "asc" },
       select: branchSelect,
     });
     return reply.send({ branches });
