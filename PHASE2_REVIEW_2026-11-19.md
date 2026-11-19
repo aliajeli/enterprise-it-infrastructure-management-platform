@@ -1,0 +1,233 @@
+# Phase 2 review — primary-repository documentation baseline — 2026-11-19
+
+## Review identification and method
+
+- **Review date:** 2026-11-19 (host date, session date and remote timestamps agree for this review; the unreconciled 2026-11-18/19 discrepancy noted in older documents concerns an earlier session only).
+- **Repository:** `aliajeli/enterprise-it-infrastructure-management-platform` — primary, private (authenticated GitHub API metadata: `private: true`, default branch `main`).
+- **Reviewed baseline:** `main` at commit `f60676205bcf9ff7f5608f0e3b3074a76bdb3776`; `origin/main` identical at review start. Full history: 22 commits (root `c509d99`, 20 per-file transfer commits, `b6bd6d8` README landing page, `f606762` transfer status). The initial review clone was shallow (depth 1); it was unshallowed before any history conclusion was drawn.
+- **Working branch:** a session-assigned working branch (name fixed by the review environment; see finding F-15 and question Q-04). `main` was never committed to directly. All changes are submitted through a pull request for owner review; nothing was merged.
+- **Method:** complete reading of all 21 baseline files; Git history and blob inspection; authenticated GitHub API metadata checks (visibility, workflows, releases, tags, commit resolution, branch protection); SHA-256 checksum verification; byte-level reconstruction of the archival damage; relative Markdown link check; limited secret-pattern scan. No repository settings, branch protection, webhooks, workflows, releases or tags were created or modified. No application code, schema, migration, installer or PoC was created or executed.
+- This document cannot embed the hash of the commit that introduces it; read the exact SHAs from Git history after the pull request is published.
+
+## Status taxonomy used in this report
+
+- **Designed** — architecture/decisions documented with reasoning and compared alternatives.
+- **Specified** — concrete contracts/protocols/requirements documented to an implementable level, still pre-implementation.
+- **Implemented** — code exists. **Nothing in this project is implemented.**
+- **Tested** — executed against real or simulated targets with recorded results. **No application, integration, security-control, hardware or workflow test has been executed.** The byte-, hash- and metadata-level checks in §10 are documentation/repository integrity checks, not application tests.
+- **Verified** — independently confirmed evidence about repository or documentation facts (only the checks listed in §10).
+
+No integration, security control, hardware compatibility or workflow is claimed tested or verified anywhere in this report or the changes it accompanies.
+
+---
+
+## 1. Repository and documentation inventory
+
+Baseline at `f606762` — 21 files, all documentation; no source tree, no `.github/`, no configuration, no manifests for tooling, no database artifacts, no binaries. Disposition column refers to this review's changes (§11).
+
+| File | Role | Design status | Disposition |
+|---|---|---|---|
+| `README.md` | Repository entry point and index | Current | Modified (index completed, F-05) |
+| `GUIDELINE.md` | Master instruction document: verbatim archived owner master prompt, requirement index, corrections, chronological history, decision summaries | Authoritative archive | Modified (archival bytes repaired, F-01; archived prompt text itself untouched) |
+| `HANDOVER.md` | Operational snapshot | Was stale (F-03) | Modified (current snapshot section added; historical text retained) |
+| `TRANSFER_STATUS.md` | Transfer record into the primary repository (2026-11-19) | Current, accurate (§3, E-05) | Unchanged |
+| `ARCHITECTURE.md` | Topology, five-service design, module boundaries, alternatives, monitoring/CCTV/integration behavior, proxy boundary | Designed/Specified | Unchanged |
+| `DATABASE_DESIGN.md` | Logical data model, ERDs, invariants, indexes, retention/migration strategy, proxy data | Designed/Specified | Unchanged |
+| `API_DOCUMENTATION.md` | Candidate REST/WSS contract, error model, idempotency, agent protocol boundaries | Designed/Specified | Unchanged |
+| `AGENT_SPECIFICATION.md` | Windows Agent: identity lifecycle, task protocol, deployment state machine, Session Helper | Designed/Specified | Unchanged |
+| `SECURITY_POLICY.md` | Trust boundaries, crypto, RBAC, bridge protocol, Update Proxy threat model, incident response | Designed/Specified | Unchanged |
+| `NETWORK_REQUIREMENTS.md` | Ports/paths check matrix, proxy paths | Designed | Unchanged |
+| `DEPLOYMENT_WORKFLOWS.md` | Agent deployment, package/Store Commerce workflow, installer/update, date-only destination, proxy flow | Designed/Specified | Unchanged |
+| `DESKTOP_BRIDGE_POC.md` | Bounded PoC specification and acceptance criteria | Planned; execution not authorized | Unchanged |
+| `TESTING_STRATEGY.md` | Test gates, PoC matrix, owner-approved three tiers | Designed; nothing executed | Unchanged |
+| `RELEASE_PROCESS.md` | Bootstrap exception, per-commit flow, publication/recovery | Designed; one item PROPOSED | Unchanged |
+| `VERSIONING_POLICY.md` | Version identity/channel rules, allocator design | Designed; one item PROPOSED | Unchanged |
+| `DECISION_LOG.md` | Historical proposals + six owner-approved decisions with details | Authoritative | Unchanged |
+| `CHANGELOG.md` | Change tracking | Was missing transfer/review entries (F-10) | Modified (2026-11-19 entry added) |
+| `DOCUMENTATION_REVIEW_REPORT.md` | Historical pre-transfer review (mirror era) | Historical record | Unchanged (intentionally) |
+| `FINAL_HANDOVER_REPORT.md` | Historical pre-transfer finalization report | Historical record | Unchanged (intentionally; stale statements identified in F-03) |
+| `FINAL_FILE_MANIFEST.md` | Package manifest (sizes + SHA-256) | Was stale (F-02) | Modified (recomputed against current tree) |
+| `SHA256SUMS.txt` | Checksum gate | Was stale (F-02) | Modified (recomputed against current tree) |
+| `PHASE2_REVIEW_2026-11-19.md` | This review report | — | Added |
+
+## 2. Current project status
+
+- **Phase:** Phase 2 — Architecture, Design, Documentation and Technical Validation Planning. Phase 3 is **not authorized and not started**.
+- **Transfer:** the Phase 2 documentation package was transferred into this primary repository on 2026-11-19 and the transfer is recorded in `TRANSFER_STATUS.md` (commit `f606762`). The older `HANDOVER.md`/`FINAL_HANDOVER_REPORT.md` statements that the package "has not been transferred" are pre-transfer history (F-03).
+- **Owner-approved decisions (2026-11-18), authoritative:** (1) five separate Windows services; (2) date-only package destination `C:\Source\Package\<YYYY-MM-DD>\`; (3) one-time installer bootstrap exception; (4) central Update Proxy with server-side GitHub credentials only; (5) Desktop Bridge PoC design-only, separately authorized; (6) three-tier testing. All six are consistently reflected across the documentation set (§4 matrix).
+- **Open proposal:** the one-SHA-one-channel rule remains **PROPOSED — OWNER CONFIRMATION REQUIRED**, consistently marked in `RELEASE_PROCESS.md` (per-commit flow, item 1) and `VERSIONING_POLICY.md` (identity rules), and echoed by `TRANSFER_STATUS.md` and `FINAL_HANDOVER_REPORT.md` (Q-01).
+- **Implementation state:** zero application code, zero migrations, zero workflows, zero releases, zero tags, zero installer artifacts (E-06..E-09). Everything documented is Designed/Specified only.
+- **Integrity state at baseline:** the checksum gate failed for 2 of 19 files (`GUIDELINE.md`, `README.md`) because the manifests were carried over from the source package (F-01, F-02); both are addressed by this review (§11).
+
+## 3. Architecture review findings
+
+Assessment per domain. Severity applies to open items; "no finding" means the documents are internally complete for Phase 2 purposes and correctly labeled.
+
+### 3.1 Windows service topology — consistent, PoC-gated selections remain (Informational)
+`ARCHITECTURE.md` ("Explicit service and process topology", "Owner-approved topology and service lifecycle") fully specifies the five services (Edge, Next, API/WebSocket, Worker, PostgreSQL) with identities/privileges, example ports (explicitly non-binding), loopback-only internals, liveness vs readiness criteria, startup order (PostgreSQL → API/Worker → Next → Edge), bounded restart policy, drain/shutdown ordering, maintenance-mode behavior, logging and ACL requirements. This matches decision 1 and correctly refuses to equate SCM "Running" with readiness. Open by design, pending the Tier 2 Windows PoC: exact TLS edge product and Node service host ("exact TLS edge/service-hosting components TBD"), and the agent TLS topology — edge-terminated mTLS with authenticated identity forwarding vs a separate API-terminated agent listener ("select and test one option before implementation"). No inconsistency found; these are declared open selections (Q-08), not gaps.
+
+### 3.2 Module boundaries — complete (no finding)
+The module-ownership table in `ARCHITECTURE.md` maps all ten modules required by the 2026-11-18 architecture-review correction (Inventory, Monitoring, Agent Management, Deployment, Network, CCTV, Remote Access, Credential Vault, Release/Update, Excel I/O) to components, persistent data and boundaries. Each maps to entities in `DATABASE_DESIGN.md` and routes/events in `API_DOCUMENTATION.md`.
+
+### 3.3 Database design — coherent logical model; owner confirmations flagged in-document (Low)
+`DATABASE_DESIGN.md` provides two ERDs (high-level + expanded), an entity catalog, invariant detail (subtype exclusivity via deferred triggers, partial unique indexes possibly beyond Prisma, lease/idempotency fields, audit immutability), index list, retention/migration strategy, and the proxy/package data additions required by decisions 2 and 4 — with proxy tables correctly placed in the separately hosted proxy's own datastore and an explicit prohibition on cross-database foreign keys. Open items are self-declared and require owner input, not redesign: `warehouse_id` uniqueness; cross-branch VM hosting (default same-branch); network-namespace entity before IP-uniqueness enforcement; retention defaults; alert deduplication policy (Q-09). The document honestly bounds itself as a "complete initial *logical* model … not a reviewed executable schema".
+
+### 3.4 API and WebSocket specification — consistent, appropriately candidate-level (Informational)
+`API_DOCUMENTATION.md` is explicitly "candidate route shapes for design review only". RBAC-on-every-request, opaque session cookies, agent identity separation from human sessions, error model, cursor pagination, `Idempotency-Key` semantics, job lifecycle (including `needs-reconciliation`), bridge capability issuance, update endpoints and the WSS event set are all consistent with `SECURITY_POLICY.md`, `AGENT_SPECIFICATION.md` and `ARCHITECTURE.md`. Concrete rate-limit values, session lifetimes and schema-version/deprecation windows are unspecified — acceptable at Phase 2 depth, listed in §6.
+
+### 3.5 Agent architecture and communication protocol — consistent across four documents (no finding)
+`AGENT_SPECIFICATION.md` (identity lifecycle: bootstrap trust → enroll → operate → rotate → revoke → reinstall/recovery; deployment state machine `created → preflight → staged → service_install_or_upgrade → enrollment → verification → succeeded|failed|cancelled|needs_reconciliation`; error taxonomy), `SECURITY_POLICY.md` (enrollment and task authorization), `ARCHITECTURE.md` (agent management boundary) and `NETWORK_REQUIREMENTS.md` (SMB 445 + RPC 135/dynamic, no WinRM, no trust, GIG/OKCS credential split) agree on every checked point: allowlisted typed tasks only, no arbitrary shell/PowerShell, single-use enrollment tickets, per-device key proof, nonce/expiry/idempotency, Session 0 constraint with the interactive Session Helper and honest delivery reporting. The documents correctly flag the stolen-ticket impersonation limit and that binary-vs-package hash definitions must be pinned at implementation.
+
+### 3.6 Update Proxy — coherent threat model; deployment parameters open (Medium, decision-gated)
+The proxy design is consistent across `SECURITY_POLICY.md` (threat model), `ARCHITECTURE.md` (boundary), `DEPLOYMENT_WORKFLOWS.md` (flow), `API_DOCUMENTATION.md` (proxy API), `NETWORK_REQUIREMENTS.md` (paths) and `DATABASE_DESIGN.md` (proxy datastore): server-side GitHub App identity only, no client-shipped GitHub secrets, per-request authorization of installation/channel/asset, allowlisted repository and fixed upstream hosts, redirect-hop validation, fail-closed cache policy with revocation, anti-downgrade and channel rules, audit without tokens, and an explicit refusal to treat SHA-256 as publisher authenticity. Open (owner/operator questions, declared in-document): proxy hosting platform, operator, endpoint/DNS/certificate provisioning, installation-identity bootstrap and the signing roadmap (Q-08). No architectural contradiction found; the decision (`proxy`) is not weakened anywhere.
+
+### 3.7 Desktop Bridge — decision honored; PoC well-bounded (no finding)
+`DESKTOP_BRIDGE_POC.md` matches decision 5 exactly: design and planning only, execution requires separate authorization, disposable snapshotted VMs, native-messaging-first candidate vs loopback comparison, no production bridge, no generic process launcher, adversarial acceptance criteria (cross-origin, DNS rebinding, replay across restart, argument injection, path substitution, credential-leak inspection), and an explicit statement that a successful PoC is not production approval. `SECURITY_POLICY.md`'s concrete protocol and `ARCHITECTURE.md`'s transport comparison agree.
+
+### 3.8 Deployment and Store Commerce workflow — consistent with decision 2 (no finding)
+`DEPLOYMENT_WORKFLOWS.md` enforces the canonical date-only destination, records the exact path per target, prohibits nested package-name directories, defines same-day filename-collision handling (fail and ask; per-target/date locking; identical-content reuse only under explicit policy), gates force-close behind recorded explicit approval, specifies the 15-step per-target sequence with honest notification-delivery reporting, and supersedes the archived master prompt's conflicting lookup wording explicitly ("Conflicting earlier lookup wording is superseded by the owner decision"). The archived prompt text in `GUIDELINE.md` was correctly left untouched. One specification gap: the exact supported source for post-update Store Commerce version verification is unnamed (§6 M-09).
+
+### 3.9 Monitoring and CCTV — consistent semantics (no finding)
+ICMP-router-reachability-only semantics, online/offline/unknown classification, configurable interval/timeout/retries/retention/concurrency, history only for branches, NVR-sourced camera status, complete-successful-snapshot-only reconciliation, no subnet scanning, XML external-entity disabling and firmware-specific compatibility caveats are consistent between `ARCHITECTURE.md`, `DATABASE_DESIGN.md` and the archived requirement text. DS-7732NI-K4 / DS-7732NXI-K4 compatibility remains unverified (correctly labeled; Tier 3).
+
+### 3.10 Release/versioning architecture — consistent; feasibility honestly unresolved (Medium, decision-gated)
+`RELEASE_PROCESS.md` and `VERSIONING_POLICY.md` implement decision 3 (bootstrap exception, no fake installers, transition at first independently Windows-tested installable release) identically, and both carry the one-SHA-one-channel PROPOSED marker (Q-01). The allocator design (durable ledger, atomic reservation, burned-on-failure versions, compare-and-create tags, no version commits, no recursive triggers) is coherent, and the documents state plainly that GitHub refs are "not yet demonstrated" to provide the required atomicity — an unresolved feasibility question for the Phase 3 PoC matrix, not a documentation defect. Gap: no mechanism currently assigns versions to bootstrap-period documentation commits (F-07, Q-06).
+
+### 3.11 Network requirements — consistent (no finding)
+`NETWORK_REQUIREMENTS.md` agrees with all consumers: edge 443 example as the only exposed application listener, loopback internals, ICMP/NVR ISAPI/SMB+RPC/SSH paths, proxy egress allowlisting, and a per-path evidence matrix. Everything is labeled proposed/unvalidated; the RPC dynamic-port range and TeamViewer LAN specifics remain site-validation items (declared).
+
+## 4. Cross-document consistency findings
+
+### 4.1 Owner-decision conformance matrix
+
+| Decision | Conforming evidence (file → section) | Deviations found |
+|---|---|---|
+| 1 — Five separate services | DECISION_LOG → approved #1 + details §1; ARCHITECTURE → topology + lifecycle tables; DEPLOYMENT_WORKFLOWS → installer/update (five-service drain); TESTING_STRATEGY → Tier 2 ("all five service startups") | None |
+| 2 — Date-only package path | DECISION_LOG → #2 + details §2; DEPLOYMENT_WORKFLOWS → canonical destination + collision handling + 15-step sequence; DATABASE_DESIGN → JobTarget/Package/PackageFile additions; API_DOCUMENTATION → `/packages` note; GUIDELINE archived prompt keeps superseded wording, explicitly superseded | None |
+| 3 — Bootstrap exception | DECISION_LOG → #3; RELEASE_PROCESS → §One-time bootstrap exception; VERSIONING_POLICY → §Scope and exception; TESTING_STRATEGY → Tier 1 bootstrap clause | None (mechanism gap tracked as F-07/Q-06, not a contradiction) |
+| 4 — Central Update Proxy | DECISION_LOG → #4; ARCHITECTURE → §Update Proxy boundary; SECURITY_POLICY → §threat model; DEPLOYMENT_WORKFLOWS → §proxy flow; NETWORK_REQUIREMENTS → §proxy paths; DATABASE_DESIGN → §proxy data; API_DOCUMENTATION → §Proxy API | None |
+| 5 — Bridge PoC (design only) | DECISION_LOG → #5; DESKTOP_BRIDGE_POC → status banner; SECURITY_POLICY → §bridge protocol; ARCHITECTURE → choice-validation row; TESTING_STRATEGY → Tier 2 ("separately authorized") | None; no PoC executed |
+| 6 — Tiered testing | DECISION_LOG → #6; TESTING_STRATEGY → §Owner-approved three tiers; RELEASE_PROCESS → step 3; HANDOVER → §C | None |
+
+### 4.2 Documented defects and inconsistencies (with severity)
+
+- **F-01 — High — repaired in this review.** Archival byte loss: the transfer normalized the archived master prompt region of `GUIDELINE.md` from CRLF to LF (1536 CR bytes lost). Evidence: file added in commit `4a4f2e2` as blob `19d0d46e6fde22290ecc4cfe91ba71848ebce393`, 53698 bytes, zero CR bytes; `SHA256SUMS.txt` baseline check FAILED for this file; manifest lists 55234 bytes / `2a14f841…`; the file's own archival claim ("exact byte-for-byte copy … including its original line endings") and the recorded source SHA-256 (`38634f57…`) were both falsified in the primary-repository copy. Repair: byte-exact reconstruction (LF→CRLF of the embedded region only) simultaneously reproduces the recorded source-file SHA-256 **and** the manifest full-file SHA-256 (E-03, E-04); restored as blob `5cf1fe00f420226716fab36a6f26828d005fb547` in the first commit of this pull request; read exact commit SHAs from Git history after publication (a document cannot embed the volatile hashes of its own pull request). No prompt content changed. Residual risk: nothing yet prevents re-normalization in future operations (Q-02). Note: the CRLF bytes never existed anywhere in the primary repository's history — the normalization happened during the transfer itself, exactly the risk `FINAL_HANDOVER_REPORT.md` warned about.
+- **F-02 — High — repaired in this review.** Stale integrity gate: `SHA256SUMS.txt`/`FINAL_FILE_MANIFEST.md` were carried over verbatim from the source package: the `README.md` entry (4456 B / `8f08e806…`) described the pre-transfer README, not the landing-page README (1204 B at baseline); `TRANSFER_STATUS.md` was absent from both; the manifest's "Total: 20 files" contradicted the 21-file tree. `TRANSFER_STATUS.md` itself directed: "Recompute and validate checksums before using them as an integrity gate." Both files were recomputed against the post-repair tree after all review edits; pre-repair values remain in commit `f606762` (E-10).
+- **F-03 — High — repaired in this review (HANDOVER.md); historical files intentionally untouched.** `HANDOVER.md` contradicted the actual repository state: it presented the package as an untransferred local `FINAL_UPLOAD` draft and instructed "Do not publish, merge, transfer to the main repository", while `TRANSFER_STATUS.md` (committed later in `f606762`) records a completed, verified transfer — and the primary repository plainly contains the package. `GUIDELINE.md` §23 requires HANDOVER.md to be the *current* operational snapshot. Fix: a dated current-snapshot section was added on top; the pre-transfer paragraph is retained verbatim, labeled historical. `FINAL_HANDOVER_REPORT.md` and `DOCUMENTATION_REVIEW_REPORT.md` contain the same era-bound statements ("not ready for transfer to the primary repository", mirror-centric paths) but are point-in-time reports; they were deliberately **not** edited, and their historical status is recorded here and in the README index.
+- **F-04 — Medium — resolved by evidence, no file change.** `TRANSFER_STATUS.md`'s "Latest README update commit: `b6bd6d8…`" initially appeared to reference a nonexistent commit because the review clone was shallow (depth 1). After `git fetch --unshallow` and GitHub API resolution: the full history is 22 commits; `b6bd6d8` is the direct parent of `f606762`, is exactly the commit that rewrote `README.md`, and `f606762` adds only `TRANSFER_STATUS.md` (E-05). The reference is accurate. Lesson recorded for future reviewers: unshallow before drawing history conclusions.
+- **F-05 — Low — repaired.** `README.md`'s index omitted six root files (`CHANGELOG.md`, `DESKTOP_BRIDGE_POC.md`, `DOCUMENTATION_REVIEW_REPORT.md`, `FINAL_HANDOVER_REPORT.md`, `FINAL_FILE_MANIFEST.md`, `SHA256SUMS.txt`). Index completed and grouped; all previous entries and the status wording preserved.
+- **F-06 — Medium — owner decision required, no change made.** Layout divergence: `GUIDELINE.md` §23 mandates `docs/GUIDELINE.md`, `docs/ARCHITECTURE.md`, etc. The primary repository uses a root-level layout. The "Public documentation mirror note" in `GUIDELINE.md` explains root-level placement for the *temporary mirror* only; it does not settle the primary repository's permanent layout. Restructuring now would churn every link and both integrity files without an owner decision (Q-05).
+- **F-07 — Medium — owner decision required.** Versioning mechanism gap: `GUIDELINE.md` §20 requires a unique application version for every pushed commit on every branch, and `DECISION_LOG.md` decision 3 says bootstrap commits "receive unique immutable versions" — but no version metadata file, allocator or pipeline exists, and the 22 baseline commits carry no application version. Building release automation is out of Phase 2 scope, so the gap cannot be closed by action now; the owner must decide the bootstrap-period policy (e.g., retroactive assignment once the first pipeline exists, or explicit exemption of pre-implementation documentation commits) (Q-06).
+- **F-08 — Medium — correctly flagged, awaiting owner.** One-SHA-one-channel remains PROPOSED — OWNER CONFIRMATION REQUIRED, with identical markers in `RELEASE_PROCESS.md` and `VERSIONING_POLICY.md`. Consistent everywhere; blocks finalization of the release design only (Q-01).
+- **F-09 — Medium — carried forward, owner decision required.** Public-mirror disposition: `DOCUMENTATION_REVIEW_REPORT.md` records that the temporary mirror `aliajeli/testing` is intentionally public and contains internal domain identifiers, topology, firewall/SMB/SCM assumptions, device models and deployment procedures — including inside a historical ZIP whose Git history cannot be fixed by editing files. The primary repository is verified private, but the mirror exposure is unchanged by the transfer. No material was altered or removed in this review; the owner must decide (keep, restrict, sanitize a derivative, or take down) (Q-03).
+- **F-10 — Low — repaired.** `CHANGELOG.md` had no entry for the 2026-11-19 transfer milestone (latest entry was dated 2026-11-18); a dated entry for this review now records the transfer context, the repair and the recomputation. The transfer itself remains documented in `TRANSFER_STATUS.md` and Git history.
+- **F-11 — Low — addressed by approach.** `HANDOVER.md` does not use the 25-section structure mandated by `GUIDELINE.md` §23. The new snapshot section covers every applicable item with verified values, `Not verified`, or `Not applicable` (per the guideline's honesty rule), without rewriting the historical sections. Owner may reject this approach (Q-10, last bullet).
+- **F-12 — Informational.** Terminology drift for the interactive notification component: "Session Helper" (`AGENT_SPECIFICATION.md` §Interactive Session Helper, `HANDOVER.md` §E), "user-session notifier" (`ARCHITECTURE.md` topology diagram), "per-user/session helper" (`AGENT_SPECIFICATION.md`). Same concept, three names. Recommend fixing one canonical term when Phase 3 documentation work begins; no design change implied. Not edited now to avoid churn in stable design documents.
+- **F-13 — Informational.** Repository metadata verified consistent with Phase 2: private; zero workflows; zero releases; zero tags; branch protection **Not verified** (HTTP 403 with the current token). GitHub API reports `size: 0` KB despite 21 files — metadata lag/rounding; content presence was verified directly via `ls-remote`, full clone and API commit retrieval.
+- **F-14 — Informational.** `GUIDELINE.md` §19 requires exactly two permanent branches (`main`, `beta`). Only `main` exists (verified via `ls-remote`). Creating `beta` is a repository-administration action appropriate when development starts; it was not performed here (Q-07).
+- **F-15 — Informational.** The working branch name for this review was assigned by the review environment and cannot be renamed within the session; `GUIDELINE.md` §19 forbids references to automated assistants in branch names. The name exists only on the working branch; squash-merging the pull request keeps it out of `main`'s first-parent history (owner choice, Q-04). No commit message, document or changelog entry references any tooling.
+
+### 4.3 Consistency checks that passed (no findings)
+
+- Date coherence: decisions dated 2026-11-18; transfer and this review 2026-11-19; no document claims an impossible sequence.
+- The archived master prompt's superseded provisions (nested package path in §13, `docs/` layout in §23, per-commit release duties in §20–21 during bootstrap) are each handled by an explicit supersession/exception statement rather than silent contradiction.
+- Credential mapping (GIG for clients, OKCS for checkouts), no-trust and no-WinRM constraints are stated identically in `GUIDELINE.md`, `AGENT_SPECIFICATION.md`, `DEPLOYMENT_WORKFLOWS.md` and `NETWORK_REQUIREMENTS.md`.
+- Crypto choices (Argon2id, AES-256-GCM per-record nonce + AAD, DPAPI-wrapped envelope key with portability warning) match between `GUIDELINE.md` §16, `SECURITY_POLICY.md` and `DATABASE_DESIGN.md`.
+- Playwright resolution list in `TESTING_STRATEGY.md` matches `GUIDELINE.md` §17 screen sizes exactly.
+- "SHA-256 is integrity, not authenticity" appears consistently in `GUIDELINE.md`, `ARCHITECTURE.md`, `SECURITY_POLICY.md`, `RELEASE_PROCESS.md`, `DEPLOYMENT_WORKFLOWS.md` and `API_DOCUMENTATION.md`.
+- 53 relative Markdown links at baseline all resolve; post-edit link check also clean (E-11).
+
+## 5. Security and operational risks
+
+- **S-1 (Medium, owner decision):** public mirror exposure — see F-09/Q-03. This is the only active external exposure; the primary repository is private.
+- **S-2 (Medium → mitigated, residual):** archival re-normalization risk. F-01 is repaired, but without an owner-selected byte-preservation mechanism (`.gitattributes` policy or a procedural transfer check), a future tool-based transfer or editor normalization could silently repeat the damage. The reconstruction method in E-03 makes recovery possible again, but prevention needs Q-02.
+- **S-3 (Low):** branch protection state of `main` is Not verified (403); `RELEASE_PROCESS.md` step 1 assumes protected `main`/`beta`. Owner should confirm protections (Q-07). No settings were touched in this review.
+- **S-4 (Medium, carried forward as Phase 3 gate):** DPAPI envelope-key portability: encrypted recovery export, separately held recovery key and a restore **drill** are declared mandatory before production (`SECURITY_POLICY.md` §service identities/keys; `DECISION_LOG.md` proposal 6). Untested — remains a hard pre-production gate.
+- **S-5 (Informational):** `SECURITY_POLICY.md` retains the historical incident note ("Treat the previous token as compromised; owner reports it revoked"). The note is retained as history; the owner may confirm the revocation remains effective. No credential material exists in the tree: the limited pattern scan (E-12) found zero token/private-key/connection-string/quoted-secret/IPv4 matches. This is **not** a comprehensive secret audit; dedicated scanners were unavailable, consistent with prior reports.
+- **S-6 (Informational):** the private repository intentionally retains internal operational context (domains, device models, deployment procedures) per `TRANSFER_STATUS.md`'s security note; maintain private visibility and review collaborator access.
+- **S-7 (Low, operational):** all five-service, proxy, agent and installer behaviors remain Designed/Specified. Every operational claim (restart behavior, fail-closed cache, force-close safety, rollback) is untested; the documents already forbid presenting them as validated. The risk is process discipline in Phase 3, not a current defect.
+
+## 6. Missing specifications
+
+Each item is either explicitly flagged in-source (→ marker) or genuinely absent at Phase 2 depth. None were invented or silently filled by this review.
+
+- **M-01** RBAC permission matrix (admin/operator/viewer exact rights per endpoint/operation) — → `SECURITY_POLICY.md`: "Exact permission matrix requires approval" (Q-10).
+- **M-02** Agent transport identity selection: edge-terminated mTLS with authenticated identity forwarding vs API-terminated agent listener — → `ARCHITECTURE.md`: "select and test one option before implementation" (Q-08).
+- **M-03** TLS edge product and Node service-host selection — → `ARCHITECTURE.md`: "exact host and edge product remain unselected pending proof of concept" (Q-08).
+- **M-04** Installer technology finalization (WiX Burn/MSI candidate vs Inno Setup vs MSIX) — → `DECISION_LOG.md` proposal 4 / `ARCHITECTURE.md` choice table (Q-08).
+- **M-05** Edge certificate provisioning/renewal/revocation procedure for the operator-installed certificate — → `ARCHITECTURE.md`: "Bootstrap, renewal, revocation and no-trust behavior need target testing".
+- **M-06** Version-allocator durable store selection (GitHub refs demonstrated insufficient until proven otherwise) — → `VERSIONING_POLICY.md` (Q-08).
+- **M-07** Update Proxy host/platform/operator, endpoint DNS/certificate, installation-identity bootstrap and renewal — → `ARCHITECTURE.md` ("technical deployment questions"), `SECURITY_POLICY.md` ("need owner/operator and TLS provisioning design") (Q-08).
+- **M-08** Data-model confirmations: `warehouse_id` uniqueness; cross-branch VM hosting policy; network-namespace entity and IP-uniqueness scope; retention defaults (probe/audit/operational); alert deduplication-key policy — → `DATABASE_DESIGN.md` (Q-09).
+- **M-09** Store Commerce post-update version verification: the exact "validated supported source" is unnamed (registry key, product file version, installer output?) — → `DEPLOYMENT_WORKFLOWS.md` steps 13–14; a Tier 3 discovery item.
+- **M-10** Agent heartbeat interval and offline/unknown staleness thresholds — → `AGENT_SPECIFICATION.md` requires them "defined" but no defaults are proposed.
+- **M-11** Concrete security parameters: Argon2id parameter set ("measured parameters"), session lifetimes/rotation triggers, rate-limit values — → `SECURITY_POLICY.md`, `API_DOCUMENTATION.md`.
+- **M-12** MSI numeric-version ↔ SemVer mapping and agent internal-version mapping — → `VERSIONING_POLICY.md`: "require validation".
+- **M-13** Repository documentation layout (`docs/` vs root) for the primary repository — F-06 (Q-05).
+- **M-14** Bootstrap-period version assignment for documentation commits — F-07 (Q-06).
+- **M-15** Supported-browser matrix for the managed-extension bridge deployment — → `DESKTOP_BRIDGE_POC.md` scope ("representative supported browser … versions"); to be pinned by the PoC.
+
+## 7. Recommended documentation changes
+
+**Applied in this pull request (safe, no owner decision required):**
+- R-01: `GUIDELINE.md` archival byte repair (F-01) — content-preserving, hash-proven.
+- R-02: `README.md` index completion (F-05).
+- R-03: `HANDOVER.md` current-snapshot section + historical labeling (F-03, F-11).
+- R-04: `CHANGELOG.md` 2026-11-19 entry (F-10).
+- R-05: `FINAL_FILE_MANIFEST.md` + `SHA256SUMS.txt` recomputation per `TRANSFER_STATUS.md`'s explicit direction (F-02).
+- R-06: this review report.
+
+**Deferred, requiring owner decision first:** layout restructuring (Q-05), mirror disposition (Q-03), resolution of the PROPOSED marker text (Q-01), `.gitattributes`/preservation mechanism (Q-02), canonical Session Helper terminology (F-12), bootstrap version policy (Q-06).
+
+**Explicitly not done (and why):** `TRANSFER_STATUS.md`, `FINAL_HANDOVER_REPORT.md` and `DOCUMENTATION_REVIEW_REPORT.md` are point-in-time records and were left byte-identical; the archived master prompt is never rewritten; design documents (`ARCHITECTURE.md`, `SECURITY_POLICY.md`, etc.) were not restructured because they are internally consistent and stable — churn would invalidate the historical review evidence for no gain; no workflows, settings, releases, tags or branches other than the working branch were created or modified.
+
+## 8. Questions requiring owner decisions
+
+- **Q-01 (High priority):** Confirm or reject the **one-SHA-one-channel** rule currently marked PROPOSED in `RELEASE_PROCESS.md` and `VERSIONING_POLICY.md` (cross-channel SHA reuse as policy violation; promotion requires a distinct new commit; fast-forward channel change fails policy).
+- **Q-02 (High priority):** Select the archival **byte-preservation mechanism** for `GUIDELINE.md` (e.g., a `.gitattributes` entry disabling normalization for that path, plus a checksum gate in future transfers, or a documented manual verification step). The repair restored the bytes; nothing yet prevents re-normalization.
+- **Q-03 (Medium):** Disposition of the **public mirror** `aliajeli/testing`: keep as-is, restrict access, publish a sanitized derivative, or take down — noting its Git history retains the internal operational details catalogued in `DOCUMENTATION_REVIEW_REPORT.md`.
+- **Q-04 (Medium):** Merge mode for this pull request: **squash** keeps the session-assigned working-branch name out of `main`'s first-parent history (see F-15); a merge commit preserves per-commit granularity (repair commit separate from status-refresh commit). Owner may also simply accept or reject the branch-name deviation.
+- **Q-05 (Medium):** Permanent documentation layout for the primary repository: keep root-level, or move to `docs/` per `GUIDELINE.md` §23 when application scaffolding begins (the guideline's mirror note covers the mirror only).
+- **Q-06 (Medium):** **Bootstrap-period version policy** for documentation-only commits (F-07): retroactively assign versions when the first pipeline exists, or record an explicit owner exemption for pre-implementation documentation history.
+- **Q-07 (Low):** Confirm **branch protection** for `main` (state Not verified — 403) and the timing for creating the permanent `beta` branch (F-13, F-14).
+- **Q-08 (Phase 3 entry gate):** Confirm that the following remain PoC/validation-gated selections, and authorize the corresponding PoCs when Phase 3 planning begins: TLS edge product; Node service host; agent TLS topology (M-02); installer technology (M-04); allocator store (M-06); Update Proxy host/operator/provisioning (M-07); certificate procedures (M-05). The separately authorized Desktop Bridge PoC keeps its own approval gate.
+- **Q-09 (Phase 3 entry gate):** Data-model confirmations listed in M-08 (warehouse uniqueness, cross-branch VMs, IP namespace, retention defaults, alert deduplication).
+- **Q-10 (Phase 3 entry gate):** Approve the RBAC permission matrix (M-01) once drafted; and accept or reject this review's HANDOVER snapshot-section approach versus a full 25-section restructure (F-11).
+
+## 9. Prioritized remediation plan
+
+- **P0 — completed in this pull request:** F-01 archival repair; F-02 checksum/manifest recomputation; F-03 handover snapshot; F-05 README index; F-10 changelog; review report (R-01..R-06). Validation: E-01..E-13.
+- **P1 — owner decisions, no code (recommended before any further documentation milestones):** Q-01, Q-02, Q-03, Q-04 (at merge time), Q-05, Q-06, Q-07.
+- **P2 — Phase 2 closeout specification work (documentation-only, after P1):** draft RBAC matrix (M-01); draft certificate provisioning procedure (M-05); define Store Commerce version-verification discovery plan (M-09); propose heartbeat/threshold defaults (M-10); propose concrete security parameter starting points (M-11); pin Session Helper terminology (F-12). Each remains a proposal until owner-approved.
+- **P3 — Phase 3 entry gates (separately authorized):** execute the `TESTING_STRATEGY.md` PoC matrix — five-service Windows PoC, agent bootstrap/enrollment PoC, PostgreSQL lifecycle PoC, allocator behavior on the private repository, bridge PoC (own approval gate, Q-08); resolve M-02/M-03/M-04/M-06/M-07 from PoC evidence; Tier 2/3 provisioning.
+- **P4 — standing documentation discipline:** update HANDOVER snapshot + CHANGELOG at every milestone; recompute checksums whenever integrity files are used as a gate; keep decision supersessions explicit; never mark untested behavior as verified.
+
+## 10. Verification evidence
+
+All results observed on 2026-11-19 in the review workspace and via the authenticated GitHub API.
+
+- **E-01 Baseline state:** `git status` clean on the session branch at `f60676205bcf9ff7f5608f0e3b3074a76bdb3776`; `git ls-remote origin` → `HEAD` and `refs/heads/main` both at `f606762`; no other remote branches. Tree: 21 files, all Markdown/text; no `.github/`, no code, no `*.yml`.
+- **E-02 Baseline checksum gate:** `sha256sum -c SHA256SUMS.txt` → 17 OK, **2 FAILED** (`GUIDELINE.md`, `README.md`).
+- **E-03 Archival reconstruction proof:** `GUIDELINE.md` at baseline: 53698 bytes, **0 CR bytes**, blob `19d0d46e6fde22290ecc4cfe91ba71848ebce393` (added in `4a4f2e2`; never modified since — CRLF never existed in this repository's history). Converting the embedded master-prompt region LF→CRLF and stripping the wrapper's trailing newline yields exactly 39181 bytes with SHA-256 `38634f573b0391402a1b58ad927d133fa0ad2ca6551c8ea66180daddd3e24b16` — the owner-supplied source-file hash recorded inside `GUIDELINE.md`. Splicing that reconstruction back into the file yields exactly 55234 bytes with SHA-256 `2a14f8415a53a0c28c572d371938149e5559cfee6d07bf33be578f52597db657` — the manifest value. Both hashes matched simultaneously; the repair is byte-proven, not approximate.
+- **E-04 Post-repair verification:** repaired file written; size 55234; SHA-256 `2a14f841…`; CR count 1536; LF count 1633; embedded prompt region re-extracted → `38634f57…`; `sha256sum -c` → only `README.md` FAILED (expected pre-recomputation); committed blob `5cf1fe00f420226716fab36a6f26828d005fb547` (first commit of this pull request); `git cat-file -p HEAD~1:GUIDELINE.md` re-verified identical (git stored the bytes unchanged; no `.gitattributes`, `core.autocrlf` unset).
+- **E-05 History resolution:** after `git fetch --unshallow` (shallow: false), full log = 22 commits: root `c509d99` (README only) → 20 per-file "docs: add Phase 2 project documentation" commits (2026-11-19T06:37:26Z–06:38:36Z) → `b6bd6d8` "docs: update README for private Phase 2 documentation baseline" (06:38:54Z) → `f606762` (07:09:03Z). `git diff --stat b6bd6d8 f606762` → only `TRANSFER_STATUS.md` added (39 insertions). GitHub API commit retrieval for `b6bd6d8` confirms its patch creates the current README content. `TRANSFER_STATUS.md`'s commit reference is accurate (F-04).
+- **E-06 Repository metadata (GitHub API):** `private: true`, `default_branch: main`, `created_at: 2026-11-18T13:56:47Z`, `pushed_at: 2026-11-19T06:39:03Z` (pre-review), `size: 0` (metadata lag; see F-13).
+- **E-07 Workflows:** `GET /actions/workflows` → `total_count: 0`. None created or modified.
+- **E-08 Releases:** `GET /releases` → `[]`. **E-09 Tags:** `GET /tags` → `[]`.
+- **E-10 Post-edit integrity gate:** after all edits and recomputation, `sha256sum -c SHA256SUMS.txt` → **all listed files OK** (21 entries; the sums file excludes itself, per the established convention). `FINAL_FILE_MANIFEST.md` regenerated from actual file bytes/sizes.
+- **E-11 Link check:** baseline 53 relative Markdown link occurrences → 0 missing targets; re-run after all edits (including new links in `README.md`, `HANDOVER.md`, `CHANGELOG.md` and this report) → 0 missing targets.
+- **E-12 Limited secret-pattern scan (not a comprehensive audit):** across all `*.md`/`*.txt`: GitHub/AWS/Slack token and private-key markers → 0 matches; connection strings with embedded credentials → 0; quoted secret assignments → 0; IPv4-like literals → 0. Dedicated scanners (`gitleaks`, `trufflehog`, `detect-secrets`) unavailable; absence of pattern matches is not proof that no sensitive information exists.
+- **E-13 Hygiene:** `git diff --check` clean; commit messages use Conventional Commits `docs:` scope and contain no tooling references, per `GUIDELINE.md` §19–20.
+- **E-14 Branch protection:** `GET /branches/main/protection` → HTTP 403 "Resource not accessible by integration" → protection state **Not verified** (S-3/Q-07). No settings were modified.
+
+## 11. Changes applied in this review
+
+First commit of this pull request: `GUIDELINE.md` archival byte repair (F-01/R-01) — line-ending bytes only; verified blob `5cf1fe00f420226716fab36a6f26828d005fb547`.
+
+Second commit of this pull request (own hash not embeddable here): `README.md` (R-02), `HANDOVER.md` (R-03), `CHANGELOG.md` (R-04), `PHASE2_REVIEW_2026-11-19.md` (R-06, new), `FINAL_FILE_MANIFEST.md` and `SHA256SUMS.txt` (R-05, recomputed last so they cover every other edit). Exact commit SHAs are readable from Git history after publication.
+
+No other file was touched. In particular, `TRANSFER_STATUS.md`, `FINAL_HANDOVER_REPORT.md`, `DOCUMENTATION_REVIEW_REPORT.md`, `ARCHITECTURE.md`, `DATABASE_DESIGN.md`, `API_DOCUMENTATION.md`, `AGENT_SPECIFICATION.md`, `SECURITY_POLICY.md`, `NETWORK_REQUIREMENTS.md`, `DEPLOYMENT_WORKFLOWS.md`, `DESKTOP_BRIDGE_POC.md`, `TESTING_STRATEGY.md`, `RELEASE_PROCESS.md`, `VERSIONING_POLICY.md` and `DECISION_LOG.md` are byte-identical to the reviewed baseline.
+
+## 12. Phase boundary confirmation
+
+This review performed **documentation work only**. Explicitly confirmed as **not started / not performed**: application implementation of any kind; application source-code creation or modification; database schemas or migrations; production services; Windows installers; production release automation or any GitHub Actions workflow creation/modification; repository settings, branch protection or webhook changes; release or tag publication; Desktop Bridge PoC execution; any Tier 2/Tier 3 test execution; any merge. Phase 3 implementation has **not** started and remains unauthorized. All six owner-approved decisions are preserved unchanged; the one-SHA-one-channel rule remains PROPOSED pending owner confirmation. The pull request accompanying this report is submitted for owner review and will not be merged by this review.
