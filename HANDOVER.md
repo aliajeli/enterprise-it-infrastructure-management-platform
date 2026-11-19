@@ -381,3 +381,8 @@ An earlier application-repository inspection reported an empty clone before the 
 - Updated the cross-installation integration test for the helper's generic nonzero-exit failure.
 - Normalized root package/lock JSON file endings and bumped root version metadata to `0.1.5`.
 - Fresh Windows helper build/runtime and Linux validation are required. No production keyring or recovery is enabled.
+
+
+## 2026-11-19 — DPAPI helper test path portability
+- Adjusted the non-native helper path fixture to use the current host's absolute path. This allows the Node.js constructor/fail-closed tests to run on Linux while retaining the Windows native helper integration test.
+- Bumped root version and lockfile metadata to `0.1.6`. Fresh CI required.

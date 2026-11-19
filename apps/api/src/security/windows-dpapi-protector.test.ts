@@ -12,13 +12,13 @@ const canRunWindowsHelper = process.platform === "win32" && existsSync(helperPat
 describe("Windows DPAPI helper boundary", () => {
   it("rejects non-Windows execution and invalid key lengths", async () => {
     const protector = new WindowsDpapiProtector(
-      "C:\\CredentialVault.DpapiHelper.exe",
+      resolve(process.cwd(), "fake-dpapi-helper.exe"),
       "a2c4b6d8-1234-4abc-8def-1234567890ab",
       "linux",
     );
     await expect(protector.protect(Buffer.alloc(32))).rejects.toThrow("only on Windows");
     const windows = new WindowsDpapiProtector(
-      "C:\\CredentialVault.DpapiHelper.exe",
+      resolve(process.cwd(), "fake-dpapi-helper.exe"),
       "a2c4b6d8-1234-4abc-8def-1234567890ab",
       "win32",
     );

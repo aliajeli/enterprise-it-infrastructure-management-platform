@@ -1,3 +1,8 @@
+## Unreleased — DPAPI test path portability (2026-11-19)
+
+- Fixed the helper-path fixture in the platform-independent Node.js test to use a host-native absolute path, so the constructor test can execute on both Linux and Windows.
+- Bumped root package version to `0.1.6` and synchronized lockfile metadata.
+
 ## Unreleased — DPAPI helper memory and allocator correction (2026-11-19)
 
 - Corrected native allocation cleanup in the DPAPI helper: unmanaged input/entropy buffers use `FreeHGlobal`, while DPAPI-owned output uses `LocalFree` after zeroization.
