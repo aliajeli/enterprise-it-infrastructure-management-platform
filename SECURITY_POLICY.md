@@ -101,3 +101,6 @@ The binding storage contract is documented in `WINDOWS_KEYRING_STORAGE_DESIGN.md
 
 ## DPAPI service identity enforcement — 2026-11-20
 The DPAPI helper now requires exactly one unique dedicated Windows service SID (`S-1-5-80-...`) from the current token's user/groups and binds DPAPI optional entropy to that service SID plus the installation ID. Ordinary interactive users, LocalSystem without the dedicated service SID, and ambiguous service-token identities are rejected. The helper accepts one bounded binary request and rejects trailing input. Windows CI verifies rejection on an unprovisioned runner; this is not yet a positive protect/unprotect test under the provisioned service identity.
+
+
+The Windows DPAPI test suite now distinguishes negative hosted-runner coverage from positive service-account integration. The normal CI runner must be rejected because it has no provisioned dedicated service SID. The positive protect/unprotect round-trip is gated behind `RUN_PROVISIONED_DPAPI_INTEGRATION=1`; do not set this flag on an ordinary interactive or LocalSystem runner.

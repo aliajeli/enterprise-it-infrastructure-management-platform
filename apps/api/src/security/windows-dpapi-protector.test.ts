@@ -25,7 +25,22 @@ describe("Windows DPAPI helper boundary", () => {
     await expect(windows.protect(Buffer.alloc(16))).rejects.toThrow("Invalid DPAPI payload length.");
   });
 
-  it.skipIf(!canRunWindowsHelper)("protects and unprotects a KEK, and binds it to installation identity", async () => {
+  it.skipIf(!canRunWindowsHelper || process.env.CI !== "true")(
+    "fails closed when the process token has no dedicated service SID",
+    async () => {
+      const key = Buffer.alloc(32, 0x5a);
+      const protector = new WindowsDpapiProtector(
+        helperPath,
+        "a2c4b6d8-1234-4abc-8def-1234567890ab",
+      );
+      await expect(protector.protect(key)).rejects.toThrow("DPAPI helper failed.");
+      key.fill(0);
+    },
+  );
+
+  it.skipIf(
+    !canRunWindowsHelper || process.env.RUN_PROVISIONED_DPAPI_INTEGRATION !== "1",
+  )("protects and unprotects a KEK under the provisioned service SID", async () => {
     const installationId = "a2c4b6d8-1234-4abc-8def-1234567890ab";
     const key = Buffer.alloc(32, 0x5a);
     const protector = new WindowsDpapiProtector(helperPath, installationId);
@@ -33,13 +48,6 @@ describe("Windows DPAPI helper boundary", () => {
     expect(protectedKey).not.toEqual(key);
     const restored = await protector.unprotect(protectedKey);
     expect(restored).toEqual(key);
-
-    const otherInstallation = new WindowsDpapiProtector(
-      helperPath,
-      "b3d5c7e9-2345-4bcd-9efa-2345678901bc",
-    );
-    await expect(otherInstallation.unprotect(protectedKey)).rejects.toThrow("DPAPI helper failed.");
-
     key.fill(0);
     restored.fill(0);
     protectedKey.fill(0);

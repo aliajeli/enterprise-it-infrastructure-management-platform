@@ -1,3 +1,9 @@
+## 0.1.23 — Align DPAPI tests with service-only execution (2026-11-20)
+
+- Replaced the outdated Windows CI expectation of interactive-user DPAPI round-trip with an explicit fail-closed test for tokens without the dedicated service SID.
+- Kept positive DPAPI protect/unprotect coverage gated behind an explicitly provisioned service-identity integration environment; it remains skipped until that environment exists.
+- No production wiring or credential persistence enabled.
+
 ## 0.1.22 — Bind DPAPI helper to the dedicated service SID (2026-11-20)
 
 - DPAPI entropy now uses the unique dedicated service SID from the process token, considering the token user and groups and rejecting missing or ambiguous service identities.

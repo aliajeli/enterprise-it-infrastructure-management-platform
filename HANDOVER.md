@@ -488,3 +488,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - DPAPI helper rejects trailing bytes after its one bounded request.
 - Windows CI launches the actual helper under the unprovisioned hosted-runner identity and requires the generic failure frame, non-zero exit and no stderr.
 - Still outstanding: actual execution under an installer-provisioned service SID, DPAPI protect/unprotect round-trip in that identity, ACL tamper and process integration tests. No adapter registration, no credential persistence, no Installer/Release.
+
+
+## 2026-11-20 — DPAPI test contract correction (v0.1.23)
+- Windows CI correctly rejected the helper under the hosted runner's non-service identity after v0.1.22. The existing Vitest integration test still expected an interactive-user DPAPI round-trip, so that test failed by design.
+- Updated tests to assert rejection for a non-service process token in CI. Positive protect/unprotect round-trip is now explicitly gated behind `RUN_PROVISIONED_DPAPI_INTEGRATION=1` and must only run inside the future installer-provisioned dedicated service identity test environment.
+- This is a test expectation correction, not a weakening of service identity enforcement.
