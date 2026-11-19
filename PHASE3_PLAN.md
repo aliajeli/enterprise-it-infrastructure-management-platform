@@ -31,11 +31,13 @@
 
 **Exit criteria: PASS.** Committed npm v3 lockfile; clean Node.js 26.13.1/npm 11.20.0 runner; `npm ci`; `npm audit --audit-level=high` (0 vulnerabilities); dependency-tree verification; ESLint; TypeScript; two Vitest smoke tests; production build; and honest dashboard empty states. Evidence: GitHub Actions run [44491419345](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44491419345).
 
-### M1 — Identity, access control and persistence
+### M1 — Identity, access control and persistence (in progress)
 
-- Finalize Prisma schema and first reviewed migration for users, roles, permissions, sessions, audit events, branches and scoped access.
-- Implement secure login/logout, Argon2id password hashing, opaque HttpOnly sessions, CSRF/Origin protections, rate limiting and server-side RBAC.
-- Establish database backup/restore and migration safety before storing operational data.
+- Add the dedicated Fastify API workspace and Prisma 7.10.1 PostgreSQL adapter package.
+- Establish users, sessions, recovery codes, branches, branch-scoped access grants and append-only audit events.
+- Implement Argon2id password hashing, opaque HttpOnly sessions, strict Origin validation, login throttling, generic authentication failures and server-side authorization primitives.
+- Keep the exact operational permission matrix owner-pending; no branch/device mutation endpoints are enabled until that matrix is approved.
+- Add database migration validation against disposable PostgreSQL 18 in CI. Production backup/restore and Windows service identity remain later acceptance requirements.
 
 ### M2 — Branch and inventory management
 

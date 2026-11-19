@@ -4,20 +4,20 @@
 
 **Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-The project is being implemented in reviewable milestones. **M0 — repository and application foundation is complete**; M1 will establish identity, access control and persistence. The platform is not yet production-ready; authentication, API, database, Windows services, Agent, integrations, installer and release automation remain future milestones.
+The project is being implemented in reviewable milestones. **M0 — repository and application foundation is complete**; M1 is implementing identity, access control and persistence. The platform is not yet production-ready; authentication, API, database, Windows services, Agent, integrations, installer and release automation remain future milestones.
 
 ## Application baseline
 
 - **Web:** Next.js App Router, React, strict TypeScript and Tailwind CSS.
 - **Runtime:** Node.js 26 Active LTS.
 - **Database target:** PostgreSQL 18 (dedicated Windows service).
-- **ORM target:** Prisma ORM 7 GA; Prisma ORM 8 remains a release candidate and is not selected for production.
+- **ORM target:** Prisma ORM 7.10.1 with the PostgreSQL driver adapter; Prisma ORM 8 remains a release candidate and is not selected for production.
 - **Windows Agent target:** C# / .NET 10 LTS.
 - **Deployment target:** self-contained Windows installation with five independent Windows services.
 
 ## Development
 
-The web application lives in `apps/web`.
+The web application lives in `apps/web`, the API service in `apps/api`, and the Prisma database package in `packages/database`.
 
 After installing the supported Node.js runtime and dependencies:
 
@@ -32,7 +32,7 @@ npm run dev
 
 The development server binds to `127.0.0.1`. The initial dashboard is an implementation-status shell; it does not display fabricated device or monitoring data.
 
-**Reproducibility status:** `package-lock.json` is committed. Use Node.js 26/npm 11 and `npm ci` for clean, deterministic installs. GitHub Actions validates dependency installation, dependency-tree integrity, lint, typecheck and production build; the committed-lockfile `npm ci` run is still pending.
+**Reproducibility status:** `package-lock.json` is committed. Use Node.js 26/npm 11 and `npm ci` for clean, deterministic installs. GitHub Actions validates Prisma schema/migrations against PostgreSQL 18, dependency integrity, security audit, lint, typecheck, tests and production build.
 
 ## Documentation index
 

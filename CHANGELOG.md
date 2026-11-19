@@ -81,3 +81,8 @@
 - Completed M0 on Node.js 26.13.1/npm 11.20.0 with a committed npm v3 lockfile and a clean `npm ci` install.
 - GitHub Actions run 44491419345 passed dependency-tree verification, `npm audit --audit-level=high` (0 vulnerabilities), ESLint, TypeScript, Vitest (2 tests) and production build.
 - M0 acceptance criteria are met. M1 identity, access control and persistence is the next milestone; no production integration is claimed.
+
+## 2026-11-19 — M1 Prisma security patch update
+- Dependency audit found high-severity advisories in Prisma 7.9.1 transitive dependencies (deepmerge-ts and mysql2).
+- Updated the pinned Prisma 7 packages to 7.10.1, a patch release that updates dependencies with security advisories. Prisma 8 remains a release candidate and is not adopted.
+- Prisma 7.10.1 migration/schema validation and the refreshed lockfile must pass the complete CI gate before the M1 branch is considered validated.
