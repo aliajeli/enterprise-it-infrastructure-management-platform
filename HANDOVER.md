@@ -12,9 +12,9 @@
 | M1 identity foundation | **Merged** — PR #4 merged at 2026-11-19T09:26:44Z |
 | M1 user and branch administration | **Implemented; awaiting review** — [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5), Draft, open, not merged |
 | Active development branch | `phase3/m1-user-management` |
-| Branch head | `7dc51aba8c376d53ac1adb03c665ecd95aca21d2` |
+| Branch head | `562451d4383d0ce153f99d103072b4023e585a8e` |
 | PR #5 scope | Admin-only user provisioning/listing, temporary first-login credentials, password-change enforcement, branch creation/listing and per-user branch-grant replacement, role/status changes with session invalidation, self-disable protection, audit events, PostgreSQL lifecycle integration coverage |
-| CI validation | [Run 44506332790](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44506332790) **passed** on the current PR #5 head `7dc51aba8c376d53ac1adb03c665ecd95aca21d2`. All three jobs passed: Node.js 26 / PostgreSQL 18 platform validation; Windows API runtime smoke including native Argon2id; npm lockfile bootstrap |
+| CI validation | [Run 44506332790](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44506332790) **passed** on code head `949fe73111e642bbd8d590cbed170619b7c95330`; subsequent commits `7dc51ab` and `562451d` changed documentation only. All three jobs passed: Node.js 26 / PostgreSQL 18 platform validation; Windows API runtime smoke including native Argon2id; npm lockfile bootstrap |
 | Current review state | PR #5 is mergeable; GitHub currently reports mergeable state `unstable`. It remains Draft and has not been merged |
 | M1 still outstanding | Owner-confirmed operator/viewer action matrix; full branch lifecycle (edit/archive/restore); password recovery; production backup/restore evidence; Windows service identity/integration |
 | Not implemented | Background worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge, Store Commerce deployment, installer, updater and release automation |
