@@ -57,5 +57,6 @@ The database supports ADMIN, OPERATOR and VIEWER. Branch grants are persisted se
 - POST /api/v1/auth/login: create a server-side session.
 - GET /api/v1/session: return the authenticated principal.
 - POST /api/v1/auth/logout: revoke the current session.
+- Browser login form and authenticated dashboard guard use same-origin API routes; the dashboard does not expose operational data until the session check succeeds.
 
 The administrator bootstrap command is implemented. Password recovery, user-management API and the operational permission matrix are not implemented.

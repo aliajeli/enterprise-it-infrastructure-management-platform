@@ -100,7 +100,7 @@ export default function DashboardPage() {
             Local development
           </div>
           <p className="mt-2 text-[11px] leading-5 text-slate-500">
-            Production services and authentication are not configured yet.
+            API authentication is enabled. Production services and external integrations are not configured yet.
           </p>
         </div>
       </aside>
