@@ -2,7 +2,7 @@
 
 ## Current snapshot — M1 lifecycle completion (2026-11-19)
 
-**Snapshot observed:** current development branch `phase3/m1-completion`; final head SHA is recorded by GitHub after the last documentation commit. This is a development handover, not a production-readiness assertion.
+**Snapshot observed:** 2026-11-19, development branch `phase3/m1-completion` at `a92763634276d04fe3c29e9341d11aafa10d0813`. This is a development handover, not a production-readiness assertion.
 
 | Item | Verified state |
 |---|---|
@@ -11,10 +11,10 @@
 | M0 | Complete and merged — PR #3 |
 | M1 identity foundation | Merged — PR #4 |
 | M1 user/branch administration | Implemented on PR #5 branch; PR #5 remains Draft/open/unmerged |
-| M1 completion work | New branch `phase3/m1-completion`, based on PR #5 work; branch lifecycle and admin password recovery added; follow-up PR not yet opened pending exact-head CI validation |
+| M1 completion work | [PR #6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), Draft/open/unmerged, based on PR #5; branch lifecycle and administrator password recovery added |
 | Branch lifecycle | Edit with optimistic version; soft archive; restore; audit events; archive revokes grants and restore does not reinstate them |
 | Password recovery | ADMIN-issued one-time temporary password for active non-admin users; no-store response, forced change, session revocation, auth epoch increment and audit |
-| CI for completion work | Pending final exact-head validation. Earlier source commits triggered CI runs that were cancelled by subsequent pushes; do not treat those cancelled runs as evidence |
+| CI for completion work | [Run 44516741144](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44516741144) **passed** on exact head `8e11aeb03522a4c73dedb456ee34807a88026baf` before the final workflow-only fix; final head validation is pending. Earlier intermediate runs were cancelled or failed during backup-smoke development and are not treated as successful evidence |
 | M1 remaining acceptance gates | Owner-confirmed OPERATOR/VIEWER action matrix; clean target-Windows validation of service identities/ACL/startup/API integration; production PostgreSQL encrypted backup/restore and key-recovery evidence; final code review and green CI |
 | Not implemented | Five Windows services, Background Worker, Windows Agent, monitoring, switch/NVR integrations, Desktop Bridge PoC, Store Commerce deployment, installer, updater and release automation |
 | Security boundaries | All user/branch management routes remain ADMIN-only. OPERATOR/VIEWER operational mutation rights are not enabled. No ADMIN creation/promotion via API |
@@ -28,7 +28,7 @@
 - Archiving is transactional: mark inactive/deleted, revoke active branch grants, and append audit event.
 - Restore makes the branch active but intentionally leaves old grants revoked; an administrator must reassign access.
 - Password reset is deliberately admin-mediated because no verified email/SMS recovery channel exists. Self-service recovery is not exposed.
-- PostgreSQL integration tests were added for these paths; results must be checked on the final branch head before calling the implementation CI-verified.
+- PostgreSQL integration tests passed for these paths on run 44516741144. The custom-format PostgreSQL backup/restore smoke test also passed on that run. A later workflow-only fix adds the explicit PostgreSQL host to `pg_restore`; rerun validation on the final head before declaring final CI complete.
 
 ### Owner decision still required
 
