@@ -18,9 +18,29 @@ concurrency:
 
 jobs:
   web-validation:
-    name: Web validation (Node.js 26)
+    name: Platform validation (Node.js 26 / PostgreSQL 18)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: platform
+          POSTGRES_PASSWORD: platform_test_password
+          POSTGRES_DB: platform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U platform -d platform_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://platform:platform_test_password@127.0.0.1:5432/platform_test?schema=public
+      API_HOST: 127.0.0.1
+      API_PORT: 13001
+      PUBLIC_ORIGIN: http://127.0.0.1:3000
+      COOKIE_SECURE: "false"
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -37,6 +57,15 @@ jobs:
           else
             npm install --no-audit --no-fund
           fi
+
+      - name: Validate Prisma schema
+        run: npm run db:validate
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply migrations to disposable PostgreSQL
+        run: npm run db:migrate:deploy
 
       - name: Verify dependency tree
         run: npm ls --all
