@@ -480,3 +480,11 @@ An earlier application-repository inspection reported an empty clone before the 
 - Updated service SID resolution to consider both the token User SID and token Groups, then require exactly one unique S-1-5-80 service SID. This supports dedicated virtual service accounts while still rejecting ordinary interactive identities and ambiguous tokens.
 - Added a Windows CI process smoke test for the actual built helper: on an unprovisioned runner, BEGIN must return exactly the stable one-byte generic ERROR frame, a non-zero exit code and no stderr diagnostics.
 - This is a fail-closed protocol smoke test only. It does not validate installer provisioning, the real dedicated service SID ACLs, concurrent processes, crash recovery or power-loss durability.
+
+
+## 2026-11-20 — DPAPI service identity binding (v0.1.22)
+- Security review found the DPAPI helper derived entropy from `WindowsIdentity.GetCurrent().User` without requiring the dedicated service SID. This could bind the key to an unintended account identity and did not enforce the intended service-only execution contract.
+- DPAPI helper now resolves exactly one unique `S-1-5-80-...` service SID from token user/groups and uses that SID in DPAPI entropy. No fallback to LocalSystem or interactive users.
+- DPAPI helper rejects trailing bytes after its one bounded request.
+- Windows CI launches the actual helper under the unprovisioned hosted-runner identity and requires the generic failure frame, non-zero exit and no stderr.
+- Still outstanding: actual execution under an installer-provisioned service SID, DPAPI protect/unprotect round-trip in that identity, ACL tamper and process integration tests. No adapter registration, no credential persistence, no Installer/Release.

@@ -51,8 +51,16 @@ internal static class Program
             if (!Guid.TryParseExact(installationId, "D", out _))
                 throw new InvalidDataException();
 
-            var sid = WindowsIdentity.GetCurrent().User?.Value
-                ?? throw new InvalidOperationException();
+            // The vault is bound to the dedicated service SID, never to an arbitrary
+            // interactive user or LocalSystem identity.
+            var sid = GetDedicatedServiceSid().Value;
+
+            // The caller must close stdin after the single request; trailing bytes
+            // are rejected rather than silently ignored.
+            var trailing = new byte[1];
+            if (await input.ReadAsync(trailing) != 0)
+                throw new InvalidDataException();
+            CryptographicOperations.ZeroMemory(trailing);
             var entropyText = "EnterpriseIT.CredentialVault.DPAPI.v1|" + sid + "|" + installationId;
             entropy = SHA256.HashData(Encoding.UTF8.GetBytes(entropyText));
             payload = frame.AsSpan(8 + installationLength, payloadLength).ToArray();
@@ -105,6 +113,26 @@ internal static class Program
             CryptographicOperations.ZeroMemory(entropy);
             CryptographicOperations.ZeroMemory(output);
         }
+    }
+
+    private static SecurityIdentifier GetDedicatedServiceSid()
+    {
+        using var identity = WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
+        var candidates = new List<SecurityIdentifier>();
+        if (identity.User is SecurityIdentifier user &&
+            user.Value.StartsWith("S-1-5-80-", StringComparison.Ordinal))
+            candidates.Add(user);
+        candidates.AddRange(identity.Groups?
+            .OfType<SecurityIdentifier>()
+            .Where(sid => sid.Value.StartsWith("S-1-5-80-", StringComparison.Ordinal))
+            ?? []);
+        var unique = candidates
+            .GroupBy(sid => sid.Value, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+        if (unique.Length != 1)
+            throw new UnauthorizedAccessException();
+        return unique[0];
     }
 
     private static async Task ReadExactly(Stream stream, byte[] buffer)

@@ -1,3 +1,10 @@
+## 0.1.22 — Bind DPAPI helper to the dedicated service SID (2026-11-20)
+
+- DPAPI entropy now uses the unique dedicated service SID from the process token, considering the token user and groups and rejecting missing or ambiguous service identities.
+- The helper rejects trailing bytes after its single request frame.
+- Windows CI now runs the built DPAPI helper as the unprovisioned hosted-runner identity and verifies the exact generic failure frame, non-zero exit and empty stderr.
+- No DPAPI key is provisioned and no production storage is enabled.
+
 ## 0.1.21 — Verify fail-closed helper startup (2026-11-19)
 
 - Hardened service SID resolution to recognize a dedicated service SID represented as either the process user SID or an enabled token group, deduplicating the same SID.

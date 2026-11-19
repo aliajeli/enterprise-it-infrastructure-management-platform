@@ -97,3 +97,7 @@ Exact-head CI passed on `5067518791b0899f410fee8b76495028e11bd590`: Push run [44
 
 ## Windows Credential Keyring Storage — design gate (2026-11-19)
 The binding storage contract is documented in `WINDOWS_KEYRING_STORAGE_DESIGN.md`. It requires a fixed ProgramData path, a dedicated API service SID, exact owner and protected-DACL validation on every operation, transaction-scoped cross-process locking, durable same-directory atomic replacement and bounded binary helper sessions. Arbitrary paths, runtime ACL broadening, unlocked fallback and implicit LocalSystem/administrator execution are prohibited. This is documentation only; no concrete adapter, ACL provisioning, recovery, credential persistence or production registration exists. Keep the Credential Vault test-only.
+
+
+## DPAPI service identity enforcement — 2026-11-20
+The DPAPI helper now requires exactly one unique dedicated Windows service SID (`S-1-5-80-...`) from the current token's user/groups and binds DPAPI optional entropy to that service SID plus the installation ID. Ordinary interactive users, LocalSystem without the dedicated service SID, and ambiguous service-token identities are rejected. The helper accepts one bounded binary request and rejects trailing input. Windows CI verifies rejection on an unprovisioned runner; this is not yet a positive protect/unprotect test under the provisioned service identity.

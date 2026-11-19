@@ -138,6 +138,52 @@ jobs:
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
+      - name: Verify DPAPI helper rejects non-service identity
+        shell: pwsh
+        run: |
+          $dll = "apps/api/windows/dpapi-helper/bin/Release/net10.0-windows/CredentialVault.DpapiHelper.dll"
+          $installation = [System.Text.Encoding]::UTF8.GetBytes("00000000-0000-4000-8000-000000000001")
+          $key = [byte[]]::new(32)
+          [System.Security.Cryptography.RandomNumberGenerator]::Fill($key)
+          $body = [byte[]]::new(8 + $installation.Length + $key.Length)
+          $body[0] = 1
+          $body[1] = 1
+          $body[2] = [byte](($installation.Length -shr 8) -band 255)
+          $body[3] = [byte]($installation.Length -band 255)
+          $body[4] = 0
+          $body[5] = 0
+          $body[6] = 0
+          $body[7] = [byte]$key.Length
+          [Array]::Copy($installation, 0, $body, 8, $installation.Length)
+          [Array]::Copy($key, 0, $body, 8 + $installation.Length, $key.Length)
+          $request = [byte[]]::new(4 + $body.Length)
+          $request[0] = [byte](($body.Length -shr 24) -band 255)
+          $request[1] = [byte](($body.Length -shr 16) -band 255)
+          $request[2] = [byte](($body.Length -shr 8) -band 255)
+          $request[3] = [byte]($body.Length -band 255)
+          [Array]::Copy($body, 0, $request, 4, $body.Length)
+          $start = [System.Diagnostics.ProcessStartInfo]::new()
+          $start.FileName = "dotnet"
+          $start.ArgumentList.Add($dll)
+          $start.UseShellExecute = $false
+          $start.RedirectStandardInput = $true
+          $start.RedirectStandardOutput = $true
+          $start.RedirectStandardError = $true
+          $process = [System.Diagnostics.Process]::Start($start)
+          $process.StandardInput.BaseStream.Write($request, 0, $request.Length)
+          $process.StandardInput.Close()
+          $responseStream = [System.IO.MemoryStream]::new()
+          $process.StandardOutput.BaseStream.CopyTo($responseStream)
+          $stderr = $process.StandardError.ReadToEnd()
+          $process.WaitForExit()
+          $response = $responseStream.ToArray()
+          [Array]::Clear($key, 0, $key.Length)
+          [Array]::Clear($body, 0, $body.Length)
+          [Array]::Clear($request, 0, $request.Length)
+          if ($process.ExitCode -eq 0 -or $response.Length -ne 9 -or $response[0] -ne 0 -or $response[1] -ne 0 -or $response[2] -ne 0 -or $response[3] -ne 5 -or $response[4] -ne 2 -or $response[5] -ne 0 -or $response[6] -ne 0 -or $response[7] -ne 0 -or $response[8] -ne 0 -or $stderr.Length -ne 0) {
+            throw "DPAPI helper did not reject the unprovisioned process identity with the generic error response."
+          }
+
       - name: Build Windows keyring storage helper
         run: dotnet build apps/api/windows/keyring-storage-helper/CredentialVault.KeyringStorageHelper.csproj --configuration Release
 
