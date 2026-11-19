@@ -71,3 +71,7 @@ For suspected secret, signing, agent or bridge compromise: restrict access, revo
 
 ## Windows DPAPI provider design — 2026-11-19
 The implementation design and security gates are recorded in [WINDOWS_DPAPI_PROVIDER_DESIGN.md](WINDOWS_DPAPI_PROVIDER_DESIGN.md). It specifies a fixed-purpose .NET helper with bounded binary stdin/stdout IPC, DPAPI machine scope plus service-SID-derived optional entropy, installer-created and verified NTFS ACLs, a DPAPI-protected versioned keyring, and independent recovery custody. This is design only: no helper, production provider, keyring, recovery export or clean-host restore drill is implemented. The crypto module remains unregistered; do not enter real equipment credentials.
+
+
+## Windows DPAPI helper primitive — 2026-11-19
+A fixed-purpose .NET 10 helper and Node.js binary-IPC client now provide a DPAPI machine-scope primitive for 32-byte KEKs. The helper derives optional entropy internally from a domain separator, installation identifier and current Windows SID; it accepts no command-line arguments and uses no shell, environment secrets or temporary plaintext files. Windows CI builds the helper and runs a DPAPI round-trip/installation-binding test. This does **not** constitute a production key provider: service identity provisioning, installer-owned ACLs and ACL verification, persistent keyring/version registry, atomic rotation, independent recovery export and clean-host restore drill remain absent. Keep credential persistence and live use disabled.

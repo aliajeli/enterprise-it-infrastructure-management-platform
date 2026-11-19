@@ -365,3 +365,11 @@ An earlier application-repository inspection reported an empty clone before the 
 - Added `WINDOWS_DPAPI_PROVIDER_DESIGN.md` with a bounded .NET helper/stdin-stdout binary protocol, fixed machine-scope DPAPI, service SID-derived entropy, installer-owned ACL requirements, atomic keyring/rotation and independent recovery custody/clean-host restore requirements.
 - This is not yet a DPAPI implementation. No production key provider, persistent credential model/API, independent recovery export, installer ACL provisioning or clean-machine restore drill exists. Keep Credential Vault disconnected and do not enter real equipment secrets.
 - Root package version and lockfile metadata are now `0.1.3`; this is source metadata only. No installer or Release was created.
+
+
+## 2026-11-19 — Windows DPAPI helper primitive
+- Added `apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj` and a fixed-purpose .NET 10 Windows helper. It performs only DPAPI machine-scope Protect/Unprotect for exactly 32-byte KEKs, derives optional entropy from a domain separator + installation ID + current Windows SID, and communicates through a bounded length-prefixed binary stdin/stdout protocol.
+- Added `apps/api/src/security/windows-dpapi-protector.ts`: absolute helper path, no shell/arguments/environment key, bounded frames, five-second timeout, generic errors and best-effort buffer zeroization.
+- Windows CI now builds the helper and runs DPAPI round-trip / installation-binding integration tests. Non-Windows test runs verify fail-closed behavior and skip the native integration test.
+- This is a DPAPI primitive only, not a production key provider. No installer-created service identity or ACL verification, persistent key registry, atomic rotation, independent recovery export or clean-host restore drill exists. No Credential DB/API or real-device credential use is enabled.
+- Root version metadata is `0.1.4`; no installer/Release was created.

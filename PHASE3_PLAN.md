@@ -152,3 +152,9 @@ The separate `apps/worker` workspace now contains the first durable queue primit
 - Credential envelope crypto now zeroes caller-owned KEK buffers returned by the provider as well as local copies. Added tests for successful encrypt/decrypt zeroization and invalid key-version failure.
 - Added `WINDOWS_DPAPI_PROVIDER_DESIGN.md` defining the .NET helper protocol, DPAPI machine scope, service-SID entropy, ACL provisioning, keyring rotation and independent recovery/clean-host restore.
 - Next implementation gate is the helper protocol and Windows DPAPI integration under a dedicated service identity. No DPAPI provider or keyring is currently implemented. Credential DB/API/RBAC/audit work remains blocked on verified key protection and recovery.
+
+
+### Credential Vault continuation — DPAPI primitive (2026-11-19)
+- Added the fixed-purpose .NET 10 Windows DPAPI helper and Node.js client using bounded binary stdin/stdout framing. DPAPI machine scope is fixed; optional entropy is derived within the helper from installation ID and current Windows SID.
+- Windows CI now compiles the helper and runs the native round-trip and cross-installation binding test.
+- This is not yet the production key provider. Installer/service identity provisioning, NTFS ACL creation/verification, persistent keyring and rotation, independently protected recovery export and clean-host restore remain mandatory gates. Credential records/API and discovery remain disabled.

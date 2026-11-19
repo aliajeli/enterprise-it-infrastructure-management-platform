@@ -1,3 +1,12 @@
+## Unreleased — Windows DPAPI helper protocol (2026-11-19)
+
+- Added a fixed-purpose .NET 10 Windows helper for DPAPI machine-scope Protect/Unprotect of 32-byte KEKs. It uses a bounded length-prefixed binary stdin/stdout protocol; no shell, arguments, environment secrets or temporary plaintext files.
+- Added a Node.js client with absolute helper-path validation, bounded response framing, timeout, fail-closed error handling and buffer cleanup.
+- DPAPI optional entropy is derived inside the helper from a domain separator, installation ID and the current Windows service SID. The helper fixes machine scope and disallows UI prompts.
+- Added Windows CI compilation and DPAPI round-trip / installation-binding integration coverage.
+- This helper is only the DPAPI primitive. It does not provision service identities or ACLs, persist a keyring, implement rotation/recovery, or enable credential storage/API. Production use remains blocked pending those gates.
+- Bumped root package version to `0.1.4`; synchronized npm lockfile metadata. No installer or Release is created.
+
 ## Unreleased — Credential Vault regression-fixture correction (2026-11-19)
 
 - Corrected the new control-character regression test to construct an actual U+0001 character with `String.fromCharCode(1)`; the previous fixture contained the six printable characters `\\u0001` and therefore did not exercise the intended rejection path.
