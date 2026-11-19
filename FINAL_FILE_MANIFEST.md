@@ -4,6 +4,8 @@ Recomputed against the current primary-repository tree after the 2026-11-19 revi
 
 **Post-merge R1 recomputation — 2026-11-19:** refreshed after reconciling SECURITY_POLICY.md, the GUIDELINE.md maintained wrapper, DECISION_LOG.md custody/supersession wording, HANDOVER.md, CHANGELOG.md and the dated TRANSFER_STATUS.md note against verified main `eb8b704f945ca4c5199d97a6a8c4bd286068cfbb` (PR #1 squash merge). The root file set remains 22 files; historical review reports and archived prompt bytes are unchanged. SHA256SUMS.txt is recomputed last, after this manifest.
 
+**PR #2 review-correction recomputation — 2026-11-19:** refreshed HANDOVER.md measurement-scope/snapshot clarification and appended CHANGELOG.md entry. GUIDELINE.md itself is unchanged from the original PR #2 head. The 22-file set is unchanged; checksums are recomputed after this manifest.
+
 The table lists every root file except this manifest and `SHA256SUMS.txt`. `SHA256SUMS.txt` covers all files except itself, including this manifest. Neither file contains its own hash. Hashes prove byte integrity, not publisher authenticity. Verify with `sha256sum -c SHA256SUMS.txt` at the repository root.
 
 | File | Size (bytes) | SHA-256 |
@@ -11,7 +13,7 @@ The table lists every root file except this manifest and `SHA256SUMS.txt`. `SHA2
 | `AGENT_SPECIFICATION.md` | 7052 | `1d84172534d09d157120f6ea8b7175744bab5f7b8bbc8acc2223c51146e9af3e` |
 | `API_DOCUMENTATION.md` | 5764 | `d76899da66b0a5fbfebc52d9cbd73b08c3e033d59447c40c239ca8a9ed17468e` |
 | `ARCHITECTURE.md` | 26027 | `e48d188c941403e1925292c661801b32c0f44f82f15eb976094ed31b4c29cec6` |
-| `CHANGELOG.md` | 8583 | `56c9fb177d84c90b07473ea0c64e16b7ce9196e1c7f6c9dbbd940c3d0e748bd7` |
+| `CHANGELOG.md` | 9785 | `3c8ac71489025ee6f1e55cc0f0ce7ca954205945ecfa044b41402c6e390fa659` |
 | `DATABASE_DESIGN.md` | 21032 | `3a3c395001f2f1688caccc8490baea92e2dc96193c5049ffce6467e1e70cd486` |
 | `DECISION_LOG.md` | 16126 | `3d894a853cb3409c21040773bbc7611158b40c609b84c578a9f6c9d7839043d6` |
 | `DEPLOYMENT_WORKFLOWS.md` | 11319 | `da3df32d3ca2d623dd2793601f061ecadddaabd29507a83f5bfac4b6a326bcb3` |
@@ -19,7 +21,7 @@ The table lists every root file except this manifest and `SHA256SUMS.txt`. `SHA2
 | `DOCUMENTATION_REVIEW_REPORT.md` | 26091 | `c530c2b91e7c04941c29070d73cb43430f34bd7fbb856c92208eb2c3323cd6ec` |
 | `FINAL_HANDOVER_REPORT.md` | 6616 | `f121a8df4ae1336f99703f6658bc889dae46069283695df44c6c6a066ec19d68` |
 | `GUIDELINE.md` | 55969 | `ea7ba20a0e5fea0b67a2dd67ee4ea987c05913cb0710c9d6719a41f215c06b52` |
-| `HANDOVER.md` | 13347 | `9519e3db3db91bee017cbf6842ee69069ca81e2841cc1ff6d254d2fcd300cca9` |
+| `HANDOVER.md` | 18303 | `fa350492f10e3e7d9a189dff34104c9fd1f8925bf70d1ada5494d5f3188b7766` |
 | `NETWORK_REQUIREMENTS.md` | 3748 | `13e75ba3ad254ea128e088c62e721315540f1f7bb591a015ca4d55546f5f1a7e` |
 | `PHASE2_REVIEW_2026-11-19.md` | 70627 | `7b114bf96ed1e088688e4da3abb4dfeb555bc052033d9c5dcf5fa17ea7c18948` |
 | `README.md` | 1704 | `a0a3718822d46ae5f31cf709fe24a5ac59bb43af88d515ae37ceaa18ecff6bb2` |

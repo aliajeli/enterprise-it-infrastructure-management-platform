@@ -2,6 +2,8 @@
 
 ## Current snapshot — primary repository (2026-11-19, post-merge R1)
 
+**Snapshot observed:** 2026-11-19T08:27:09Z (UTC). This is a dated record, not continuously current status. Before acting, verify live PR/main state from GitHub with `gh pr view 2 --json state,headRefOid,baseRefName,url` and `git ls-remote origin refs/heads/main`. The authoritative repository/default branch is the primary private repository's `main`; a temporary Arena session branch is only a PR source, not a replacement authoritative development branch.
+
 This section is the operative handover snapshot for the primary private repository. The "Current package" paragraph and sections A–G below it were written **before** the transfer and describe the local `FINAL_UPLOAD` draft and the temporary public mirror; they are retained unchanged as history. Where they state that the package has not been transferred to the primary repository, [TRANSFER_STATUS.md](TRANSFER_STATUS.md) and this section supersede them: the transfer was completed and is recorded in commit `f60676205bcf9ff7f5608f0e3b3074a76bdb3776`.
 
 | Item | Value (verified 2026-11-19 unless noted) |
@@ -12,7 +14,8 @@ This section is the operative handover snapshot for the primary private reposito
 | PR #1 | **MERGED**, squash commit `eb8b704f945ca4c5199d97a6a8c4bd286068cfbb`, merged at `2026-11-19T07:58:59Z`; [PR #1](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/1). The review report's open/unmerged wording is historical |
 | Historical transfer history | 22 commits at pre-merge review time (not the current post-merge count): root `c509d99` (README baseline, 06:37:26Z), 19 per-file transfer commits (06:37:51Z–06:38:36Z), `b6bd6d8` (README landing page — the commit referenced by TRANSFER_STATUS.md, 06:38:54Z), `f606762` (TRANSFER_STATUS.md, 06:39:03Z). Review clones may be shallow; unshallow before history verification |
 | Current development phase | Phase 2 — Architecture, Design, Documentation and Technical Validation Planning. Phase 3 not authorized and not started |
-| Current working branch | `arena/aa830cf6-enterprise-it-infrastructure-m` — documentation-only post-merge reconciliation (R1), based on the verified latest `main` SHA above. Submit one new PR against `main`; do not merge it. PR #1's review work is already merged |
+| Current owner-review item | [PR #2](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/2) — **OPEN, unmerged** at the snapshot observation; documentation-only R1 reconciliation against `main`. Do not merge it |
+| PR #2 head observed at snapshot preparation | `2561d5052bce7875cbe27b2579a6ab6fedd1561c` — input to these review corrections, not a claim that it remains the live head. The commit containing this updated snapshot necessarily follows that SHA; obtain its exact SHA from live PR metadata/Git history rather than attempting a self-referential commit hash |
 | Current application version | Not applicable — no application and no version metadata exist yet (bootstrap period per [DECISION_LOG.md](DECISION_LOG.md) decision 3). Version assignment for documentation-only commits is an open owner question (see [PHASE2_REVIEW_2026-11-19.md](PHASE2_REVIEW_2026-11-19.md) §8) |
 | Latest stable / beta release, tags | None — zero releases, zero tags (verified via GitHub API) |
 | Latest installer build | None — no installer, build system or application source exists |
@@ -22,9 +25,57 @@ This section is the operative handover snapshot for the primary private reposito
 | Required environment / services / run-and-test commands | Not applicable — documentation-only repository |
 | Documentation baseline and integrity | **22 tracked root files**, verified in the remote tree at `eb8b704` and the R1 working tree (historical transfer baseline: 21 at `f606762`). PR #1 delivered the GUIDELINE.md archival repair. R1 refreshes [FINAL_FILE_MANIFEST.md](FINAL_FILE_MANIFEST.md) (20 content entries) and [SHA256SUMS.txt](SHA256SUMS.txt) (21 entries including the manifest, excluding itself); verify with `sha256sum -c SHA256SUMS.txt` |
 | Last completed task | PR #1 successfully squash-merged; post-merge remote verification completed. Its Phase 2 review findings remain recorded as historical evidence in [PHASE2_REVIEW_2026-11-19.md](PHASE2_REVIEW_2026-11-19.md) |
-| In-progress task | R1: documentation-only reconciliation of current operational statements, archival/decision preservation checks, manifest and checksum refresh; submit for owner review |
+| In-progress task | Owner review of PR #2, including the archival measurement-scope clarification and dated HANDOVER snapshot corrections. Update this existing PR only, rerun integrity checks and stop for owner review; do not open a replacement PR |
 | Known documentation discrepancies | Historical pre-transfer wording in this file, [FINAL_HANDOVER_REPORT.md](FINAL_HANDOVER_REPORT.md) and [DOCUMENTATION_REVIEW_REPORT.md](DOCUMENTATION_REVIEW_REPORT.md) describes the temporary mirror and the untransferred local package; retained as history, superseded by this snapshot and TRANSFER_STATUS.md. Full list in the review report §4 |
-| Exact next action | Owner: review the new R1 documentation-only PR (do not re-review PR #1 as if unmerged). Remaining review-report §8 questions still require owner decisions, including Q-02 (archival byte-preservation mechanism; Appendix B not implemented) and Q-07 (branch protection; not enabled). Q-03 is resolved. After submission, stop and wait; no Phase 3 authorization is implied and no Desktop Bridge PoC may run |
+| Exact next action | Verify live PR #2/main status from GitHub, then owner-review the existing PR #2 and its latest correction commit; do not merge it during this task. Remaining review-report §8 questions still require owner decisions, including Q-02 (archival byte-preservation mechanism; Appendix B not implemented) and Q-07 (branch protection; not enabled). Q-03 is resolved. Stop and wait; no Phase 3 authorization is implied and no Desktop Bridge PoC may run |
+
+## GUIDELINE archival measurement clarification — 2026-11-19 (PR #2 review)
+
+The previous audit wording “lines 6–1544 = 39,181 bytes” conflated the **embedded source prompt** with the **complete protected region**. It is not a valid measurement of those complete lines. The PR description's 39,295-byte protected-region count and 39,181-byte source-prompt count measure different scopes, not different archived versions. Historical review reports remain unchanged; this clarification defines the scopes explicitly.
+
+Compared exact Git objects (no text-mode decoding or newline conversion):
+- Baseline commit `eb8b704f945ca4c5199d97a6a8c4bd286068cfbb`, GUIDELINE blob `5cf1fe00f420226716fab36a6f26828d005fb547`.
+- PR #2 head observed before these corrections: commit `2561d5052bce7875cbe27b2579a6ab6fedd1561c`, GUIDELINE blob `2dc1d0c82503df0ff26a68b41f4644a76ba87b5d`. This follow-up does not modify GUIDELINE.md at all, so the corrected PR head retains this same blob.
+
+**Exact boundaries (zero-based, half-open byte offsets in both blobs):**
+- Complete protected region: `[626, 39921)`, physical lines 6–1544 inclusive. Starts with `<!-- BEGIN ORIGINAL MASTER PROMPT; SOURCE BYTES FOLLOW -->` plus LF (59 bytes); ends with `<!-- END ORIGINAL MASTER PROMPT; SOURCE BYTES END -->` plus LF (54 bytes).
+- Embedded original prompt: `[685, 39866)`, excluding both markers and the one LF separator at `[39866, 39867)` immediately before the closing marker. This source has 1,536 CRLF pairs and no terminal newline. No `strip`/`rstrip` or line-ending normalization is applied.
+- Maintained wrapper outside the protected region: concatenate prefix `[0, 626)` and suffix `[39921, EOF)` in that order, with no inserted separator. This is the measured outside region; historical wrapper passages are not thereby authorized for rewriting.
+
+| Scope | Baseline bytes | PR-head bytes | Baseline SHA-256 | PR-head SHA-256 |
+|---|---:|---:|---|---|
+| Complete protected region | 39295 | 39295 | `70c4863fb97824a35e22a084e78d7916646d0038fe8c681d1c10f142020f8932` | `70c4863fb97824a35e22a084e78d7916646d0038fe8c681d1c10f142020f8932` |
+| Embedded original prompt | 39181 | 39181 | `38634f573b0391402a1b58ad927d133fa0ad2ca6551c8ea66180daddd3e24b16` | `38634f573b0391402a1b58ad927d133fa0ad2ca6551c8ea66180daddd3e24b16` |
+| Maintained wrapper outside protected region | 15939 | 16674 | `0d69334d899b483dd1d34b7ec686badc101c90343ec6335a812dfdb67384dab5` | `9614fb40ee0df15618e0b01b6f6009ab18e45102bb4e9a188f3e15d1e20ef4c6` |
+
+The protected-region difference from the source size is exactly **114 bytes = 59 + 1 + 54**. Wrapper size increased by 735 bytes in R1's maintained repository-location correction; none of those bytes are inside the protected region. Both protected scopes are byte-identical, not merely hash-equal.
+
+Reproduce against the baseline, original PR head and live locally fetched PR head (replace `HEAD` with the fetched head SHA if necessary):
+
+```sh
+python3 - <<'PYCODE'
+import hashlib, subprocess
+begin = b'<!-- BEGIN ORIGINAL MASTER PROMPT; SOURCE BYTES FOLLOW -->\n'
+end = b'<!-- END ORIGINAL MASTER PROMPT; SOURCE BYTES END -->\n'
+versions = []
+for ref in ('eb8b704f945ca4c5199d97a6a8c4bd286068cfbb',
+            '2561d5052bce7875cbe27b2579a6ab6fedd1561c', 'HEAD'):
+    d = subprocess.check_output(['git', 'show', ref + ':GUIDELINE.md'])
+    assert d.count(begin) == d.count(end) == 1
+    a, e = d.index(begin), d.index(end)
+    z = e + len(end)
+    assert d[e-1:e] == b'\n' and d[e-2:e] != b'\r\n'
+    parts = (d[a:z], d[a+len(begin):e-1], d[:a] + d[z:])
+    assert parts[0] == b''.join(d.splitlines(keepends=True)[5:1544])
+    assert (a, z) == (626, 39921)
+    assert tuple(map(len, parts[:2])) == (39295, 39181)
+    versions.append(parts)
+    for scope, data in zip(('protected', 'source', 'outside-wrapper'), parts):
+        print(ref, scope, len(data), hashlib.sha256(data).hexdigest())
+assert all(v[:2] == versions[0][:2] for v in versions)
+assert versions[1] == versions[2]  # follow-up leaves entire GUIDELINE blob unchanged
+PYCODE
+```
 
 *Historical — pre-transfer; superseded by the snapshot above.*
 
