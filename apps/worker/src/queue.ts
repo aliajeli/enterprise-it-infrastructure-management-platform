@@ -158,6 +158,7 @@ export async function failDiscoveryRun(
       AND status = 'RUNNING'
       AND lease_owner = ${workerId}
       AND lease_expires_at > NOW()
+      AND cancel_requested_at IS NULL
     RETURNING CASE WHEN status = 'QUEUED' THEN 'REQUEUED' ELSE 'FAILED' END AS outcome
   `;
   return (rows[0]?.outcome as "REQUEUED" | "FAILED" | undefined) ?? "LEASE_LOST";
