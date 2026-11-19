@@ -37,3 +37,11 @@ This transfer is documentation-only. Phase 2 remains active. It does not authori
 ## Security note
 
 This repository is private. The transferred documents intentionally retain internal operational context for the project team. Maintain private visibility and review collaborator access. This transfer does not certify that every historical copy in the temporary public mirror or its Git history has been sanitized.
+
+## Dated supersession note — 2026-11-19 (post-merge R1)
+
+The transfer record, counts, README SHA and checksum qualification above are historical observations from the original transfer, not the current operational snapshot. They remain unchanged as evidence. [HANDOVER.md](HANDOVER.md) now supplies the operative snapshot: GitHub independently confirms PR #1 merged at `2026-11-19T07:58:59Z`, with squash commit `eb8b704f945ca4c5199d97a6a8c4bd286068cfbb` verified as remote `main`; its tree contains 22 root files. Authenticated repository metadata confirms private visibility.
+
+The original checksum warning was addressed by the review merged in PR #1; R1 recomputes [FINAL_FILE_MANIFEST.md](FINAL_FILE_MANIFEST.md) and then [SHA256SUMS.txt](SHA256SUMS.txt) again for the reconciled tree. Validate the current tree with `sha256sum -c SHA256SUMS.txt`; do not use historical package hashes as a current integrity gate.
+
+The owner confirmed deletion of `aliajeli/testing` on 2026-11-19; independent read-only availability checks are preserved in review evidence E-21, not repeated or recast here as witnessing the deletion. Deletion does not prove recall of copies, clones, downloads or caches; the historical security qualification above still applies to prior exposure. The primary private repository is the sole authoritative repository per [DECISION_LOG.md](DECISION_LOG.md). Phase 2 remains active; Phase 3 and Desktop Bridge PoC execution are not authorized.
