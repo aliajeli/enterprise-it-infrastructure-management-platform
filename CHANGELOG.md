@@ -1,3 +1,8 @@
+## Unreleased — M2 edit validation coverage
+
+- Extended PostgreSQL-backed inventory API integration coverage for successful asset IP/MAC updates, invalid IP/MAC rejection, successful switch-port metadata updates, duplicate and out-of-range VLAN rejection, and stale switch-port version conflicts.
+- Tests are committed but not yet verified as executed; the current GitHub commit status and PR workflow-run queries return no checks for the latest code head.
+
 ## Unreleased — M2 inventory editing
 
 - Added asset editing for asset code, name, management IP, MAC, hostname, status, vendor, model, physical location and description. Updates use the existing branch-scoped API, optimistic version checks and audit events.
