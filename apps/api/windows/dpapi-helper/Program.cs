@@ -40,7 +40,9 @@ internal static class Program
             var installationLength = BinaryPrimitives.ReadUInt16BigEndian(frame.AsSpan(2, 2));
             var payloadLength = BinaryPrimitives.ReadInt32BigEndian(frame.AsSpan(4, 4));
             if (installationLength is < 1 or > 128 ||
-                payloadLength != KeyBytes ||
+                payloadLength < 1 ||
+                payloadLength > MaxFrameBytes - 8 - installationLength ||
+                (operation == ProtectOperation && payloadLength != KeyBytes) ||
                 frameLength != 8 + installationLength + payloadLength ||
                 operation is not (ProtectOperation or UnprotectOperation))
                 throw new InvalidDataException();

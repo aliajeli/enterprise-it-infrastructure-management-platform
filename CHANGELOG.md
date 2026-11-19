@@ -1,3 +1,9 @@
+## Unreleased — DPAPI Unprotect payload bounds (2026-11-19)
+
+- Corrected request validation so Protect accepts exactly a 32-byte KEK, while Unprotect accepts a bounded variable-length DPAPI blob and still requires the helper's decrypted output to be exactly 32 bytes.
+- Windows integration exposed the prior assumption that both input operations carry a 32-byte payload; this correction is pending fresh exact-head CI.
+- Bumped root package version to `0.1.8` and synchronized lockfile metadata.
+
 ## Unreleased — DPAPI protected-blob framing correction (2026-11-19)
 
 - Fixed Node.js DPAPI response validation: DPAPI Protect returns a variable-length protected blob, while Unprotect must return exactly 32 bytes. The protocol parser now enforces bounded variable output for Protect and exact key length for Unprotect.

@@ -392,3 +392,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Windows native integration exposed a response parser assumption: it incorrectly required the DPAPI-protected blob to be 32 bytes. Protected DPAPI blobs are variable length; only the unprotected KEK must be exactly 32 bytes.
 - Node helper now accepts a bounded variable-length Protect result and continues to require exactly 32 bytes after Unprotect. Bumped root version/lock metadata to `0.1.7`.
 - Fresh Linux/PostgreSQL and Windows helper/runtime CI is required before proceeding.
+
+
+## 2026-11-19 — DPAPI Unprotect request bounds
+- Windows integration showed that the Node client incorrectly required the input to Unprotect to be exactly 32 bytes. DPAPI ciphertext is variable length; only the original KEK and decrypted output are 32 bytes.
+- Node framing and .NET helper now allow bounded protected blobs for Unprotect, while Protect still accepts exactly 32-byte KEKs and Unprotect output remains exactly 32 bytes.
+- Bumped root version/lock metadata to `0.1.8`. Fresh Windows and Linux CI required.

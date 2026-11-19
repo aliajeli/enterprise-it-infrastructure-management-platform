@@ -78,3 +78,6 @@ A fixed-purpose .NET 10 helper and Node.js binary-IPC client now provide a DPAPI
 
 
 The initial Windows integration test exposed and corrected a framing assumption: DPAPI-protected blobs are variable length, whereas the decrypted KEK is exactly 32 bytes. The Node protocol parser now applies those distinct bounds. Exact-head CI is required before treating this helper primitive as verified.
+
+
+The DPAPI protocol now distinguishes input/output sizes: Protect accepts a 32-byte KEK; Unprotect accepts a bounded variable-length DPAPI blob and returns exactly 32 bytes. The Windows integration test is the acceptance gate for this protocol.

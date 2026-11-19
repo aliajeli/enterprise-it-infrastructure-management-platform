@@ -10,7 +10,13 @@ const RESPONSE_TIMEOUT_MS = 5_000;
 
 function encodeRequest(operation: number, installationId: string, key: Buffer): Buffer {
   const installation = Buffer.from(installationId, "utf8");
-  if (installation.length < 1 || installation.length > 128 || key.length !== KEY_BYTES) {
+  if (
+    installation.length < 1 ||
+    installation.length > 128 ||
+    key.length < 1 ||
+    key.length > MAX_FRAME_BYTES - 136 ||
+    (operation === OP_PROTECT && key.length !== KEY_BYTES)
+  ) {
     throw new Error("Invalid DPAPI request.");
   }
   const body = Buffer.allocUnsafe(8 + installation.length + key.length);
@@ -77,8 +83,13 @@ export class WindowsDpapiProtector {
     if (this.platform !== "win32") {
       return Promise.reject(new Error("Windows DPAPI is available only on Windows."));
     }
-    if (!Buffer.isBuffer(payload) || payload.length !== KEY_BYTES) {
-      return Promise.reject(new Error("DPAPI accepts exactly one 32-byte key."));
+    if (
+      !Buffer.isBuffer(payload) ||
+      payload.length < 1 ||
+      payload.length > MAX_FRAME_BYTES - 136 ||
+      (operation === OP_PROTECT && payload.length !== KEY_BYTES)
+    ) {
+      return Promise.reject(new Error("Invalid DPAPI payload length."));
     }
 
     const request = encodeRequest(operation, this.installationId, payload);
