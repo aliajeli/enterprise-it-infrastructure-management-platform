@@ -1,6 +1,6 @@
 # API contract and implementation status
 
-The complete platform API described below remains a design target. M1 identity/user/branch APIs are implemented on the review branches. The initial M2 asset and switch-port metadata endpoints listed below are implemented on the M2 feature branch; CI run 44531050529 passed on commit `5d3aec16b760c1e5318297409a29fb7bb0135821`, and PR #7 is Draft/unmerged pending review. Discovery transports and operational device configuration remain unimplemented.
+The complete platform API described below remains a design target. M1 identity/user/branch APIs are implemented on the review branches. The initial M2 asset and switch-port metadata endpoints listed below are implemented on the M2 feature branch; CI runs 44531050529 and 44531799575 passed; latest run 44531799575 passed on exact head `60e9f694e9b0cf8960452ac63dfba8ee84431ca0`. PR #7 is Draft/unmerged pending review. Discovery transports and operational device configuration remain unimplemented.
 
 ## Implemented M1 API subset
 

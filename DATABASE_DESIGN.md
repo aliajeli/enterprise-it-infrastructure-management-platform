@@ -23,7 +23,7 @@ Database-enforced controls:
 - PostgreSQL trigger rejects UPDATE and DELETE against audit events.
 - User and branch relations restrict hard deletion where historical references exist.
 
-The M1 migration, generated Prisma 7.10.1 client and live PostgreSQL 18 integration test passed in GitHub Actions. M2 adds `assets`, `switch_profiles`, `switch_ports`, `port_observations` and `discovery_runs` in migration `20261119130000_inventory_foundation`; Prisma validation, client generation, migration application and PostgreSQL integration tests passed in GitHub Actions run 44531050529 on exact branch head `5d3aec16b760c1e5318297409a29fb7bb0135821`.
+The M1 migration, generated Prisma 7.10.1 client and live PostgreSQL 18 integration test passed in GitHub Actions. M2 adds `assets`, `switch_profiles`, `switch_ports`, `port_observations` and `discovery_runs` in migration `20261119130000_inventory_foundation`; Prisma validation, client generation, migration application and PostgreSQL integration tests passed in GitHub Actions runs 44531050529 and 44531799575. Latest exact-head run 44531799575 passed on `60e9f694e9b0cf8960452ac63dfba8ee84431ca0`, including append-only port-observation enforcement.
 
 ## Implemented M2 inventory schema slice (CI-verified; PR #7 review pending)
 

@@ -5,7 +5,7 @@
 - Added switch-port metadata list/create/update APIs for operator-maintained aliases, descriptions, configured VLANs and connected-device labels.
 - Enforced the owner-approved role policy at each M2 API entry point: OPERATOR write access only within active assigned branches; VIEWER read-only; ADMIN global.
 - Added PostgreSQL integration coverage for role restrictions, cross-branch denial, asset editing and stale-version conflicts.
-- GitHub Actions run [44531050529](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44531050529) passed on exact M2 head `5d3aec16b760c1e5318297409a29fb7bb0135821`, including PostgreSQL migrations/integration, Windows API smoke, typecheck, lint, tests and production build.
+- GitHub Actions run [44531050529](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44531050529) passed on initial M2 head. Follow-up run [44531799575](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44531799575) passed on `60e9f694e9b0cf8960452ac63dfba8ee84431ca0`, including append-only observation enforcement and active-branch scope tests.
 - No SNMP/SSH discovery, live switch configuration, subnet scanning, monitoring or hardware compatibility is claimed. PR #7 remains Draft and unmerged pending review.
 
 ## Unreleased — M1 lifecycle completion
