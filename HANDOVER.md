@@ -13,16 +13,18 @@
 | M1 lifecycle and approved role policy | PR #6 Draft/open/unmerged |
 | M2 inventory and switch-port API | PR #7 Draft/open/unmerged; CI passed on its exact head `e015919110a77cc13db0678113a88eae95166063` |
 | M2 inventory UI | PR #8 Draft/open/unmerged; branch selector, inventory list/search, asset registration, switch-port metadata and observation display added |
+| M2 inventory editing | Added asset edit form (optimistic version PATCH) and switch-port metadata edit form (optimistic version PATCH) in commits `6fb36a9334555bed3bad08af6dc99c730dafaa80` and `e1afdf8b1e064d8d246a55ff861bb71d1af2b8f9`; UI/API integration and CI validation still pending |
 | Accessible branch API | Added in PR #8; ADMIN sees active branches globally, OPERATOR/VIEWER see only active granted branches |
 | Not implemented | SNMP/SSH discovery, live switch configuration, Windows services, Worker, Windows Agent, monitoring, NVR integration, Desktop Bridge, Store Commerce deployment, installer, updater and release automation |
 | Release/production | No installer, release, tag or production deployment claimed |
 
 ### Immediate next actions
 
-1. Verify all CI jobs on the exact current PR #8 head.
-2. Review the stacked PR chain #5 → #6 → #7 → #8; passing CI does not replace code review.
-3. Keep the PRs Draft/unmerged until the owner review and dependency order are resolved.
-4. Continue M2 with asset detail/edit flows and port metadata editing, then implement safe read-only discovery as a separate tested slice.
+1. Run and verify all required CI jobs on the exact current PR #8 head (`e1afdf8b1e064d8d246a55ff861bb71d1af2b8f9`); the GitHub status endpoint currently returns no status checks or PR-triggered workflow runs for this SHA, so it is not validated yet.
+2. Add focused UI tests for asset and port edit flows, including stale-version (409), invalid IP/MAC and invalid/duplicate VLAN cases; correct any failures.
+3. Review the stacked PR chain #5 → #6 → #7 → #8; passing CI does not replace code review. Keep all dependent PRs Draft/unmerged until owner review and dependency order are resolved.
+4. Continue M2 with asset detail presentation, switch-port metadata history and safe read-only discovery as a separate tested slice.
+5. Keep installer/release work within the documented one-time bootstrap exception: assign immutable per-commit version identities in the future release ledger, but do not fabricate an installer before clean Windows installation and readiness gates are genuinely met.
 
 ---
 
