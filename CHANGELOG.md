@@ -1,3 +1,12 @@
+## Unreleased — M2 inventory foundation
+
+- Added PostgreSQL/Prisma models and migration for branch-owned assets, switch profiles, switch ports, port observations and discovery-run records.
+- Added branch-scoped inventory list/create/update APIs with bounded pagination, branch/kind/search filters, IP/MAC validation, optimistic concurrency and transactional audit events.
+- Added switch-port metadata list/create/update APIs for operator-maintained aliases, descriptions, configured VLANs and connected-device labels.
+- Enforced the owner-approved role policy at each M2 API entry point: OPERATOR write access only within active assigned branches; VIEWER read-only; ADMIN global.
+- Added PostgreSQL integration coverage for role restrictions, cross-branch denial, asset editing and stale-version conflicts.
+- No SNMP/SSH discovery, live switch configuration, subnet scanning, monitoring or hardware compatibility is claimed. CI and review are pending.
+
 ## Unreleased — M1 lifecycle completion
 - Added ADMIN-only branch editing with optimistic version checks, soft archive and restore.
 - Archiving a branch now revokes all active user-branch grants in the same transaction; restoring the branch does not silently reinstate revoked grants.

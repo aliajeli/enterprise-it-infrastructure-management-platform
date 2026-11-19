@@ -4,7 +4,7 @@
 
 **Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration is implemented in [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5); branch lifecycle and administrator password recovery are being completed in the follow-up review branch. M1 acceptance still requires owner confirmation of the OPERATOR/VIEWER action matrix and real Windows service plus production backup/restore evidence. The platform is not production-ready; Windows services, Agent, monitoring, integrations, installer, updater and release automation remain future milestones.
+The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration and role policy are implemented in Draft PRs [#5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) and [#6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), both unmerged. The initial M2 inventory and switch-port API/schema slice is being developed in Draft PR #7. M1 still requires clean Windows service integration and production encrypted backup/restore evidence. M2 discovery transports, UI and hardware validation remain future work. The platform is not production-ready.
 
 ## Application baseline
 
@@ -99,4 +99,5 @@ All behavior described as planned or not implemented remains unverified until im
 - M0 web application foundation: complete and merged.
 - M1 identity/authentication/persistence: merged.
 - M1 user and branch administration: implemented in [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5), CI-verified and awaiting review; not yet merged.
-- M2 inventory management and subsequent Windows Agent, monitoring, integrations, installer and release milestones are not yet implemented.
+- M2 initial inventory/switch-port schema and API slice: implemented on feature branch, awaiting CI/review; no real discovery or switch configuration.
+- Windows Agent, monitoring, SNMP/SSH integrations, installer, updater and release milestones remain future work.

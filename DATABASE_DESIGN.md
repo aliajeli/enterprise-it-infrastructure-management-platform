@@ -1,6 +1,6 @@
 # Database design and implementation status
 
-The M1 identity foundation has an implemented Prisma schema and PostgreSQL migration. The broader infrastructure ERD below remains a proposed design; its device, monitoring, job, integration and deployment entities have not yet been migrated.
+The M1 identity foundation is implemented in its review branches. The first M2 inventory schema slice is implemented on `phase3/m2-inventory-foundation`; monitoring, agent, credential, integration and deployment entities in the broader ERD remain design-only.
 
 ## Implemented M1 schema
 
@@ -23,7 +23,20 @@ Database-enforced controls:
 - PostgreSQL trigger rejects UPDATE and DELETE against audit events.
 - User and branch relations restrict hard deletion where historical references exist.
 
-The migration, generated Prisma 7.10.1 client and live PostgreSQL 18 integration test pass in GitHub Actions run 44495513578. The remaining ERD entities are design-only until their implementation milestones.
+The M1 migration, generated Prisma 7.10.1 client and live PostgreSQL 18 integration test passed in GitHub Actions. M2 adds `assets`, `switch_profiles`, `switch_ports`, `port_observations` and `discovery_runs` in migration `20261119130000_inventory_foundation`; its Prisma validation, migration and integration test evidence is pending the current branch CI run.
+
+## Implemented M2 inventory schema slice (CI pending)
+
+Migration: `packages/database/prisma/migrations/20261119130000_inventory_foundation/migration.sql`.
+
+- `assets`: common branch-owned inventory identity, kind/status, hostname, primary IPv4/IPv6 address, MAC, vendor/model/serial, location, description, optimistic version and soft-delete timestamp. Asset code is unique within a branch; management IP is deliberately not globally unique because routed branches can reuse private address space.
+- `switch_profiles`: optional one-to-one switch-specific SNMP identity and firmware metadata; no community string, password or credential material.
+- `switch_ports`: stable per-switch `ifIndex` record plus operator-maintained name/alias/description, configured access/tagged VLAN metadata and connected-device label. VLAN IDs are constrained to 1–4094; interface index must be positive.
+- `port_observations`: append-only timestamped observations for admin/operational state, VLAN, learned IP/MAC and speed, with source provenance. Observations are distinct from operator-maintained metadata.
+- `discovery_runs`: durable run record shape and outcome counters for future SNMP/SSH/Agent/ISAPI/import jobs. No discovery worker is claimed implemented.
+- Foreign keys use RESTRICT for operational history; indexes support branch/kind inventory and latest port observations. The migration adds database checks for MAC syntax, VLAN ranges, positive interface indices and nonnegative run counters.
+
+**Data authority rule:** manual port alias, description, configured VLAN and connected-device label are not overwritten by discovery. Discovery appends observations with source and timestamp; stale/missing observations do not imply a port was removed. A failed or partial discovery never deletes inventory records. Raw observation metadata must be sanitized and must never contain credentials, community strings or session tokens.
 
 ## Conventions
 PostgreSQL, Prisma, UUID primary keys, timestamptz in UTC, created_at and updated_at on mutable records, optimistic version where concurrent edits matter. Soft-delete operational assets using deleted_at; never cascade-delete operational history. Explicit nullable fields, constraints and enum checks are finalized in schema review. Secret ciphertext is never returned by general APIs. IP addresses use PostgreSQL inet or validated canonical text with a consistent Prisma mapping; document native-type limitations. Enforce IPv4/IPv6 and uniqueness according to management network/namespace rather than globally if networks can overlap. Time-zone aware user display. All text lengths and numeric ranges validated in both API and database.

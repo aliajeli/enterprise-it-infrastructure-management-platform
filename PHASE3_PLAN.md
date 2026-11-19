@@ -31,7 +31,7 @@
 
 **Exit criteria: PASS.** Committed npm v3 lockfile; clean Node.js 26.13.1/npm 11.20.0 runner; `npm ci`; `npm audit --audit-level=high` (0 vulnerabilities); dependency-tree verification; ESLint; TypeScript; two Vitest smoke tests; production build; and honest dashboard empty states. Evidence: GitHub Actions run [44491419345](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44491419345).
 
-### M1 — Identity, access control and persistence (in progress; implementation slices delivered)
+### M1 — Identity, access control and persistence (implementation delivered; review/evidence gates open)
 
 **Merged in PR #4 (2026-11-19):**
 - Fastify API and Prisma 7.10.1 database workspaces; PostgreSQL migration for users, sessions, recovery codes, branches, branch grants and append-only audit events.
@@ -48,18 +48,28 @@
 - Audit events for administrative operations and PostgreSQL integration coverage for user lifecycle, password rotation, branch grants, session revocation and append-only audit enforcement.
 - CI run [44504888903](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44504888903) passed all three jobs: Linux/Node.js 26/PostgreSQL 18 platform validation, Windows API/native Argon2id runtime smoke and lockfile bootstrap.
 
-**M1 acceptance criteria still outstanding:**
-- Owner confirmation of the precise OPERATOR/VIEWER action matrix before any operational inventory/device/network mutation is enabled.
-- Complete branch lifecycle (update, archive/restore and safe reassignment behavior).
-- Password recovery workflow and operational recovery policy.
-- Production backup/restore evidence, Windows service identity/integration validation and pre-production operational hardening.
-- PR #5 code review and merge. Passing CI is necessary but does not replace review or owner decisions.
+**M1 acceptance gates still outstanding:**
+- The owner-approved ADMIN/OPERATOR/VIEWER action matrix is recorded in `DECISION_LOG.md` and its server-side policy primitives are implemented and CI-verified in PR #6.
+- Branch lifecycle (edit/archive/restore) and ADMIN-issued temporary password reset are implemented on PR #6; no self-service recovery channel is configured.
+- Clean target-Windows service identity/ACL/startup/API integration evidence; the five Windows services are not yet implemented.
+- Production PostgreSQL encrypted backup/restore and key-recovery evidence; disposable CI backup/restore is not production evidence.
+- PR #5 and PR #6 code review and merge remain owner-controlled. Passing CI is necessary but does not replace review.
 
-### M2 — Branch and inventory management
+### M2 — Branch and inventory management (initial slice in progress)
 
-- Implement branches, branch links, common device identity and typed device records.
-- Add switch inventory and manually maintained switch-port/VLAN/IP/device bindings.
-- Implement validated CRUD, search, filtering, pagination, optimistic concurrency and audit history.
+**Implemented on `phase3/m2-inventory-foundation` (CI/review pending):**
+- PostgreSQL/Prisma schema and migration for branch-owned common assets, switch profiles, switch ports, timestamped port observations and discovery-run records.
+- Branch-scoped inventory list/create/update API with bounded pagination, filtering, IP/MAC validation, optimistic concurrency and transactional audit events.
+- Switch-port metadata list/create/update API for operator-maintained alias, description, configured VLANs and connected-device label.
+- Server-side role and branch enforcement: OPERATOR can edit inventory and metadata only in assigned active branches; VIEWER is read-only; ADMIN is global. No live switch configuration is exposed.
+- Integration tests cover OPERATOR create/edit, VIEWER read/denied write, cross-branch denial and optimistic version conflicts.
+
+**Remaining M2 work:**
+- Branch links and richer typed asset profiles (servers, POS, printers, NVRs, cameras, routers and computers).
+- Inventory UI with branch-aware filters, asset detail and port table/editor.
+- Safe SNMP read-only discovery for supported Cisco/MikroTik devices; reconciliation and observation history without overwriting manual metadata.
+- Import/export, bulk validation, deduplication and audit-friendly reconciliation.
+- Real hardware validation before vendor/model/firmware compatibility claims.
 
 ### M3 — Windows Agent lifecycle
 

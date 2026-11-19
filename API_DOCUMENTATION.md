@@ -1,6 +1,6 @@
 # API contract and implementation status
 
-The complete platform API described below is still a design target. The following M1 subset is implemented and CI-verified; all other candidate routes and event contracts remain planned, not implemented.
+The complete platform API described below remains a design target. M1 identity/user/branch APIs are implemented on the review branches. The initial M2 asset and switch-port metadata endpoints listed below are implemented on the M2 feature branch and await CI/review; discovery transports and operational device configuration remain unimplemented.
 
 ## Implemented M1 API subset
 
@@ -26,6 +26,19 @@ All state-changing routes require an exact trusted Origin, an authenticated serv
 | POST | /api/v1/branches/{branchId}/archive | ADMIN soft-archives branch and revokes all active branch grants. |
 | POST | /api/v1/branches/{branchId}/restore | ADMIN restores branch without restoring previously revoked grants. |
 
+## Implemented M2 inventory API slice (feature branch; validation pending)
+
+| Method | Route | Behavior and authorization |
+|---|---|---|
+| GET | /api/v1/inventory/assets | Lists active inventory assets with bounded limit/offset, branch and kind filters, and text/IP search. ADMIN global; OPERATOR/VIEWER limited to active assigned branches. Requires `inventory.read`. |
+| POST | /api/v1/inventory/assets | Creates a branch-owned asset; SWITCH requires a switch profile in the same transaction. Requires `inventory.write` and active branch grant. |
+| PATCH | /api/v1/inventory/assets/{assetId} | Updates common asset metadata with optimistic version check. Requires `inventory.write` and active branch grant. |
+| GET | /api/v1/inventory/assets/{assetId}/switch-ports | Lists switch port metadata and latest recorded observation. Requires `switch.metadata.read` and active branch grant. |
+| POST | /api/v1/inventory/assets/{assetId}/switch-ports | Creates a manually maintained port metadata record. Requires `switch.metadata.write` and active branch grant. |
+| PATCH | /api/v1/inventory/assets/{assetId}/switch-ports/{portId} | Updates alias, description, configured VLAN and connected-device label using optimistic version. Requires `switch.metadata.write` and active branch grant. |
+
+The API persists inventory metadata only. It does not configure switches, change live VLANs, initiate SSH/SNMP sessions, scan subnets, or claim a port's live status. Port state/IP/MAC/speed are modeled as timestamped observations, not operator-entered truth. SNMP/SSH discovery workers are not implemented. Secrets are not part of asset or switch-profile records.
+
 Authentication implementation details:
 
 - Argon2id password hashing; 14–128 character password policy for initial credentials.
@@ -37,11 +50,11 @@ Authentication implementation details:
 - API binds to loopback. Only loopback proxy peers are trusted for forwarded client IP; the TLS Edge must overwrite X-Forwarded-For.
 - The first administrator is created only through the interactive local bootstrap CLI.
 
-Not yet implemented: operational device APIs, WebSocket contracts, Agent enrollment and job operations. The owner-approved OPERATOR/VIEWER action matrix is recorded in `M1_USER_MANAGEMENT_DESIGN.md` and enforced as a server-side `PlatformAction` policy primitive with unit coverage; no operational mutation endpoint is exposed yet. Admin password recovery is implemented as an administrator-issued one-time temporary credential; self-service recovery is not implemented because no verified recovery channel is configured.
+Not yet implemented: SNMP/SSH discovery transports and workers, WebSocket contracts, Agent enrollment and durable job execution. The initial inventory CRUD and manual switch-port metadata endpoints are now present on the M2 feature branch. Live device configuration, remote sessions, credential use and deployment remain denied to OPERATOR/VIEWER. Admin password recovery is implemented as an administrator-issued one-time temporary credential; self-service recovery is not implemented because no verified recovery channel is configured.
 
 ## Approved role/action policy for future operational APIs
 
-The policy is enforced server-side; UI visibility is never an authorization boundary. Every branch-owned operation must require both the action capability and an active grant for the target branch. ADMIN has global scope. OPERATOR is limited to inventory read/write, switch-port/VLAN metadata read/write, and non-destructive inventory discovery/sync. VIEWER is read-only for inventory and switch metadata. OPERATOR and VIEWER cannot change live device configuration, initiate remote sessions, use stored credentials, create/execute deployments, manage users/branches/settings, or force-close Store Commerce. Force-close additionally requires explicit per-operation approval and a warning even for ADMIN. The policy helper exists, but each future route, WebSocket event and job handler must enforce it before access or side effects.
+The policy is enforced server-side; UI visibility is never an authorization boundary. Every branch-owned operation must require both the action capability and an active grant for the target branch. ADMIN has global scope. OPERATOR is limited to inventory read/write, switch-port/VLAN metadata read/write, and non-destructive inventory discovery/sync. VIEWER is read-only for inventory and switch metadata. OPERATOR and VIEWER cannot change live device configuration, initiate remote sessions, use stored credentials, create/execute deployments, manage users/branches/settings, or force-close Store Commerce. Force-close additionally requires explicit per-operation approval and a warning even for ADMIN. The policy helper is applied to each implemented M2 route; every future route, WebSocket event and job handler must enforce it before access or side effects.
 
 ## Planned API contract
 

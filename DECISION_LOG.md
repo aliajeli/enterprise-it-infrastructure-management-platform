@@ -110,3 +110,13 @@ The owner explicitly approved the following distinction between ADMIN, OPERATOR 
 - **Enforcement:** authorization must be checked server-side for every HTTP request, WebSocket event and durable job handler. Branch-owned operations require both the action capability and an active, non-revoked grant on an active branch. Client-side hiding is not security.
 - **Implementation boundary:** the closed action policy and unit tests may be implemented in M1. Operational endpoints and modules remain unimplemented until their own milestones; this decision does not claim those features exist.
 - **Status:** owner-approved; the server-side policy helper, branch-action guard and role/action unit tests are committed in PR #6 at `6be6e63b66930a454e1c7e87587a3882796de8e7`; CI run 44527431429 passed on that exact commit. Operational endpoints remain future work. No PR merge or repository settings change is authorized by this decision.
+
+
+## M2 inventory data-authority and discovery rules — 19 November 2026
+
+- **Manual metadata remains authoritative:** switch-port alias, description, configured VLAN/tagged VLANs and connected-device label are operator-maintained metadata. A future discovery process must not overwrite these fields.
+- **Observations are separate and time-stamped:** port admin/operational state, learned VLAN, IP/MAC and speed belong in append-only, source-labelled observations. Unknown/stale is not equivalent to DOWN or physically disconnected.
+- **No destructive reconciliation:** missing ports/assets in one scan, or any partial/failed scan, must not delete or retire records. Reconciliation requires repeated successful evidence and a separately reviewed lifecycle policy.
+- **Addressing:** IP addresses are not globally unique; different branches/VLANs may reuse private ranges. Inventory uniqueness is branch-scoped by asset code, not management IP.
+- **Discovery safety:** initial discovery is read-only SNMP/SSH against explicitly registered equipment. No subnet sweep, configuration write, credential exposure or automatic network mutation. Discovery workers and real-device compatibility remain unimplemented until later M2 tasks and Tier 3 testing.
+- **VLAN validation:** valid VLAN IDs are 1–4094; tagged VLAN lists are unique. The API and PostgreSQL enforce range checks.
