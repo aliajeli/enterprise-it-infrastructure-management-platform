@@ -197,6 +197,51 @@ describe.skipIf(!isDisposableTestDatabase)(
         }),
       ).rejects.toThrow();
 
+      const branchBeforeEdit = await db.branch.findUniqueOrThrow({
+        where: { id: secondBranchId },
+        select: { version: true },
+      });
+      const editBranch = await app.inject({
+        method: "PATCH",
+        url: `/api/v1/branches/${secondBranchId}`,
+        headers: { origin: publicOrigin, cookie: adminCookie },
+        payload: {
+          branchCode: `EDIT-${randomUUID().slice(0, 8)}`,
+          name: "Renamed API branch",
+          version: branchBeforeEdit.version,
+        },
+      });
+      expect(editBranch.statusCode).toBe(200);
+      expect(editBranch.json().branch.version).toBe(branchBeforeEdit.version + 1);
+
+      const archiveBranch = await app.inject({
+        method: "POST",
+        url: `/api/v1/branches/${secondBranchId}/archive`,
+        headers: { origin: publicOrigin, cookie: adminCookie },
+        payload: { version: editBranch.json().branch.version },
+      });
+      expect(archiveBranch.statusCode).toBe(204);
+      expect(await db.userBranchAccess.count({
+        where: { userId, branchId: secondBranchId, revokedAt: null },
+      })).toBe(0);
+
+      const archivedBranch = await db.branch.findUniqueOrThrow({
+        where: { id: secondBranchId },
+        select: { version: true, deletedAt: true },
+      });
+      expect(archivedBranch.deletedAt).not.toBeNull();
+      const restoreBranch = await app.inject({
+        method: "POST",
+        url: `/api/v1/branches/${secondBranchId}/restore`,
+        headers: { origin: publicOrigin, cookie: adminCookie },
+        payload: { version: archivedBranch.version },
+      });
+      expect(restoreBranch.statusCode).toBe(200);
+      expect(restoreBranch.json().branch.deletedAt).toBeNull();
+      expect(await db.userBranchAccess.count({
+        where: { userId, branchId: secondBranchId, revokedAt: null },
+      })).toBe(0);
+
       const roleChange = await app.inject({
         method: "PATCH",
         url: `/api/v1/users/${userId}/role`,
@@ -212,6 +257,63 @@ describe.skipIf(!isDisposableTestDatabase)(
         headers: { cookie: newCookie },
       });
       expect(revokedAfterRoleChange.statusCode).toBe(401);
+
+      const loginAfterRoleChange = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        headers: { origin: publicOrigin },
+        payload: {
+          username: created.user.username,
+          password: "New Operator Password 2026!",
+        },
+      });
+      expect(loginAfterRoleChange.statusCode).toBe(200);
+      const preResetCookie = sessionCookie(loginAfterRoleChange);
+
+      const resetPassword = await app.inject({
+        method: "POST",
+        url: `/api/v1/users/${userId}/reset-password`,
+        headers: { origin: publicOrigin, cookie: adminCookie },
+      });
+      expect(resetPassword.statusCode).toBe(200);
+      expect(resetPassword.headers["cache-control"]).toContain("no-store");
+      expect(resetPassword.json().mustChangePassword).toBe(true);
+      expect(resetPassword.json().temporaryPassword).toHaveLength(43);
+
+      const preResetSession = await app.inject({
+        method: "GET",
+        url: "/api/v1/session",
+        headers: { cookie: preResetCookie },
+      });
+      expect(preResetSession.statusCode).toBe(401);
+
+      const oldPasswordLogin = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        headers: { origin: publicOrigin },
+        payload: {
+          username: created.user.username,
+          password: "New Operator Password 2026!",
+        },
+      });
+      expect(oldPasswordLogin.statusCode).toBe(401);
+
+      const resetLogin = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        headers: { origin: publicOrigin },
+        payload: {
+          username: created.user.username,
+          password: resetPassword.json().temporaryPassword,
+        },
+      });
+      expect(resetLogin.statusCode).toBe(200);
+      expect(resetLogin.json().user.mustChangePassword).toBe(true);
+
+      const resetAudit = await db.auditEvent.findFirst({
+        where: { action: "USER_PASSWORD_RESET", objectId: userId },
+      });
+      expect(resetAudit).not.toBeNull();
 
       const statusChange = await app.inject({
         method: "PATCH",
