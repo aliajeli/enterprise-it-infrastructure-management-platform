@@ -55,3 +55,9 @@
 - Selected Node.js 26 Active LTS, Next.js 16.4.6, PostgreSQL 18 and Prisma ORM 7 GA as the initial compatibility baseline; exact dependency installation and clean-runner verification remain pending.
 - No API, database migration, Windows service, Agent, Desktop Bridge, installer, release workflow or production integration is claimed as implemented.
 - No repository settings, branch protection, hooks, webhooks or permissions were changed.
+
+## 2026-11-19 — M0 quality-gate scaffolding
+- Added an explicit ESLint CLI gate using the official Next.js 16 Core Web Vitals and TypeScript flat configurations.
+- Added root and web-workspace lint scripts and documented the local validation sequence.
+- Added a Node.js 26 runtime selector file.
+- Dependency installation, lockfile generation and execution of lint/typecheck/build remain pending a network-enabled Node.js 26 runner.

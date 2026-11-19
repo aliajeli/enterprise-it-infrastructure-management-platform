@@ -23,12 +23,15 @@ After installing the supported Node.js runtime and dependencies:
 
 ```sh
 npm install
+npm run lint
+npm run typecheck
+npm run build
 npm run dev
 ```
 
 The development server binds to `127.0.0.1`. The initial dashboard is an implementation-status shell; it does not display fabricated device or monitoring data.
 
-**Reproducibility status:** the initial scaffold does not yet include a generated `package-lock.json`. Dependency installation and clean-runner build must be verified before this milestone is complete.
+**Reproducibility status:** a generated `package-lock.json` is still required. Run `npm install` with Node.js 26/npm 11, commit the resulting lockfile, then verify `npm ci`, lint, typecheck and production build on a clean runner.
 
 ## Documentation index
 

@@ -25,6 +25,7 @@
 - Create the first real Next.js application shell with responsive navigation and truthful empty states.
 - Pin a supported runtime/framework baseline and record package-lock generation/verification as a required gate.
 - Establish build, typecheck, lint, unit and security validation before enabling any release workflow.
+- Use the Next.js 16 ESLint flat-config integration; do not rely on the removed `next lint` command.
 - Reconcile the operational handover with the post-PR #2 repository state.
 
 **Exit criteria:** reproducible dependency installation with committed lockfile; successful typecheck and production build on a clean runner; no placeholder claims of connected infrastructure.
