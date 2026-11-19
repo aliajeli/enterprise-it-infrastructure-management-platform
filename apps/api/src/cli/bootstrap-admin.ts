@@ -1,4 +1,4 @@
-import { createInterface } from "node:readline";
+import { createInterface } from "node:readline/promises";
 import { StringDecoder } from "node:string_decoder";
 import { stdin, stdout } from "node:process";
 import { prisma } from "@platform/database";
