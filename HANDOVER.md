@@ -422,3 +422,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - Added `WINDOWS_KEYRING_STORAGE_DESIGN.md` defining fixed ProgramData storage, dedicated service SID, exact ACL verification, transaction-scoped process lock, durable atomic replacement, binary helper session and Windows acceptance gates.
 - Design only; no production storage adapter or real credential storage. Worker handlers remain disabled. No installer or Release.
 - Root package and lockfile metadata advanced to `0.1.12`.
+
+
+
+## 2026-11-19 — package-lock dependency consistency correction
+- Both Push and PR validation on `8e877a8a4640987491a6a3584cec561b37059de4` failed at `npm ls --all`. The precise invalid entry was `node_modules/@prisma/streams-local`: lock metadata incorrectly said `0.1.12` while the resolved package tarball was `0.1.11` and `@prisma/dev` required `0.1.11`.
+- Windows API runtime smoke passed on that SHA, including DPAPI helper build and API build/tests.
+- Corrected only the third-party lock entry back to `0.1.11`; root package/lock metadata advances to `0.1.13`. Exact-head Linux/PostgreSQL and Windows CI must pass before implementation continues.

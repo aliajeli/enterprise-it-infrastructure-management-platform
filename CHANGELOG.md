@@ -279,3 +279,9 @@
 - Specified exact owner/DACL validation, transaction-scoped cross-process locking, same-directory durable atomic replacement, bounded binary helper sessions and Windows multi-process/security acceptance tests.
 - This is a design milestone only: no filesystem adapter, ACL provisioning, storage helper operation, production keyring registration, recovery export or installer is implemented by this change.
 - Root version metadata advanced to 0.1.12; no Release or installer is produced.
+
+
+## Unreleased — dependency lock consistency correction
+- Exact-head CI for `0.1.12` failed at `npm ls --all`: the root version bump had inadvertently changed the locked `node_modules/@prisma/streams-local` package version to `0.1.12` while its resolved tarball and `@prisma/dev` dependency remained at `0.1.11`.
+- Restored the third-party package lock entry to `0.1.11`; only the root package and root lock metadata use `0.1.13`.
+- Windows API runtime smoke passed on the failed commit; Linux dependency-tree verification is rerun on this correction. No application dependency versions were intentionally changed.
