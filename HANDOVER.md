@@ -344,3 +344,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - Corrected test isolation with per-test cleanup and explicit assertions that each claim returns the intended run. Lease recovery count assertion now allows additional eligible rows, while still verifying the target run's recovered state.
 - Follow-up commit: `4ca9fd786eb1820db99e0a7745079908c418ccad`. CI run [44576830667](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44576830667) is currently in progress; exact-head results are not yet known.
 - Do not claim the PostgreSQL queue tests pass until run 44576830667 (or a later exact-head run) succeeds. Worker remains fail-closed with no discovery handlers enabled.
+
+
+## 2026-11-19 — Credential Vault validation correction
+- Exact-head CI for crypto-core commit `25021e1b2b428f2f8287484105a36d7d2bd9d381` failed on both Linux platform validation and Windows API runtime smoke. Both failures came from the same malformed control-character validation expression in `apps/api/src/security/credential-vault-crypto.ts`; six envelope tests rejected the valid `credential-1` context before exercising encryption.
+- Corrected context validation to reject ASCII control characters by code point, and added a regression test for valid identifiers and control-character rejection.
+- Bumped root package version to `0.1.1` and synchronized the npm lockfile root metadata. This is source/version metadata only; no installer or Release was produced.
+- The correction requires fresh exact-head Linux/PostgreSQL and Windows CI before DPAPI implementation proceeds. Credential Vault remains unconnected to the API and must not be used for real equipment secrets.

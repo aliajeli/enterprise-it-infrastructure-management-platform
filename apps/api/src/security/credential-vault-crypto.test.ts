@@ -87,6 +87,13 @@ describe("credential vault cryptographic envelope", () => {
     await expect(decryptCredentialSecret(encrypted, context, empty)).rejects.toBeInstanceOf(CredentialDecryptionError);
   });
 
+  it("accepts ordinary identifiers and rejects control characters in context", async () => {
+    const keys = provider();
+    await expect(encryptCredentialSecret("secret", context, keys)).resolves.toMatchObject({ formatVersion: 1 });
+    await expect(encryptCredentialSecret("secret", { ...context, assetId: "asset-\\u0001" }, keys))
+      .rejects.toThrow("Invalid credential context: assetId.");
+  });
+
   it("rejects empty and oversized secrets before encryption", async () => {
     const keys = provider();
     await expect(encryptCredentialSecret("", context, keys)).rejects.toThrow();

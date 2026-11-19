@@ -53,7 +53,7 @@ export class CredentialDecryptionError extends Error {
 
 function validateContext(context: CredentialContext): void {
   for (const [name, value] of Object.entries(context)) {
-    if (typeof value !== "string" || value.length < 1 || value.length > 128 || /[\\u0000-\\u001f]/u.test(value)) {
+    if (typeof value !== "string" || value.length < 1 || value.length > 128 || [...value].some((character) => character.charCodeAt(0) <= 0x1f)) {
       throw new Error(`Invalid credential context: ${name}.`);
     }
   }

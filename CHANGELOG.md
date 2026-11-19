@@ -1,3 +1,10 @@
+## Unreleased — Credential Vault context-validation correction (2026-11-19)
+
+- Fixed the control-character validation in the credential encryption context. The previous escaped character-class expression rejected valid identifiers such as `credential-1` on both Linux and Windows.
+- Added regression coverage for ordinary identifiers and rejection of ASCII control characters.
+- Exact-head CI for the preceding crypto-core commit `25021e1b2b428f2f8287484105a36d7d2bd9d381` failed in both platform-validation and Windows runtime-smoke jobs; six crypto tests failed at context validation. This correction is pending fresh CI and is not yet verified.
+- Bumped the application package version from `0.1.0` to `0.1.1`; no installer or GitHub Release is created until required validation and release gates pass.
+
 ## Unreleased — Credential Vault cryptographic core (2026-11-19)
 
 - Added an AES-256-GCM envelope-encryption primitive with a fresh random 256-bit data key per credential, independent 96-bit nonces for data/key wrapping, 128-bit authentication tags and AAD bound to credential, branch, asset and credential kind.
