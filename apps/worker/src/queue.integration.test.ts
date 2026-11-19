@@ -127,6 +127,20 @@ describe.skipIf(!isDisposableTestDatabase)(
       expect(failed.attemptCount).toBe(2);
     });
 
+    it("does not let failure handling override an active cancellation request", async () => {
+      if (!db) throw new Error("Database integration was not initialized.");
+      const runId = await createRun();
+      await claimNextDiscoveryRun(db, "cancel-owner", ["SNMP"]);
+      await db.$executeRaw`
+        UPDATE discovery_runs SET cancel_requested_at = NOW()
+        WHERE id = ${runId}::uuid
+      `;
+      expect(await failDiscoveryRun(db, runId, "cancel-owner", "TEST_FAILURE", "safe test failure")).toBe("LEASE_LOST");
+      expect(await acknowledgeCancellation(db, runId, "cancel-owner")).toBe(true);
+      const cancelled = await db.discoveryRun.findUniqueOrThrow({ where: { id: runId } });
+      expect(cancelled.status).toBe("CANCELLED");
+    });
+
     it("gives cancellation precedence over retry exhaustion on expired leases", async () => {
       if (!db) throw new Error("Database integration was not initialized.");
       const runId = await createRun({ maxAttempts: 1, attemptCount: 0 });
