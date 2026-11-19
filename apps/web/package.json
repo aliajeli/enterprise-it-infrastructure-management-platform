@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "lucide-react": "1.75.0",
@@ -23,6 +24,7 @@
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "eslint": "9.39.1",
-    "eslint-config-next": "16.4.6"
+    "eslint-config-next": "16.4.6",
+    "vitest": "5.1.1"
   }
 }

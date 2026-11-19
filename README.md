@@ -25,6 +25,7 @@ After installing the supported Node.js runtime and dependencies:
 npm ci
 npm run lint
 npm run typecheck
+npm test
 npm run build
 npm run dev
 ```

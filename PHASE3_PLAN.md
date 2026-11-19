@@ -24,7 +24,8 @@
 - Establish a maintainable monorepo and strict frontend baseline.
 - Create the first real Next.js application shell with responsive navigation and truthful empty states.
 - Pin a supported runtime/framework baseline and record package-lock generation/verification as a required gate.
-- Establish build, typecheck, lint, unit and security validation before enabling any release workflow.
+- Establish build, typecheck, lint, unit and dependency-security validation before enabling any release workflow.
+- Keep the first smoke tests focused on honest dashboard empty states and accessible navigation; add domain-specific tests alongside each later module.
 - Use the Next.js 16 ESLint flat-config integration; do not rely on the removed `next lint` command.
 - Reconcile the operational handover with the post-PR #2 repository state.
 

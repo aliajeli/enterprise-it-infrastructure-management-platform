@@ -2,7 +2,7 @@
 
 ## Current snapshot — Phase 3 implementation (2026-11-19)
 
-**Snapshot observed:** 2026-11-19T08:49:00Z (UTC). This section supersedes the earlier Phase 2 snapshot below; historical evidence and decisions remain preserved.
+**Snapshot observed:** 2026-11-19T08:50:00Z (UTC). This section supersedes the earlier Phase 2 snapshot below; historical evidence and decisions remain preserved.
 
 | Item | Current verified state |
 |---|---|
@@ -13,10 +13,10 @@
 | Current implementation commit | `65ae3036437923288b27914b06be84cf3cddeaaa` |
 | Active pull request | [PR #3 — initial platform web foundation](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/3), open, draft, base `main`; not merged |
 | First milestone | M0 — repository and application foundation, in progress |
-| Implemented scope | Initial Next.js App Router workspace, strict TypeScript configuration, Tailwind CSS integration, responsive infrastructure overview shell with truthful empty states, Phase 3 plan, refreshed landing page/changelog, ESLint 9 flat configuration using the official Next.js 16 Core Web Vitals and TypeScript presets, root/workspace lint scripts, and `.nvmrc` Node 26 selector, native keyboard-accessible mobile navigation, and a GitHub Actions validation workflow for Node.js 26 |
+| Implemented scope | Initial Next.js App Router workspace, strict TypeScript configuration, Tailwind CSS integration, responsive infrastructure overview shell with truthful empty states, Phase 3 plan, refreshed landing page/changelog, ESLint 9 flat configuration using the official Next.js 16 Core Web Vitals and TypeScript presets, root/workspace lint scripts, and `.nvmrc` Node 26 selector, native keyboard-accessible mobile navigation, a GitHub Actions validation workflow for Node.js 26, and a Vitest dashboard smoke-test baseline |
 | Not implemented | Authentication, API, database schema/migrations, Windows services, worker, Agent, monitoring, NVR/switch integrations, Desktop Bridge, installer, updater and release automation |
 | Dependency reproducibility | `package-lock.json` is committed (lockfileVersion 3), generated using Node.js 26.13.1/npm 11.20.0. A clean `npm ci` validation against the committed lockfile is still required |
-| Validation | GitHub Actions run 44490452757 passed dependency installation (`npm install`), dependency-tree verification, ESLint, TypeScript check and production build for application source commit `1ccfe9b`. This run predates the lockfile commit, so it did not validate `npm ci`. A PR run on the lockfile commit was marked `action_required` because the lockfile was pushed by `github-actions[bot]`; a fresh run using a normal branch commit is required. PR remains draft and must not be merged/released until the committed-lockfile run passes |
+| Validation | GitHub Actions run 44490885136 passed `npm ci` against the committed lockfile, dependency-tree verification, ESLint, TypeScript check and production build on commit `dacbac97`. Unit tests and high-severity dependency audit were added immediately afterward and require a fresh run. PR remains draft and must not be merged/released until the committed-lockfile run passes |
 | Execution environment limitation | Available execution environment reports Node.js 22.16.0/npm 10.9.2, below the selected Node.js 26 baseline; outbound DNS/network access is unavailable. GitHub-hosted runners successfully provision Node.js 26.13.1/npm 11.20.0. This limitation concerns the current assistant execution container, not the owner's workstation |
 | Architectural constraints | All six owner-approved decisions in `DECISION_LOG.md` remain binding. Five independent Windows services remain required |
 | Repository administration | No repository settings, branch protection, hooks, webhooks or permissions changed. Added a project-level CI validation workflow; no release workflow or production deployment workflow was added |
@@ -24,11 +24,10 @@
 
 ### Next actions
 
-1. Trigger a fresh validation run on the committed-lockfile branch head and confirm `npm ci` succeeds with Node.js 26/npm 11.
-2. Confirm dependency-tree verification, ESLint, TypeScript and production build all pass on that same commit; fix any findings.
-3. Add/execute focused unit and security tests and complete an accessibility review before declaring M0 complete.
-4. Reconcile the M0 result and update this handover with exact run IDs, commands, runner versions and evidence.
-5. Only after all M0 exit criteria pass, begin M1 identity, access control and persistence. Do not treat the dashboard shell as a functioning management platform.
+1. Validate the new Vitest smoke tests and high-severity dependency audit on the committed-lockfile branch.
+2. Complete the accessibility review and fix any findings.
+3. Reconcile M0 with exact run IDs, commands, runner versions and evidence.
+4. Only after all M0 exit criteria pass, begin M1 identity, access control and persistence. Do not treat the dashboard shell as a functioning management platform.
 
 ---
 

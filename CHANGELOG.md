@@ -69,3 +69,9 @@
 - Committed the generated npm v3 lockfile using Node.js 26.13.1/npm 11.20.0.
 - The first lint run found two internal anchor elements; both were replaced with Next.js Link components.
 - GitHub Actions run 44490452757 passed dependency installation, dependency-tree verification, lint, typecheck and production build for the application source. That run preceded the lockfile commit; a fresh npm ci run against the committed lockfile is still required.
+
+## 2026-11-19 — M0 unit and dependency-security gates
+- Added Vitest 5.1.1 and server-rendered dashboard smoke tests covering truthful empty states and navigation semantics.
+- Added a high-severity threshold npm dependency audit to the GitHub Actions validation workflow.
+- Optimized lockfile bootstrap to skip registry resolution once the lockfile is already tracked.
+- The committed-lockfile CI run passed npm ci, dependency-tree verification, ESLint, TypeScript and production build; the expanded test and audit gates are now being validated.
