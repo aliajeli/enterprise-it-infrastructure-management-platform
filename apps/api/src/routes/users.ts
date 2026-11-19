@@ -169,8 +169,8 @@ export async function registerUserRoutes(
               mustChangePassword: true,
               branchAccesses: {
                 create: request.body.branchIds.map((branchId) => ({
-                  branchId,
-                  grantedByUserId: actor.user.id,
+                  branch: { connect: { id: branchId } },
+                  grantedBy: { connect: { id: actor.user.id } },
                 })),
               },
             },
