@@ -1,3 +1,9 @@
+## Unreleased — Windows keyring helper-session transport (2026-11-19)
+
+- Added an unregistered Windows-only Node transport client for the v1 helper protocol. It retains one child process across a complete storage transaction, serializes local transactions, rejects nested/out-of-transaction operations and fails closed on protocol errors.
+- Added transport tests using a fake helper process. The .NET helper does not yet implement these storage operations; ACL verification, cross-process locking, durable atomic replacement, installer provisioning and production registration remain blocked.
+- Root package version metadata advanced to `0.1.15`; no installer or Release is created.
+
 ## Unreleased — Windows keyring protocol contract (2026-11-19)
 
 - Added a bounded version-1 binary frame codec for the future Windows keyring helper session, with explicit transaction/read/atomic-write/end request and response opcodes.

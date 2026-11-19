@@ -127,3 +127,10 @@ The maximum payload is 32 KiB. The complete frame must contain exactly the decla
 Request opcodes: `BEGIN_TRANSACTION=0x01`, `READ_REGISTRY=0x02`, `WRITE_REGISTRY_ATOMIC=0x03`, `END_TRANSACTION=0x04`. Response opcodes: `BEGIN_OK=0x81`, `READ_RESULT=0x82`, `WRITE_OK=0x83`, `END_OK=0x84`, `ERROR=0xff`. `READ_RESULT` begins with a one-byte status (`0` = registry found followed by exact UTF-8 JSON bytes; `1` = not found and no remaining bytes). `ERROR` contains exactly one stable error code byte; it never carries OS exception text, paths or registry content. Empty control responses have zero-length payloads.
 
 This commit adds only the Node-side framing codec and unit contract tests. The .NET helper does not yet implement these operations, the adapter is not registered, and no Windows filesystem ACL or atomic-write claim is made. The helper implementation must consume this exact contract and add Windows process/ACL integration tests before production registration.
+
+
+## 11. Node helper-session transport milestone
+
+Added a Windows-only, deliberately unregistered Node transport client for the frozen v1 protocol. It starts the helper without a shell or arguments, retains one helper process across the full keyring callback, serializes in-process transactions, rejects nested/out-of-transaction access, enforces frame bounds and operation ordering, and kills the helper on protocol/operation failure. Unit tests use an in-memory fake process to verify transaction framing and fail-closed boundaries.
+
+This is transport groundwork, not a usable storage adapter: the .NET helper still does not implement the storage opcodes, service SID and exact NTFS ACL verification are not implemented, no cross-process lock or atomic filesystem write exists, and the client is not registered. Do not enable credential persistence or enter real equipment credentials.

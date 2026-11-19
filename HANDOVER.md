@@ -436,3 +436,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - Added the version-1 bounded binary frame codec and unit tests for the Windows keyring helper session. Frozen opcodes and frame semantics in `WINDOWS_KEYRING_STORAGE_DESIGN.md`.
 - This milestone does not implement the .NET storage operations, service SID/DACL validation, cross-process lock, durable atomic replace or Node storage adapter. No keyring is persisted in production and no real equipment credentials may be entered.
 - Root package and lockfile metadata advanced to `0.1.14`; no installer or Release was created.
+
+
+## 2026-11-19 — Windows keyring helper-session transport
+- Exact-head CI for `1343b1dd6e9a0a10f37beb7866e6a2f84c74384b` passed both Push run [44599777807](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44599777807) and PR run [44599791110](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44599791110), including Linux/PostgreSQL validation, Windows DPAPI helper build/API tests, and lockfile bootstrap on Push.
+- Added an unregistered Node helper-session transport client and fake-process tests. It holds a single helper session for a storage callback and validates protocol state.
+- The .NET helper does not yet implement the storage opcodes. Service SID/NTFS ACL verification, cross-process lock, durable atomic replace, installer provisioning and production registration remain unimplemented. Keep Credential Vault test-only; no real equipment credentials, installer or Release.
+- Root version metadata advanced to `0.1.15`.
