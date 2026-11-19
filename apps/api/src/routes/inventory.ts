@@ -46,8 +46,8 @@ interface UpdateAssetBody {
   name?: string;
   status?: "ACTIVE" | "INACTIVE" | "RETIRED";
   hostname?: string;
-  primaryIp?: string;
-  macAddress?: string;
+  primaryIp?: string | null;
+  macAddress?: string | null;
   vendor?: string;
   model?: string;
   serialNumber?: string;
@@ -204,8 +204,8 @@ export async function registerInventoryRoutes(
             name: { type: "string", minLength: 2, maxLength: 160 },
             kind: { type: "string", enum: ["COMPUTER", "SERVER", "SWITCH", "ROUTER", "FIREWALL", "NVR", "CAMERA", "PRINTER", "POS", "UPS", "OTHER"] },
             hostname: { type: "string", maxLength: 255 },
-            primaryIp: { type: "string", maxLength: 64 },
-            macAddress: { type: "string", maxLength: 17 },
+            primaryIp: { type: ["string", "null"], maxLength: 64 },
+            macAddress: { type: ["string", "null"], maxLength: 17 },
             vendor: { type: "string", maxLength: 120 },
             model: { type: "string", maxLength: 120 },
             serialNumber: { type: "string", maxLength: 160 },
@@ -335,11 +335,11 @@ export async function registerInventoryRoutes(
       if (!actor) return;
       const body = request.body;
       const assetCode = body.assetCode?.trim().toUpperCase();
-      const primaryIp = body.primaryIp?.trim();
-      const macAddress = body.macAddress?.trim().toLowerCase();
+      const primaryIp = body.primaryIp === null ? null : body.primaryIp?.trim();
+      const macAddress = body.macAddress === null ? null : body.macAddress?.trim().toLowerCase();
       if ((assetCode !== undefined && !/^[A-Z0-9][A-Z0-9._-]{1,63}$/.test(assetCode)) ||
-          (primaryIp !== undefined && isIP(primaryIp) === 0) ||
-          (macAddress !== undefined && !validMac(macAddress))) {
+          (primaryIp !== undefined && primaryIp !== null && primaryIp.length > 0 && isIP(primaryIp) === 0) ||
+          (macAddress !== undefined && macAddress !== null && macAddress.length > 0 && !validMac(macAddress))) {
         return reply.code(400).send({ error: { code: "INVALID_ASSET", message: "Asset fields are invalid." } });
       }
       try {
@@ -351,8 +351,8 @@ export async function registerInventoryRoutes(
               ...(body.name !== undefined ? { name: body.name.trim() } : {}),
               ...(body.status !== undefined ? { status: body.status } : {}),
               ...(body.hostname !== undefined ? { hostname: clean(body.hostname, 255) ?? null } : {}),
-              ...(primaryIp !== undefined ? { primaryIp } : {}),
-              ...(macAddress !== undefined ? { macAddress } : {}),
+              ...(body.primaryIp !== undefined ? { primaryIp: primaryIp || null } : {}),
+              ...(body.macAddress !== undefined ? { macAddress: macAddress || null } : {}),
               ...(body.vendor !== undefined ? { vendor: clean(body.vendor, 120) ?? null } : {}),
               ...(body.model !== undefined ? { model: clean(body.model, 120) ?? null } : {}),
               ...(body.serialNumber !== undefined ? { serialNumber: clean(body.serialNumber, 160) ?? null } : {}),
