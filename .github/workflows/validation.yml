@@ -91,7 +91,12 @@ jobs:
           createdb -h 127.0.0.1 -U platform platform_restore_test
           pg_restore --exit-on-error --no-owner --no-privileges --dbname=platform_restore_test "$RUNNER_TEMP/platform-m1.dump"
           psql -h 127.0.0.1 -U platform -d platform_restore_test -Atqc 'SELECT (SELECT COUNT(*) FROM "users") > 0 AND (SELECT COUNT(*) FROM "branches") > 0 AND (SELECT COUNT(*) FROM "audit_events") > 0' | grep -qx t
-          psql -h 127.0.0.1 -U platform -d platform_restore_test -Atqc 'SELECT COUNT(*) FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL' | grep -Eq '^[1-9][0-9]*
+          migration_count="$(psql -h 127.0.0.1 -U platform -d platform_restore_test -Atqc 'SELECT COUNT(*) FROM "_prisma_migrations" WHERE "finished_at" IS NOT NULL')"
+          test "$migration_count" -gt 0
+          dropdb -h 127.0.0.1 -U platform platform_restore_test
+          rm -f "$RUNNER_TEMP/platform-m1.dump"
+
+      - name: Production build
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
