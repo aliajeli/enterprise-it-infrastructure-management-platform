@@ -177,3 +177,11 @@
 - Added Worker unit tests for retry policy and attempt limits.
 - The Worker deliberately registers no discovery handlers and uses an empty source allow-list; it cannot claim queued runs. No SNMP/SSH/ISAPI/Agent requests, credential storage, enqueue API or Windows service deployment are included.
 - Runtime/CI validation is pending for commit-specific head.
+
+
+## Unreleased — Worker lease correctness and PostgreSQL integration tests
+- Corrected expired-lease recovery so cancellation is processed before retry exhaustion; a cancellation-requested run cannot be incorrectly marked FAILED by the exhausted-attempt update.
+- Enforced live-lease expiry for completion and cancellation acknowledgement, preventing a stale worker from finalizing a run after its lease has expired.
+- Added disposable-PostgreSQL integration tests for concurrent claims, lease ownership, stale-worker rejection, lease recovery/reclaim, retry exhaustion, cancellation precedence and transaction rollback.
+- The preceding Worker foundation CI run (commit `356c5b5`, run `44572613928`) passed all three jobs. Validation of these follow-up fixes and integration tests is pending on their exact commit head.
+- Discovery handlers remain disabled; no SNMP/SSH/ISAPI/Agent network activity, installer or release is enabled by this change.
