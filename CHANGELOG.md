@@ -1,3 +1,12 @@
+## Unreleased — M1 lifecycle completion
+- Added ADMIN-only branch editing with optimistic version checks, soft archive and restore.
+- Archiving a branch now revokes all active user-branch grants in the same transaction; restoring the branch does not silently reinstate revoked grants.
+- Added administrator-issued one-time temporary password reset for active non-admin accounts, with Argon2id hashing, forced password change, auth-epoch increment, session revocation, rate limiting, audit event and no-store response.
+- Added administrator UI controls for branch edit/archive/restore and user password reset; temporary credentials are shown once and can be cleared from the screen.
+- Expanded PostgreSQL integration coverage for branch version conflicts/lifecycle, grant revocation on archive, non-restoration of grants and password reset/session invalidation.
+- Updated M1 design, API contract, testing strategy and project status documentation.
+- Owner confirmation of the OPERATOR/VIEWER operational action matrix, target-Windows service identity/integration tests, and production PostgreSQL backup/restore evidence remain acceptance gates. No production readiness is claimed.
+
 # Changelog
 
 ## 2026-11-19 — primary-repository review, archival repair and status refresh
