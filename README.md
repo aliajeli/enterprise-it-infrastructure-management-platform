@@ -93,3 +93,10 @@ The development server binds to `127.0.0.1`. The initial dashboard is an impleme
 The Phase 2 checksum manifest predates the Phase 3 source tree and does not cover the new source files. Recompute it when the documentation baseline is formally retired; do not use it as an integrity gate for the current application tree.
 
 All behavior described as planned or not implemented remains unverified until implemented and independently validated.
+
+## Current implementation status
+
+- M0 web application foundation: complete and merged.
+- M1 identity/authentication/persistence: merged.
+- M1 user and branch administration: implemented in [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5), CI-verified and awaiting review; not yet merged.
+- M2 inventory management and subsequent Windows Agent, monitoring, integrations, installer and release milestones are not yet implemented.

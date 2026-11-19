@@ -98,3 +98,14 @@
 - Added a Windows runner smoke gate for Prisma generation/build, API typecheck, native Argon2id execution, tests and API build.
 - Validation run 44495513578 passed: npm audit reported zero vulnerabilities; 10 API and 2 web tests passed on Linux; 9 API tests passed on Windows with the database-only integration test skipped there; Linux production build and Windows API build passed.
 - Opened [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4) for owner review. It is not merged. M1 remains in progress; user management, password change/recovery, branch CRUD and the owner-confirmed operational role/action matrix remain outstanding.
+
+## 2026-11-19 — M1 user and branch administration implementation
+
+- Added admin-only user provisioning and listing, cryptographically random temporary credentials, no-store credential delivery and forced password change at first login.
+- Added branch creation/listing and transactional replacement of per-user branch grants.
+- Added OPERATOR/VIEWER role changes and account disable/enable with session revocation and auth-epoch invalidation.
+- Added self-modification protections, owner-controlled administrator-account restrictions and audit events for administrative actions.
+- Added PostgreSQL integration coverage for provisioning, login, password change, branch-scope replacement, role/status changes, session revocation and append-only audit enforcement.
+- Fixed Prisma relation-connect semantics for branch/grantor provisioning and corrected Node response-header typing in the integration test.
+- GitHub Actions run 44504888903 passed all three validation jobs, including Linux/PostgreSQL 18 and Windows native Argon2id runtime validation.
+- Opened [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) as Draft for review. It is not merged. M1 remains in progress pending code review, the owner-confirmed operational role/action matrix, complete branch lifecycle, password recovery and production/Windows service validation.

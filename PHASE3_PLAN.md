@@ -1,7 +1,7 @@
 # Phase 3 — Implementation plan
 
 **Status:** Active — owner authorization received 2026-11-19.  
-**Baseline:** `main` at `60b0e515896c6db1e3d3469f834866e76d0198ca`.  
+**Current main baseline:** `b7dc102bc7293817d10022176ac7fe5627d015ca` (2026-11-19).  
 **Execution rule:** implementation proceeds through reviewable milestones and pull requests. Owner-approved architecture decisions in `DECISION_LOG.md` are binding.
 
 ## Delivery principles
@@ -31,22 +31,29 @@
 
 **Exit criteria: PASS.** Committed npm v3 lockfile; clean Node.js 26.13.1/npm 11.20.0 runner; `npm ci`; `npm audit --audit-level=high` (0 vulnerabilities); dependency-tree verification; ESLint; TypeScript; two Vitest smoke tests; production build; and honest dashboard empty states. Evidence: GitHub Actions run [44491419345](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44491419345).
 
-### M1 — Identity, access control and persistence (in progress)
+### M1 — Identity, access control and persistence (in progress; implementation slices delivered)
 
-- Add the dedicated Fastify API workspace and Prisma 7.10.1 PostgreSQL adapter package.
-- Establish users, sessions, recovery codes, branches, branch-scoped access grants and append-only audit events.
-- Implement Argon2id password hashing, opaque HttpOnly sessions, strict Origin validation, login throttling, generic authentication failures and server-side authorization primitives.
-- Provide a one-time interactive bootstrap command for the first administrator; never seed default credentials.
-- Keep the exact operational permission matrix owner-pending; no branch/device mutation endpoints are enabled until that matrix is approved.
-- Add database migration validation against disposable PostgreSQL 18 in CI. Production backup/restore and Windows service identity remain later acceptance requirements.
+**Merged in PR #4 (2026-11-19):**
+- Fastify API and Prisma 7.10.1 database workspaces; PostgreSQL migration for users, sessions, recovery codes, branches, branch grants and append-only audit events.
+- Argon2id authentication, opaque hashed sessions, login/logout, database-backed login lockout, strict Origin checks, rate limits and one-time interactive first-administrator bootstrap.
+- Initial browser sign-in, session-gated dashboard and logout flow; server-side branch-scope primitives.
+- PR #4 is merged. Its original CI run 44495513578 passed the identity foundation gates.
 
-**Delivered in PR #4 (CI-verified; open, not merged):**
-- Fastify API and Prisma 7.10.1 database workspaces; first PostgreSQL migration for identity, sessions, branch grants and append-only audit events.
-- Argon2id login, opaque hashed sessions, logout, origin checks, rate limits, lockout, first-admin bootstrap CLI and initial branch-scope primitives.
-- Browser sign-in, session-gated dashboard shell and logout.
-- Linux/PostgreSQL 18 and Windows API/Argon2id validation pass in workflow run 44495513578.
+**Implemented in PR #5 (Draft; CI passed, awaiting review):**
+- Admin-only user provisioning and listing; no public administrator self-registration.
+- Cryptographically random temporary credentials, no-store response and forced password change at first login.
+- Branch creation/listing and per-user branch-grant replacement.
+- Role changes between OPERATOR and VIEWER; account disable/enable; session revocation and auth-epoch invalidation.
+- Self-disable/self-role/self-branch-scope protections; administrator account mutation is restricted to an owner-controlled procedure.
+- Audit events for administrative operations and PostgreSQL integration coverage for user lifecycle, password rotation, branch grants, session revocation and append-only audit enforcement.
+- CI run [44504888903](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44504888903) passed all three jobs: Linux/Node.js 26/PostgreSQL 18 platform validation, Windows API/native Argon2id runtime smoke and lockfile bootstrap.
 
-**M1 exit criteria still outstanding:** admin user management, password change/recovery, branch CRUD, owner-confirmed operator/viewer action matrix, production backup/restore evidence and Windows service integration. The current API has no operational mutation endpoints.
+**M1 acceptance criteria still outstanding:**
+- Owner confirmation of the precise OPERATOR/VIEWER action matrix before any operational inventory/device/network mutation is enabled.
+- Complete branch lifecycle (update, archive/restore and safe reassignment behavior).
+- Password recovery workflow and operational recovery policy.
+- Production backup/restore evidence, Windows service identity/integration validation and pre-production operational hardening.
+- PR #5 code review and merge. Passing CI is necessary but does not replace review or owner decisions.
 
 ### M2 — Branch and inventory management
 
@@ -92,7 +99,7 @@
 
 ## Current scope and explicit limitations
 
-The initial implementation commit establishes only the web workspace shell. It does not implement authentication, API, database, Windows services, Agent, monitoring, device integrations, installer, updater or release automation. No production data or credentials are present. A generated dependency lockfile and successful clean-runner build are required before this foundation can be considered reproducible or releasable.
+The repository now contains the merged M0 web foundation and M1 identity/authentication/persistence foundation. M1 user and branch administration is implemented on PR #5 but remains under review and is not merged. No Windows services, Agent, monitoring, switch/NVR integrations, Desktop Bridge, Store Commerce deployment, installer, updater or release automation are claimed as implemented. No production deployment or hardware compatibility is claimed.
 
 ## Open owner-confirmation items
 
