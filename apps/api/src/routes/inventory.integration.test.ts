@@ -167,10 +167,73 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
       method: "PATCH",
       url: `/api/v1/inventory/assets/${switchAssetId}`,
       headers: { origin, cookie: operatorCookie },
-      payload: { version: 1, location: "Server room / Rack 02" },
+      payload: {
+        version: 1,
+        location: "Server room / Rack 02",
+        primaryIp: "192.0.2.11",
+        macAddress: "02:00:00:00:00:11",
+      },
     });
     expect(updateAsset.statusCode).toBe(200);
     expect(updateAsset.json().asset.version).toBe(2);
+    expect(updateAsset.json().asset.primaryIp).toBe("192.0.2.11");
+    expect(updateAsset.json().asset.macAddress).toBe("02:00:00:00:00:11");
+
+    const invalidAssetIp = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: { version: 2, primaryIp: "not-an-ip" },
+    });
+    expect(invalidAssetIp.statusCode).toBe(400);
+
+    const invalidAssetMac = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: { version: 2, macAddress: "invalid-mac" },
+    });
+    expect(invalidAssetMac.statusCode).toBe(400);
+
+    const updatePort = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: {
+        version: 1,
+        alias: "Checkout terminal 01",
+        configuredVlanId: 7,
+        configuredTaggedVlans: [30, 40],
+        connectedDeviceLabel: "POS-01",
+      },
+    });
+    expect(updatePort.statusCode).toBe(200);
+    expect(updatePort.json().port.version).toBe(2);
+    expect(updatePort.json().port.configuredTaggedVlans).toEqual([30, 40]);
+
+    const duplicateTaggedVlans = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: { version: 2, configuredTaggedVlans: [30, 30] },
+    });
+    expect(duplicateTaggedVlans.statusCode).toBe(400);
+
+    const outOfRangeVlan = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: { version: 2, configuredVlanId: 4095 },
+    });
+    expect(outOfRangeVlan.statusCode).toBe(400);
+
+    const stalePortUpdate = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: { version: 1, alias: "stale port edit" },
+    });
+    expect(stalePortUpdate.statusCode).toBe(409);
 
     const observation = await db.portObservation.create({
       data: {
