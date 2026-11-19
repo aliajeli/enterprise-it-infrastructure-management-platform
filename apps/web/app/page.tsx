@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AuthGuard } from "./components/auth-guard";
+import { LogoutButton } from "./components/logout-button";
 import {
   Activity,
   Bell,
   Camera,
-  ChevronDown,
   CircleHelp,
   Command,
   Database,
@@ -46,6 +47,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 
 export default function DashboardPage() {
   return (
+    <AuthGuard>
     <main className="min-h-screen lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
       <aside className="hidden border-r border-slate-700/40 bg-slate-950/35 px-4 py-5 lg:flex lg:flex-col">
         <div className="flex items-center gap-3 px-2">
@@ -155,11 +157,7 @@ export default function DashboardPage() {
               <Bell size={18} />
             </button>
             <div className="hidden h-8 w-px bg-slate-700/60 sm:block" />
-            <button type="button" disabled className="flex items-center gap-2 text-left opacity-70" aria-label="User profile (authentication not configured)">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-700 text-xs font-semibold text-slate-200">IT</div>
-              <span className="hidden text-xs text-slate-400 sm:block">Local workspace</span>
-              <ChevronDown size={14} className="hidden text-slate-500 sm:block" />
-            </button>
+            <LogoutButton />
           </div>
         </header>
 
@@ -258,5 +256,6 @@ export default function DashboardPage() {
         </div>
       </section>
     </main>
+    </AuthGuard>
   );
 }
