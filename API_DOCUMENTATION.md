@@ -4,13 +4,27 @@ The complete platform API described below is still a design target. The followin
 
 ## Implemented M1 API subset
 
+All state-changing routes require an exact trusted Origin, an authenticated server-side session and role ADMIN where indicated. API responses are private/no-store.
+
 | Method | Route | Behavior |
 |---|---|---|
 | GET | /health/live | Process liveness only; does not imply readiness. |
 | GET | /health/ready | Checks database connectivity and presence of the initial users schema. |
 | POST | /api/v1/auth/login | Validates username/password and issues an opaque server-side session cookie. |
-| GET | /api/v1/session | Validates the cookie, session expiry/revocation, user status and auth epoch; returns a minimal principal. |
+| GET | /api/v1/session | Validates cookie, expiry/revocation, user status and auth epoch; returns a minimal principal. |
 | POST | /api/v1/auth/logout | Revokes the current session and clears its cookie. |
+| POST | /api/v1/auth/change-password | Authenticated user changes own password; all sessions revoked and re-login required. |
+| GET | /api/v1/users | ADMIN lists users without password hashes or secrets. |
+| POST | /api/v1/users | ADMIN provisions OPERATOR/VIEWER and receives a one-time temporary password. |
+| PATCH | /api/v1/users/{userId}/status | ADMIN enables/disables a non-admin account; revokes sessions. |
+| PATCH | /api/v1/users/{userId}/role | ADMIN changes a non-admin role; revokes sessions. |
+| PUT | /api/v1/users/{userId}/branches | ADMIN atomically replaces branch grants and audits the change. |
+| POST | /api/v1/users/{userId}/reset-password | ADMIN issues one-time temporary password to an active non-admin; revokes sessions and forces password change. |
+| GET | /api/v1/branches | ADMIN lists active, inactive and archived branch records. |
+| POST | /api/v1/branches | ADMIN creates a branch. |
+| PATCH | /api/v1/branches/{branchId} | ADMIN edits branch code/name with optimistic version check. |
+| POST | /api/v1/branches/{branchId}/archive | ADMIN soft-archives branch and revokes all active branch grants. |
+| POST | /api/v1/branches/{branchId}/restore | ADMIN restores branch without restoring previously revoked grants. |
 
 Authentication implementation details:
 
@@ -23,7 +37,7 @@ Authentication implementation details:
 - API binds to loopback. Only loopback proxy peers are trusted for forwarded client IP; the TLS Edge must overwrite X-Forwarded-For.
 - The first administrator is created only through the interactive local bootstrap CLI.
 
-Not yet implemented: user-management endpoints, password change/recovery, branch CRUD, operational device APIs, WebSocket contracts, Agent enrollment, job operations, and final operator/viewer action permissions. Server-side authorization primitives exist, but no operational mutation endpoint is exposed.
+Not yet implemented: operational device APIs, WebSocket contracts, Agent enrollment, job operations, and final owner-confirmed operator/viewer action permissions. Admin password recovery is implemented as an administrator-issued one-time temporary credential; self-service recovery is not implemented because no verified recovery channel is configured. Server-side authorization primitives exist, but no operational mutation endpoint is exposed.
 
 ## Planned API contract
 
