@@ -1,3 +1,9 @@
+## 0.1.44 — Fix inventory search IP filter semantics
+
+- Fixed inventory asset search so the IP-address predicate is included only when the search term is a valid IP address. Non-IP searches no longer pass an `equals: undefined` condition to Prisma, which could be omitted and broaden the OR query unexpectedly.
+- Added PostgreSQL integration coverage for exact IP search and a non-matching text search returning zero rows.
+- Synchronized both root package and lockfile version metadata at 0.1.44. Exact-head CI is required; no installer or Release.
+
 ## 0.1.43 — Add PostgreSQL regression coverage for bootstrap advisory lock
 
 - Added a PostgreSQL integration assertion that executes the exact transaction-scoped advisory-lock query used by administrator bootstrap and verifies Prisma receives a supported integer result rather than PostgreSQL `void`.

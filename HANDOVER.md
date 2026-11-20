@@ -1,3 +1,9 @@
+## 2026-11-20 — Inventory search predicate hardening (v0.1.44)
+
+- Corrected asset search construction: the primary-IP equality predicate is now added only when the query is a syntactically valid IPv4/IPv6 address. This avoids an undefined Prisma predicate being omitted from an OR expression and potentially widening text searches.
+- Added disposable PostgreSQL integration assertions for a matching IP and a non-matching text term.
+- Root package and both lockfile version fields synchronized at 0.1.44. Exact-head Push/PR validation required. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Bootstrap advisory-lock regression coverage (v0.1.43)
 
 - Added a PostgreSQL integration test that executes the exact MATERIALIZED-CTE advisory-lock query used by `bootstrap-admin.ts` and asserts that Prisma can deserialize its integer result.

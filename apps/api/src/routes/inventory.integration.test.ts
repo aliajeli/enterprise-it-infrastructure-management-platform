@@ -114,6 +114,24 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
     expect(createSwitch.statusCode).toBe(201);
     switchAssetId = createSwitch.json().asset.id as string;
 
+    const exactIpSearch = await app.inject({
+      method: "GET",
+      url: `/api/v1/inventory/assets?branchId=${branchId}&q=192.0.2.10`,
+      headers: { cookie: operatorCookie },
+    });
+    expect(exactIpSearch.statusCode).toBe(200);
+    expect(exactIpSearch.json().page.total).toBe(1);
+    expect(exactIpSearch.json().assets[0].id).toBe(switchAssetId);
+
+    const nonMatchingSearch = await app.inject({
+      method: "GET",
+      url: `/api/v1/inventory/assets?branchId=${branchId}&q=NO-SUCH-ASSET-9F2C`,
+      headers: { cookie: operatorCookie },
+    });
+    expect(nonMatchingSearch.statusCode).toBe(200);
+    expect(nonMatchingSearch.json().page.total).toBe(0);
+    expect(nonMatchingSearch.json().assets).toHaveLength(0);
+
     const viewerWrite = await app.inject({
       method: "POST",
       url: "/api/v1/inventory/assets",

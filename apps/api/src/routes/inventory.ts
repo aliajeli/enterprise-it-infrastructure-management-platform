@@ -151,18 +151,19 @@ export async function registerInventoryRoutes(
       }
 
       const q = request.query.q?.trim();
+      const searchConditions = q
+        ? [
+            { name: { contains: q, mode: "insensitive" as const } },
+            { assetCode: { contains: q, mode: "insensitive" as const } },
+            { hostname: { contains: q, mode: "insensitive" as const } },
+            ...(isIP(q) ? [{ primaryIp: { equals: q } }] : []),
+          ]
+        : undefined;
       const where = {
         deletedAt: null,
         ...(branchIds ? { branchId: { in: branchIds } } : {}),
         ...(request.query.kind ? { kind: request.query.kind } : {}),
-        ...(q ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" as const } },
-            { assetCode: { contains: q, mode: "insensitive" as const } },
-            { hostname: { contains: q, mode: "insensitive" as const } },
-            { primaryIp: { equals: isIP(q) ? q : undefined } },
-          ],
-        } : {}),
+        ...(searchConditions ? { OR: searchConditions } : {}),
       };
       const [assets, total] = await db.$transaction([
         db.asset.findMany({
