@@ -1,3 +1,10 @@
+## 0.1.47 — Paginated switch-port observation history API
+
+- Added a branch-authorized, read-only endpoint for a switch port's append-only observation history, with bounded pagination (1–100 rows), deterministic newest-first ordering and a total count.
+- The response deliberately excludes raw discovery metadata and exposes only operational fields needed by the inventory UI.
+- Added PostgreSQL integration coverage for newest-first ordering, pagination totals, VIEWER read access, and rejection of a port ID that does not belong to the requested switch.
+- Root package and lockfile versions synchronized at 0.1.47. No discovery runner, device probing, switch configuration, installer or Release is enabled.
+
 ## 0.1.46 — Prevent stale switch-port responses
 
 - Added request sequencing to switch-port detail loading. When operators open another switch or close the dialog while a request is in flight, late responses are ignored instead of replacing the currently selected switch's ports or changing its loading/error state.

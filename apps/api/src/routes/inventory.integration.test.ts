@@ -304,6 +304,45 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
         speedMbps: 1000,
       },
     });
+    await db.portObservation.create({
+      data: {
+        portId,
+        source: "SNMP",
+        observedAt: new Date(observation.observedAt.getTime() + 1000),
+        adminState: "UP",
+        operState: "DOWN",
+        vlanId: 7,
+        speedMbps: 1000,
+      },
+    });
+
+    const observationHistory = await app.inject({
+      method: "GET",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}/observations?limit=1&offset=0`,
+      headers: { cookie: operatorCookie },
+    });
+    expect(observationHistory.statusCode).toBe(200);
+    expect(observationHistory.json().page).toEqual({ limit: 1, offset: 0, total: 2 });
+    expect(observationHistory.json().observations).toHaveLength(1);
+    expect(observationHistory.json().observations[0].operState).toBe("DOWN");
+
+    const observationHistorySecondPage = await app.inject({
+      method: "GET",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}/observations?limit=1&offset=1`,
+      headers: { cookie: viewerCookie },
+    });
+    expect(observationHistorySecondPage.statusCode).toBe(200);
+    expect(observationHistorySecondPage.json().page.total).toBe(2);
+    expect(observationHistorySecondPage.json().observations).toHaveLength(1);
+    expect(observationHistorySecondPage.json().observations[0].operState).toBe("UP");
+
+    const mismatchedPortHistory = await app.inject({
+      method: "GET",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${randomUUID()}/observations`,
+      headers: { cookie: operatorCookie },
+    });
+    expect(mismatchedPortHistory.statusCode).toBe(404);
+
     await expect(
       db.portObservation.update({
         where: { id: observation.id },

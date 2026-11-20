@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.46`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.47`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -121,3 +121,13 @@ The second command is destructive. Verify that the Compose project points only t
 4. Repeat, but close the dialog while its port request is pending; confirm the closed dialog does not reappear and no stale port list is shown when another switch is opened.
 
 Expected: late responses from an earlier selection are ignored. This protects UI state only; it does not cancel server-side work or perform network discovery.
+
+
+## 8. Switch-port observation history API
+
+1. With the disposable PostgreSQL integration database enabled, run the inventory API integration test suite.
+2. Confirm a port with two synthetic observations returns the newest observation first.
+3. Request the history with `limit=1&offset=1`; confirm the second page contains the older observation while `page.total` remains 2.
+4. Confirm a VIEWER with branch access can read history, and a port ID that does not belong to the requested switch returns 404.
+
+Expected: history is read-only, branch-authorized and paginated. The endpoint does not trigger discovery and does not expose raw discovery metadata.

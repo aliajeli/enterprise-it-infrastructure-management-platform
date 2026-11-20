@@ -1,3 +1,10 @@
+## 2026-11-20 — Switch-port observation history API (v0.1.47)
+
+- Added GET /api/v1/inventory/assets/:assetId/switch-ports/:portId/observations. It verifies the port belongs to the requested non-deleted switch, enforces the existing branch-scoped switch.metadata.read permission, and returns read-only observations ordered newest-first with bounded limit/offset pagination.
+- The response uses an explicit field selection and does not expose rawMetadata. Integration tests cover two observations, ordering, page totals, VIEWER read access and mismatched asset/port IDs.
+- UI history viewer remains the next step. No live SNMP polling or device/network operation is introduced. PR #8 remains Draft/open/unmerged; no installer or Release.
+- Root package and lockfile version metadata synchronized at 0.1.47; exact-head Push and PR CI required.
+
 ## 2026-11-20 — Switch-port request race protection (v0.1.46)
 
 - Switch-port detail reads now use a monotonically increasing request ID. Responses from an earlier switch selection cannot overwrite the port list, error state or loading state for a newer selection.

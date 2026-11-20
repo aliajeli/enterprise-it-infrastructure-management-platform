@@ -17,6 +17,11 @@ interface AssetQuery {
   offset?: number;
 }
 
+interface ObservationQuery {
+  limit?: number;
+  offset?: number;
+}
+
 interface CreateAssetBody {
   branchId: string;
   assetCode: string;
@@ -409,6 +414,70 @@ export async function registerInventoryRoutes(
       const actor = await requireBranchAction(db, config, request, reply, asset.branchId, "switch.metadata.read");
       if (!actor) return;
       return reply.send({ switch: { assetId: asset.id, name: asset.name }, ports: asset.switch.ports });
+    },
+  );
+
+  app.get<{ Params: { assetId: string; portId: string }; Querystring: ObservationQuery }>(
+    "/api/v1/inventory/assets/:assetId/switch-ports/:portId/observations",
+    {
+      schema: {
+        params: {
+          type: "object", required: ["assetId", "portId"],
+          properties: {
+            assetId: { type: "string", format: "uuid" },
+            portId: { type: "string", format: "uuid" },
+          },
+        },
+        querystring: {
+          type: "object", additionalProperties: false,
+          properties: {
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 25 },
+            offset: { type: "integer", minimum: 0, maximum: 100000, default: 0 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const port = await db.switchPort.findFirst({
+        where: {
+          id: request.params.portId,
+          switch: { assetId: request.params.assetId, asset: { deletedAt: null } },
+        },
+        select: {
+          id: true,
+          ifIndex: true,
+          switch: { select: { asset: { select: { branchId: true } } } },
+        },
+      });
+      if (!port) {
+        return reply.code(404).send({ error: { code: "SWITCH_PORT_NOT_FOUND", message: "Switch port not found." } });
+      }
+      const actor = await requireBranchAction(
+        db, config, request, reply, port.switch.asset.branchId, "switch.metadata.read",
+      );
+      if (!actor) return;
+
+      const limit = request.query.limit ?? 25;
+      const offset = request.query.offset ?? 0;
+      const where = { portId: port.id };
+      const [observations, total] = await db.$transaction([
+        db.portObservation.findMany({
+          where,
+          orderBy: [{ observedAt: "desc" }, { id: "desc" }],
+          take: limit,
+          skip: offset,
+          select: {
+            id: true, source: true, observedAt: true, adminState: true, operState: true,
+            vlanId: true, ipAddress: true, macAddress: true, speedMbps: true,
+          },
+        }),
+        db.portObservation.count({ where }),
+      ]);
+      return reply.send({
+        port: { id: port.id, ifIndex: port.ifIndex },
+        observations,
+        page: { limit, offset, total },
+      });
     },
   );
 
