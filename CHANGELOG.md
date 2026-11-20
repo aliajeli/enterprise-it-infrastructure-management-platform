@@ -1,3 +1,10 @@
+## 0.1.33 — Record Windows keyring storage security review gate (2026-11-20)
+
+- Added `WINDOWS_KEYRING_STORAGE_HARDENING_REVIEW.md` with a source-level review of the current helper and explicit blockers for parent-path trust, rename/delete races, path-based atomic replacement/cleanup, and missing provisioned-Windows integration coverage.
+- The review distinguishes implemented controls from unverified assumptions and defines a handle-relative implementation direction plus mandatory Windows acceptance tests.
+- No runtime helper behavior or adapter registration changed. Credential storage remains test-only; do not enter real equipment credentials. Worker discovery remains disabled.
+- Root application version advanced to `0.1.33`. No installer or Release created.
+
 ## 0.1.32 — Record service SID hardening CI verification (2026-11-20)
 
 - Recorded successful exact-code validation for the TokenGroups service SID hardening and Windows service provisioning design milestone.

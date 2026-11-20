@@ -1,3 +1,11 @@
+## 2026-11-20 — Windows keyring storage hardening review (v0.1.33)
+- Revalidated branch head `f428f63a7a30fdd67b5da9bd42cce94d4debd019`; PR #8 remains open, Draft and unmerged.
+- Reviewed the current .NET keyring helper and storage contract. The helper checks the final vault directory and individual file handles, but it does not yet pin and validate the complete ProgramData → EnterpriseIT → CredentialVault path chain for the lifetime of a transaction. Directory opens currently permit delete sharing; temp cleanup and replacement remain path-based. These leave unresolved rename/path-substitution and TOCTOU questions.
+- Added `WINDOWS_KEYRING_STORAGE_HARDENING_REVIEW.md` with concrete remediation and Windows integration gates. This is an assessment/design checkpoint, not a runtime security fix.
+- The PR workflow for `f428f63a7a30fdd67b5da9bd42cce94d4debd019` ended as `action_required` with zero jobs/check runs; exact-head CI is therefore unverified. Prior `d947b5b` Push and PR runs passed, but that SHA is not the current branch head.
+- Keep the Node storage client unregistered, Worker discovery handlers empty, and real credential entry disabled until path/ACL/lock/atomic-write integration tests pass under a provisioned dedicated service SID. No installer or Release.
+
+
 # Project handover
 ## Current verified snapshot — patched dependency and service SID hardening CI passed (2026-11-20)
 
