@@ -121,6 +121,7 @@ The development server binds to `127.0.0.1`. The initial dashboard is an impleme
 - [Desktop Bridge PoC specification](DESKTOP_BRIDGE_POC.md)
 - [Testing strategy](TESTING_STRATEGY.md)
 - [Local preview and manual acceptance checklist](PREVIEW_TEST_GUIDE.md)
+- [Windows installer host preflight](INSTALLER_PREFLIGHT.md)
 - [Release process](RELEASE_PROCESS.md)
 - [Versioning policy](VERSIONING_POLICY.md)
 - [Decision log](DECISION_LOG.md)

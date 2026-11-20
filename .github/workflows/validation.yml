@@ -215,6 +215,10 @@ jobs:
             throw "Unprovisioned keyring helper did not fail closed with the generic binary error contract."
           }
 
+      - name: Test read-only installer host preflight
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-installer-preflight.ps1
+
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 

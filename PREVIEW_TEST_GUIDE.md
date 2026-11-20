@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.48`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.50`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -156,3 +156,16 @@ Expected: history is a read-only view of already-recorded data. Opening it does 
 7. For a test dataset above 10,000 matching assets, confirm the UI asks the operator to narrow filters rather than downloading a truncated file.
 
 Expected: export reads existing inventory only. It does not poll devices, initiate SNMP/ICMP scans, modify MikroTik rules or change equipment configuration.
+
+
+## 11. Windows installer host preflight (read-only)
+
+Run from an elevated PowerShell session on a Windows x64 test host:
+
+```powershell
+.\\scripts\\windows\\installer-preflight.ps1 -MinimumFreeSpaceGB 10
+```
+
+The command emits a JSON report and exits with code `0` only when Windows, x64, elevation and the Program Files/ProgramData local fixed-volume checks pass; exit code `2` means one or more required checks failed. The default 10 GB threshold is a preliminary staging floor and must be revisited after payload sizing. The script is read-only: it does not create directories, alter ACLs, register services, bind or probe ports, change firewall policy, initialize PostgreSQL or install the application.
+
+Expected: this check is only a host prerequisite baseline. A passing report does not establish supported-OS certification, service readiness, successful installation or production suitability.

@@ -1,3 +1,10 @@
+## 0.1.50 — Windows installer host preflight baseline
+
+- Added a read-only PowerShell preflight for Windows x64, elevated execution, and ready local fixed Program Files/ProgramData volumes with a configurable free-space floor.
+- Separated environment collection from pure evaluation and added Windows CI assertions for non-Windows, non-x64, non-elevated, insufficient-space, network-volume and unavailable-volume rejection.
+- This is an installer prerequisite check only: it does not create directories, change ACLs, register services, inspect or modify ports/firewall rules, initialize PostgreSQL, or install the application. OS support matrix, five-service registration and installer packaging remain open gates.
+- Root package and lockfile versions synchronized at 0.1.50.
+
 ## 0.1.49 — Branch inventory CSV export
 
 - Added a CSV export action that follows the active branch, search text and equipment-type filters and retrieves all matching records in bounded 100-row pages.

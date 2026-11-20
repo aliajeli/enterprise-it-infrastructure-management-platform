@@ -1,3 +1,11 @@
+## 2026-11-20 — Windows installer preflight baseline (v0.1.50)
+
+- Added `scripts/windows/installer-preflight.ps1`, a read-only host check for Windows, x64 architecture, elevated execution and ready local fixed volumes for Program Files and ProgramData. The minimum free-space floor is configurable (default 10 GB) and is only a staging baseline, not a final capacity recommendation.
+- Added pure fact-evaluation tests and wired them into the Windows CI job. Negative cases cover non-Windows, non-x64, non-elevated execution, insufficient free space, network volumes and unavailable volumes.
+- The script does not create or modify files, ACLs, services, ports, firewall rules, PostgreSQL or application state. It does not claim that the host is supported or that the product is installable.
+- Next installer gates: finalize supported Windows OS matrix and service identities/ports; implement and test the five independent Windows services; finish keyring path/ACL hardening and positive service-SID tests; then build and validate offline packaging, upgrade, repair, uninstall-retain-data and rollback.
+- Root package and lockfile versions synchronized at 0.1.50. Exact-head Push/PR CI required. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Branch inventory CSV export (v0.1.49)
 
 - Added an inventory CSV export action respecting the currently selected branch, search term and equipment-type filter. It fetches matching records in 100-row API pages and downloads a UTF-8 BOM CSV.
