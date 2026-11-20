@@ -1,3 +1,10 @@
+## 2026-11-20 — Bootstrap advisory-lock regression coverage (v0.1.43)
+
+- Added a PostgreSQL integration test that executes the exact MATERIALIZED-CTE advisory-lock query used by `bootstrap-admin.ts` and asserts that Prisma can deserialize its integer result.
+- Updated the local preview acceptance guide to version 0.1.43; the previous guide incorrectly advertised 0.1.38.
+- This test validates the SQL/Prisma result contract when the disposable PostgreSQL integration database is enabled. It does not create an administrator or replace the manual Windows bootstrap test.
+- Exact-head Push and PR CI are required. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Administrator bootstrap Prisma raw-query fix (v0.1.42)
 
 - Fixed `bootstrap-admin.ts`: the transaction-scoped PostgreSQL advisory lock is now evaluated in a MATERIALIZED CTE while the outer query returns an integer column, avoiding Prisma's unsupported PostgreSQL `void` deserialization.

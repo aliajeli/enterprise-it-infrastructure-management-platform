@@ -1,3 +1,9 @@
+## 0.1.43 — Add PostgreSQL regression coverage for bootstrap advisory lock
+
+- Added a PostgreSQL integration assertion that executes the exact transaction-scoped advisory-lock query used by administrator bootstrap and verifies Prisma receives a supported integer result rather than PostgreSQL `void`.
+- Updated the preview guide to the current version. This is regression coverage and documentation synchronization; it does not create an installer or Release.
+- Root package and lockfile versions synchronized at 0.1.43. Exact-head CI is required.
+
 ## 0.1.42 — Fix administrator bootstrap advisory-lock query
 
 - Fixed the bootstrap transaction's PostgreSQL advisory-lock query to materialize the void-returning lock call internally and return a supported integer result to Prisma. The transaction-scoped lock and concurrent-bootstrap protection remain intact.

@@ -149,5 +149,5 @@ All behavior described as planned or not implemented remains unverified until im
 - M0 web application foundation: complete and merged.
 - M1 identity/authentication/persistence: merged.
 - M1 user and branch administration: implemented in [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5), CI-verified and awaiting review; not yet merged.
-- M2 branch-aware inventory UI, asset CRUD, switch-port metadata and API/schema: implemented on Draft PR #8; CI passed on exact head `d208b490`; manual Windows preview acceptance is still required. No real discovery or switch configuration.
+- M2 branch-aware inventory UI, asset CRUD, switch-port metadata and API/schema: implemented on Draft PR #8; CI status must be checked against the latest exact branch head, and manual Windows preview acceptance is still required. No real discovery or switch configuration.
 - Windows Agent, monitoring, SNMP/SSH integrations, installer, updater and release milestones remain future work. No installer or GitHub Release exists yet.

@@ -83,6 +83,16 @@ describe.skipIf(!isDisposableTestDatabase)(
       await db?.$disconnect();
     });
 
+    it("returns a Prisma-supported result from the bootstrap advisory lock", async () => {
+      if (!db) throw new Error("PostgreSQL integration was not initialized.");
+
+      const rows = await db.$transaction((tx) =>
+        tx.$queryRaw<Array<{ locked: number }>>`WITH advisory_lock AS MATERIALIZED (SELECT pg_advisory_xact_lock(735901224)) SELECT 1::int AS locked FROM advisory_lock`,
+      );
+
+      expect(rows).toEqual([{ locked: 1 }]);
+    });
+
     it("provisions users, forces password change, scopes branches and revokes sessions", async () => {
       if (!db || !app) throw new Error("PostgreSQL integration was not initialized.");
 
