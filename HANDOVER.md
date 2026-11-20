@@ -1,3 +1,10 @@
+## 2026-11-20 — Handle-relative Windows directory-chain groundwork (v0.1.34)
+- Added an isolated .NET primitive that opens the standard local volume root and each fixed child directory (ProgramData, EnterpriseIT, CredentialVault) relative to a retained parent handle using NtCreateFile.
+- The primitive checks directory/reparse attributes and same-volume identity, captures file IDs, denies delete sharing on retained directory handles, and disposes the chain in reverse order.
+- This is compile-time groundwork only. It is not called by Program.cs; current lock/read/write/replace/cleanup paths remain path-based. No ACL policy or adversarial Windows acceptance tests exist yet.
+- Next: add provisioned-Windows tests for path substitution, reparse points, file IDs, ACL tampering and multi-process locking; then migrate every storage operation to retained directory handles. Do not register the Node client or store real credentials before those gates pass.
+- Push CI on exact head must be checked before treating this change as validated. PR #8 remains Draft/unmerged; no installer or Release.
+
 ## 2026-11-20 — Windows keyring storage hardening review (v0.1.33)
 - Revalidated branch head `f428f63a7a30fdd67b5da9bd42cce94d4debd019`; PR #8 remains open, Draft and unmerged.
 - Reviewed the current .NET keyring helper and storage contract. The helper checks the final vault directory and individual file handles, but it does not yet pin and validate the complete ProgramData → EnterpriseIT → CredentialVault path chain for the lifetime of a transaction. Directory opens currently permit delete sharing; temp cleanup and replacement remain path-based. These leave unresolved rename/path-substitution and TOCTOU questions.

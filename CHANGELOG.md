@@ -1,3 +1,11 @@
+## 0.1.34 — Add isolated handle-relative Windows directory-chain primitive (2026-11-20)
+
+- Added WindowsDirectoryHandleChain, an isolated .NET helper primitive that opens the standard local ProgramData → EnterpriseIT → CredentialVault chain using retained directory handles and parent-relative NtCreateFile opens.
+- The primitive rejects non-directory/reparse components, rejects volume changes, records file identities, and denies delete sharing while the chain is held.
+- Added WINDOWS_KEYRING_HANDLE_RELATIVE_FILESYSTEM.md documenting native API contracts and remaining acceptance gates.
+- Deliberately not wired into storage operations: existing lock/read/write/replace/cleanup remain path-based. ACL policy, adversarial Windows tests and transaction-relative file operations are still required. The Node client remains unregistered.
+- Root application version advanced to 0.1.34. No installer or Release created.
+
 ## 0.1.33 — Record Windows keyring storage security review gate (2026-11-20)
 
 - Added `WINDOWS_KEYRING_STORAGE_HARDENING_REVIEW.md` with a source-level review of the current helper and explicit blockers for parent-path trust, rename/delete races, path-based atomic replacement/cleanup, and missing provisioned-Windows integration coverage.
