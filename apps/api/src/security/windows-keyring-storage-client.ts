@@ -12,6 +12,7 @@ interface HelperProcess {
   stdout: NonNullable<ChildProcess["stdout"]>;
   once(event: "error", listener: (error: Error) => void): this;
   once(event: "close", listener: (code: number | null) => void): this;
+  exitCode: number | null;
   kill(): boolean;
 }
 type SpawnHelper = (path: string) => HelperProcess;
@@ -106,6 +107,34 @@ class WindowsKeyringTransaction {
 
   async end(): Promise<void> {
     await this.exchange(KeyringOpcode.END_TRANSACTION, Buffer.alloc(0), KeyringOpcode.END_OK, 0);
+    this.process.stdin.end();
+    await this.waitForSuccessfulExit();
+  }
+
+  private async waitForSuccessfulExit(): Promise<void> {
+    const currentExitCode = this.process.exitCode;
+    if (currentExitCode !== null) {
+      if (currentExitCode !== 0) throw new Error("Windows keyring helper did not exit cleanly.");
+      return;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const finish = (code: number | null) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        if (code === 0) resolve();
+        else reject(new Error("Windows keyring helper did not exit cleanly."));
+      };
+      const timeout = setTimeout(() => {
+        if (settled) return;
+        this.process.kill();
+        finish(null);
+      }, RESPONSE_TIMEOUT_MS);
+      this.process.once("close", finish);
+      if (this.process.exitCode !== null) finish(this.process.exitCode);
+    });
   }
 
   abort(): void {
@@ -190,13 +219,19 @@ export class WindowsKeyringStorageClient implements CredentialKeyringStorage {
       transaction?.abort();
       throw error;
     } finally {
-      if (transaction && callbackCompleted) {
-        try { await transaction.end(); }
-        catch { transaction.abort(); }
-      } else {
-        transaction?.abort();
+      try {
+        if (transaction && callbackCompleted) {
+          try { await transaction.end(); }
+          catch {
+            transaction.abort();
+            throw new Error("Windows keyring helper session did not terminate cleanly.");
+          }
+        } else {
+          transaction?.abort();
+        }
+      } finally {
+        release();
       }
-      release();
     }
   }
 

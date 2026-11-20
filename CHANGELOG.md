@@ -1,3 +1,10 @@
+## 0.1.25 — Verify Windows keyring helper process termination (2026-11-20)
+
+- The Node transport now closes helper stdin after the acknowledged END frame and waits for the child process to exit with code 0.
+- A non-zero exit or shutdown timeout now fails the storage transaction instead of being silently swallowed.
+- Added fake-process tests for stdin closure, successful exit and non-zero exit after END acknowledgement.
+- The storage adapter remains unregistered; no installer provisioning or production credential persistence is enabled.
+
 ## 0.1.24 — Define independent Credential Vault recovery (2026-11-20)
 
 - Added a recovery architecture for offline RSA-OAEP KEK wrapping, separately signed canonical manifests, HSM-backed private-key custody, and clean-host DPAPI re-protection.

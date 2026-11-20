@@ -9,7 +9,10 @@ class FakeHelper extends EventEmitter {
   readonly stdout = new PassThrough();
   killed = false;
   ended = false;
+  exitCode: number | null = null;
   private transaction = false;
+
+  constructor(private readonly exitCodeOnEnd = 0) {
 
   constructor() {
     super();
@@ -36,6 +39,10 @@ class FakeHelper extends EventEmitter {
             this.transaction = false;
             this.ended = true;
             response = encodeKeyringFrame(KeyringOpcode.END_OK);
+            setImmediate(() => {
+              this.exitCode = this.exitCodeOnEnd;
+              this.emit("close", this.exitCode);
+            });
             break;
           default: throw new Error("unknown");
         }
@@ -49,7 +56,8 @@ class FakeHelper extends EventEmitter {
 
   kill(): boolean {
     this.killed = true;
-    this.emit("close", 0);
+    this.exitCode ??= 1;
+    this.emit("close", this.exitCode);
     return true;
   }
 }
@@ -64,6 +72,20 @@ describe("Windows keyring storage helper transport", () => {
     });
     expect(helper.killed).toBe(false);
     expect(helper.ended).toBe(true);
+    expect(helper.stdin.writableEnded).toBe(true);
+    expect(helper.exitCode).toBe(0);
+  });
+
+
+  it("does not report success when the helper exits unsuccessfully after END_OK", async () => {
+    const helper = new FakeHelper(1);
+    const client = new WindowsKeyringStorageClient("C:\\\\Program Files\\\\EnterpriseIT\\\\keyring-helper.exe", "win32", () => helper);
+    await expect(client.withExclusiveLock(async () => "operation-result")).rejects.toThrow(
+      "session did not terminate cleanly",
+    );
+    expect(helper.ended).toBe(true);
+    expect(helper.stdin.writableEnded).toBe(true);
+    expect(helper.killed).toBe(true);
   });
 
   it("rejects access outside a transaction and nested transactions", async () => {

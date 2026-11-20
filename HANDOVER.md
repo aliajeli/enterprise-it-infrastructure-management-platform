@@ -499,3 +499,10 @@ An earlier application-repository inspection reported an empty clone before the 
 ## 2026-11-20 — Independent recovery design (v0.1.24)
 - Added `CREDENTIAL_VAULT_RECOVERY_DESIGN.md`: independent offline RSA-3072 OAEP-SHA256 wrapping for every retained KEK, separate RSA-PSS-SHA256 manifest signing, canonical bounded manifest, HSM/hardware-backed private-key custody, two-person export/restore approval, clean-host restore preserving installation ID, and explicit acceptance gates.
 - This is a design decision proposal only. No recovery keys or recovery workflow have been implemented. DPAPI remains machine-bound; no production use until the clean-host restore drill succeeds.
+
+
+## 2026-11-20 — Windows helper process shutdown verification (v0.1.25)
+- Fixed a lifecycle gap in the unregistered Node storage transport: after END_OK it now closes stdin and waits for the helper's close event with exit code 0.
+- Non-zero exit or shutdown timeout fails the enclosing storage transaction; cleanup still kills the helper and releases the in-process transaction queue.
+- Tests cover successful shutdown, stdin closure and non-zero process exit after END_OK.
+- This does not enable storage. Installer provisioning, positive dedicated-Service-SID integration, path-component hardening and real multi-process/ACL/crash tests remain outstanding.

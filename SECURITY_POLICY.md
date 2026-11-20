@@ -108,3 +108,6 @@ The Windows DPAPI test suite now distinguishes negative hosted-runner coverage f
 
 ## Independent Credential Vault recovery design — 2026-11-20
 See `CREDENTIAL_VAULT_RECOVERY_DESIGN.md`. Proposed design wraps every retained KEK to an offline RSA-3072 recovery public key (OAEP-SHA256) and signs a canonical manifest with a separate offline RSA-PSS-SHA256 signing key. Private keys remain in an independently controlled HSM/hardware-backed store with dual control. Clean-host recovery re-protects KEKs with the new host's DPAPI while preserving the immutable installation ID. This is not implemented or approved for production; a successful second-host restore drill is mandatory.
+
+
+The unregistered Windows keyring transport now requires the helper to terminate with exit code 0 after END_TRANSACTION/END_OK. A failed or timed-out shutdown is surfaced as a failed storage transaction and the helper is terminated; it must not be silently reported as success.

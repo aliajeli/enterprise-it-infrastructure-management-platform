@@ -157,3 +157,10 @@ This is an implementation milestone, not production acceptance. No installer pro
 The helper resolves the dedicated service SID from either the token's User SID or token Groups, deduplicates it, and requires exactly one unique `S-1-5-80-...` identity. It never falls back to LocalSystem or an interactive user identity.
 
 Windows CI now launches the built helper as a separate process on the unprovisioned hosted runner, sends a BEGIN frame, and verifies the exact generic ERROR response, non-zero process exit, and empty stderr. This confirms the helper rejects the runner's unprovisioned identity/storage context without leaking diagnostics. It is not a substitute for integration tests under the installer-provisioned service identity.
+
+
+## 14. Helper process shutdown contract (0.1.25)
+
+After the helper acknowledges END_TRANSACTION with END_OK, the Node client closes helper stdin and waits for the process close event. Exit code 0 is required. A non-zero exit or timeout fails the enclosing storage transaction; it is not converted into a successful callback result. The client kills the helper on shutdown failure and releases its in-process transaction queue in a finally path. Unit tests cover successful exit and non-zero exit after END_OK.
+
+This confirms process lifecycle only; it does not establish installer provisioning, ACL correctness under a provisioned service SID, or cross-process filesystem acceptance.
