@@ -1,3 +1,9 @@
+## 2026-11-20 — Correct native interop overload ambiguity (v0.1.35)
+- Exact Windows CI on commit 64b82dcc3c4d96c9b697a615cea04a91218c8750 failed while compiling WindowsDirectoryHandleChain.cs with CS0121: overloaded GetFileInformationByHandleEx P/Invoke declarations made both out-var calls ambiguous.
+- Renamed the managed declarations to GetFileAttributeTagInfo and GetFileIdentityInfo while retaining EntryPoint=GetFileInformationByHandleEx. This addresses the compile-time ambiguity; exact-head CI must still prove the correction.
+- The directory-chain primitive remains isolated and unused by Program.cs. No ACL/TOCTOU acceptance is claimed; Node client remains unregistered.
+- PR #8 remains Draft/unmerged. No installer or Release.
+
 ## 2026-11-20 — Handle-relative Windows directory-chain groundwork (v0.1.34)
 - Added an isolated .NET primitive that opens the standard local volume root and each fixed child directory (ProgramData, EnterpriseIT, CredentialVault) relative to a retained parent handle using NtCreateFile.
 - The primitive checks directory/reparse attributes and same-volume identity, captures file IDs, denies delete sharing on retained directory handles, and disposes the chain in reverse order.

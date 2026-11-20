@@ -150,14 +150,14 @@ internal sealed class WindowsDirectoryHandleChain : IDisposable
 
     private static DirectoryIdentity ReadAndVerifyDirectory(SafeFileHandle handle)
     {
-        if (handle.IsInvalid || !GetFileInformationByHandleEx(handle, AttributeTagInfoClass,
+        if (handle.IsInvalid || !GetFileAttributeTagInfo(handle, AttributeTagInfoClass,
                 out var attributes, Marshal.SizeOf<FileAttributeTagInfo>()))
             throw new Win32Exception(Marshal.GetLastWin32Error());
         if ((attributes.FileAttributes & DirectoryAttribute) == 0 ||
             (attributes.FileAttributes & ReparseAttribute) != 0)
             throw new UnauthorizedAccessException("A keyring path component is not a plain directory.");
 
-        if (!GetFileInformationByHandleEx(handle, FileIdInfoClass,
+        if (!GetFileIdentityInfo(handle, FileIdInfoClass,
                 out var identity, Marshal.SizeOf<FileIdInfo>()))
             throw new Win32Exception(Marshal.GetLastWin32Error());
         return new DirectoryIdentity(identity.VolumeSerialNumber, identity.FileIdLow, identity.FileIdHigh);
@@ -187,12 +187,12 @@ internal sealed class WindowsDirectoryHandleChain : IDisposable
 
     [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "GetFileInformationByHandleEx")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandleEx(SafeFileHandle file, int infoClass,
+    private static extern bool GetFileAttributeTagInfo(SafeFileHandle file, int infoClass,
         out FileAttributeTagInfo information, int bufferSize);
 
     [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "GetFileInformationByHandleEx")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandleEx(SafeFileHandle file, int infoClass,
+    private static extern bool GetFileIdentityInfo(SafeFileHandle file, int infoClass,
         out FileIdInfo information, int bufferSize);
 
     [DllImport("ntdll.dll")]

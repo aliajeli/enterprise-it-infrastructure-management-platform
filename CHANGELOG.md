@@ -1,3 +1,9 @@
+## 0.1.35 — Disambiguate Windows file-information interop calls (2026-11-20)
+
+- Corrected the Windows helper build failure in the new directory-chain primitive: the two GetFileInformationByHandleEx declarations now have distinct managed names while both retain the documented Win32 entry point.
+- Exact CI for 0.1.34 exposed compiler error CS0121 at both file-attribute and file-ID lookups; this is a compile correction, not a security acceptance result.
+- Root application version advanced to 0.1.35. No installer or Release created.
+
 ## 0.1.34 — Add isolated handle-relative Windows directory-chain primitive (2026-11-20)
 
 - Added WindowsDirectoryHandleChain, an isolated .NET helper primitive that opens the standard local ProgramData → EnterpriseIT → CredentialVault chain using retained directory handles and parent-relative NtCreateFile opens.
