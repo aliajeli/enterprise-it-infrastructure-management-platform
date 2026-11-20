@@ -1,16 +1,17 @@
 # Project handover
-## Current observed snapshot — lockfile refresh shell fix pending CI (2026-11-20)
+## Current observed snapshot — patched Effect lockfile generated; exact-head CI pending (2026-11-20)
 
 **Branch:** `phase3/m2-inventory-ui`  
-**Previous head:** `19112d871c13b2b316c895045e0650ba60902252`  
+**Previous head:** `2db7510a5725c2f777ca396d53565692b7fe2dba`  
 **PR:** [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8) — Draft/open/unmerged.
 
-### Dependency remediation evidence
+### Dependency security remediation
 
-- Audit failure on `0.1.26` identified vulnerable `effect@3.20.0` through Prisma 7.10.1 / @prisma/config 7.10.1. The upstream advisory fixes this in `effect@3.22.1`.
-- Root npm override is now exact `effect: 3.22.1`; `npm update effect --package-lock-only --ignore-scripts --no-audit --no-fund` completed successfully in the 0.1.28 bootstrap run.
-- The bootstrap commit step then failed on a shell quoting syntax error before staging/pushing the generated lockfile. Therefore the lockfile has not yet been verified to contain 3.22.1.
-- Version 0.1.29 fixes only that workflow shell quoting. Next CI must prove: generated lock contains `node_modules/effect@3.22.1`, `npm ls --all` succeeds, `npm audit --audit-level=high` passes, then lint/typecheck/tests/PostgreSQL backup-restore/production build all pass on one exact head.
+- Audit on 0.1.26 found `effect@3.20.0` through Prisma 7.10.1 / @prisma/config 7.10.1. Advisory GHSA-7589-6fvf-x4pw / CVE-2026-121707 is fixed in `effect@3.22.1`.
+- Root override pins `effect` to exactly `3.22.1`.
+- Corrected bootstrap workflow now executes `npm update effect --package-lock-only --ignore-scripts --no-audit --no-fund`. It completed and generated lockfile commit `2db7510a5725c2f777ca396d53565692b7fe2dba`.
+- Verified checked-in lockfile metadata: `node_modules/effect` resolves to version `3.22.1` with its registry tarball and integrity hash. This confirms lockfile resolution only, not successful install or audit.
+- Added a CI guard requiring the lockfile's exact Effect version to be `3.22.1`. Version 0.1.30 triggers a fresh validation run against the updated lockfile; previous in-flight runs target an older SHA and do not qualify.
 
 ### Credential Vault status
 
@@ -28,6 +29,8 @@
 
 - PR #8 remains Draft/unmerged. No installer or GitHub Release is authorized or claimed.
 - Release requires real clean-Windows install, service identity/ACL provisioning, upgrade, uninstall, rollback, database migration/restore and independent recovery drills.
+
+---
 
 ---
 

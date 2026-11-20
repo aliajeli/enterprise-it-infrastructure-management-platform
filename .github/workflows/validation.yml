@@ -59,6 +59,10 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
+      - name: Verify patched Effect resolution
+        run: |
+          node -e 'const lock = require("./package-lock.json"); const actual = lock.packages?.["node_modules/effect"]?.version; if (actual !== "3.22.1") { console.error("Expected effect@3.22.1, found " + String(actual)); process.exit(1); }'
+
       - name: Validate Prisma schema
         run: npm run db:validate
 

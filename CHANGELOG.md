@@ -1,3 +1,10 @@
+## 0.1.30 — Verify patched Effect lockfile resolution in CI (2026-11-20)
+
+- The corrected bootstrap workflow successfully generated and pushed a lockfile resolving `node_modules/effect` to `3.22.1` (lockfile commit `2db7510a5725c2f777ca396d53565692b7fe2dba`).
+- Added an explicit CI guard that fails unless the checked-in lockfile resolves exactly `effect@3.22.1`, preventing a future stale-lock regression from reaching dependency audit.
+- Full dependency audit, lint, typecheck, tests, PostgreSQL backup/restore and production build still require successful runs on the new exact head.
+- Root application version advanced to `0.1.30`. No installer, Release, or production credential-vault registration is created.
+
 ## 0.1.29 — Fix lockfile refresh workflow quoting (2026-11-20)
 
 - Corrected the shell quoting in the lockfile refresh commit step; the preceding `npm update effect --package-lock-only` command completed, but the commit step failed during shell parsing before staging or pushing the generated lockfile.
