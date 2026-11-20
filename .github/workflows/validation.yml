@@ -139,6 +139,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Build Windows API service host
+        run: dotnet build apps/api/windows/service-host/EnterpriseIT.ApiServiceHost.csproj --configuration Release
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 

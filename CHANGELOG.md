@@ -1,3 +1,10 @@
+## 0.1.52 — Add initial Windows API service host
+
+- Added a .NET 10 Windows Service Host project for the API process. It launches only the fixed, installer-layout Node runtime and API entry point, without a shell or caller-supplied arguments.
+- Added a private standard-input shutdown command so the host can request Fastify/Prisma graceful shutdown before bounded process-tree termination. The child environment is restricted to required OS variables and non-secret API defaults; database configuration remains in the protected application configuration file.
+- Added the host project to Windows CI compilation. This is an implementation scaffold only: it does not provision the virtual service account/service SID, install/register the service, prove child-token inheritance, provide TLS edge/Web/Worker/PostgreSQL services, or approve Credential Vault storage.
+- Root package and lockfile versions synchronized at 0.1.52. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 0.1.51 — Fix Windows installer preflight test parameter collision
 
 - Renamed the test fixture parameter that collided with PowerShell's automatic read-only `$IsWindows` variable; the fixture still supplies the `IsWindows` fact consumed by the evaluator.

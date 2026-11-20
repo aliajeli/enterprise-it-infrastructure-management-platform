@@ -1,3 +1,9 @@
+## Implementation status — v0.1.52
+
+The repository now contains an initial .NET 10 SCM host project at `apps/api/windows/service-host`. It launches a fixed Node runtime/API entry point, strips inherited process environment variables before adding a narrow allowlist, and requests graceful shutdown through a private stdin control message. The API handles that message by closing Fastify and disconnecting Prisma.
+
+This is a buildable implementation scaffold, not an installer-ready service. The following remain mandatory before registration or production use: provision `NT SERVICE\\EnterpriseITApi` with an explicit service SID; validate the effective token SID and privileges; prove the child process inherits the enabled SID; apply and verify immutable binary ACLs; implement readiness/health supervision and bounded recovery policy; and run clean-VM Windows integration tests. The service host currently assumes the future immutable version-directory layout (`runtime/node.exe` and `apps/api/dist/server.js`). It does not install files, create identities, modify ACLs, provision configuration, open firewall ports or register itself with SCM.
+
 # Windows Service Host and Credential Vault Provisioning Contract
 
 **Status:** Architecture/provisioning design gate. This document does not install services, create identities, provision ACLs, or register the keyring adapter.

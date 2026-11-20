@@ -1,3 +1,11 @@
+## 2026-11-20 — Initial Windows API service-host scaffold (v0.1.52)
+
+- Added `apps/api/windows/service-host` as a .NET 10 Windows Service Host for the API process. It resolves only fixed package-relative `runtime/node.exe` and `apps/api/dist/server.js` paths, uses `ProcessStartInfo.ArgumentList` without a shell, and clears inherited environment variables before adding a narrow OS-variable allowlist and non-secret API defaults.
+- Added a private stdin `SHUTDOWN` control message to the Node API. The host requests graceful Fastify close and Prisma disconnect, waits up to 20 seconds, then terminates the child process tree if it does not exit.
+- Added a Windows CI compile step for the host. This proves only compilation when CI passes; no service has been registered or started under a provisioned virtual service identity.
+- Still blocking: service SID provisioning and token validation, positive child-token inheritance test, service recovery policy, health/readiness integration, TLS edge/Web/Worker/PostgreSQL service packaging, Credential Vault handle-relative path/ACL hardening and adversarial tests. The API host must not be installed as a production service yet.
+- No firewall changes, port mapping, device probing, SNMP SET or MikroTik automation. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Installer preflight CI correction (v0.1.51)
 
 - Fixed Windows CI test failure caused by naming a test-fixture parameter `$IsWindows`, which collides with PowerShell's automatic read-only platform variable. The parameter is now `WindowsPlatform`; the fixture output property remains `IsWindows`.

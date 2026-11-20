@@ -18,11 +18,35 @@ try {
   process.exitCode = 1;
 }
 
-async function shutdown(signal: string): Promise<void> {
-  app.log.info({ signal }, "API service shutting down");
-  await app.close();
-  await prisma.$disconnect();
+let shutdownTask: Promise<void> | undefined;
+
+function shutdown(signal: string): Promise<void> {
+  shutdownTask ??= (async () => {
+    app.log.info({ signal }, "API service shutting down");
+    await app.close();
+    await prisma.$disconnect();
+  })();
+  return shutdownTask;
 }
 
 process.once("SIGINT", () => void shutdown("SIGINT"));
 process.once("SIGTERM", () => void shutdown("SIGTERM"));
+
+// The Windows Service Host owns this process' stdin pipe. It can request a
+// graceful stop without relying on console control events or forceful signals.
+let hostControlBuffer = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk: string) => {
+  hostControlBuffer += chunk;
+  if (hostControlBuffer.length > 64) {
+    hostControlBuffer = "";
+    return;
+  }
+
+  const newline = hostControlBuffer.indexOf("\\n");
+  if (newline < 0) return;
+
+  const command = hostControlBuffer.slice(0, newline).trim();
+  hostControlBuffer = hostControlBuffer.slice(newline + 1);
+  if (command === "SHUTDOWN") void shutdown("HOST");
+});
