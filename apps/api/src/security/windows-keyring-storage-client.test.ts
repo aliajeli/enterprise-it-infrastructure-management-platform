@@ -13,8 +13,6 @@ class FakeHelper extends EventEmitter {
   private transaction = false;
 
   constructor(private readonly exitCodeOnEnd = 0) {
-
-  constructor() {
     super();
     this.stdin.on("data", (frame: Buffer) => {
       try {

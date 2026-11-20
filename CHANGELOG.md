@@ -1,3 +1,8 @@
+## 0.1.26 — Correct helper shutdown test fixture (2026-11-20)
+
+- Corrected the fake helper constructor used by the new process-exit tests so its configured exit code is initialized in a single constructor.
+- No runtime behavior changed from 0.1.25.
+
 ## 0.1.25 — Verify Windows keyring helper process termination (2026-11-20)
 
 - The Node transport now closes helper stdin after the acknowledged END frame and waits for the child process to exit with code 0.

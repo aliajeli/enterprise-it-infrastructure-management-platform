@@ -506,3 +506,7 @@ An earlier application-repository inspection reported an empty clone before the 
 - Non-zero exit or shutdown timeout fails the enclosing storage transaction; cleanup still kills the helper and releases the in-process transaction queue.
 - Tests cover successful shutdown, stdin closure and non-zero process exit after END_OK.
 - This does not enable storage. Installer provisioning, positive dedicated-Service-SID integration, path-component hardening and real multi-process/ACL/crash tests remain outstanding.
+
+
+## 2026-11-20 — Shutdown test fixture correction (v0.1.26)
+- Corrected a duplicate constructor declaration in the FakeHelper test fixture introduced with the process-exit lifecycle tests. The runtime transport changes from v0.1.25 are unchanged.
