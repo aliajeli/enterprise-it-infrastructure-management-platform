@@ -1,3 +1,10 @@
+## 0.1.31 — Harden service SID token validation and define Windows service provisioning (2026-11-20)
+
+- Keyring storage helper now accepts a service SID from the token user or only from an enabled, non-deny-only TokenGroups entry; disabled and deny-only service SID groups are ignored, and ambiguous active service SIDs fail closed.
+- Added `WINDOWS_SERVICE_HOST_PROVISIONING_DESIGN.md` covering the dedicated virtual API service identity, .NET SCM host, immutable binary ACLs, separate mutable ProgramData layout, complete path-component/TOCTOU validation, lifecycle, and real Windows acceptance tests.
+- The helper still validates only the final vault directory handle today; full ProgramData parent-chain validation, service provisioning, and positive integration under a real service identity remain blockers. No production keyring registration is enabled.
+- Root application version advanced to `0.1.31`. No installer or Release created.
+
 ## 0.1.30 — Verify patched Effect lockfile resolution in CI (2026-11-20)
 
 - The corrected bootstrap workflow successfully generated and pushed a lockfile resolving `node_modules/effect` to `3.22.1` (lockfile commit `2db7510a5725c2f777ca396d53565692b7fe2dba`).

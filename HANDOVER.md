@@ -1,24 +1,23 @@
 # Project handover
-## Current observed snapshot — patched Effect lockfile generated; exact-head CI pending (2026-11-20)
+## Current observed snapshot — Effect advisory remediated; service identity hardening underway (2026-11-20)
 
 **Branch:** `phase3/m2-inventory-ui`  
-**Previous head:** `2db7510a5725c2f777ca396d53565692b7fe2dba`  
+**Previous head:** `f9036228d249c91b39898e23d737b7943a3e4b90`  
 **PR:** [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8) — Draft/open/unmerged.
 
-### Dependency security remediation
+### Dependency remediation and CI
 
-- Audit on 0.1.26 found `effect@3.20.0` through Prisma 7.10.1 / @prisma/config 7.10.1. Advisory GHSA-7589-6fvf-x4pw / CVE-2026-121707 is fixed in `effect@3.22.1`.
-- Root override pins `effect` to exactly `3.22.1`.
-- Corrected bootstrap workflow now executes `npm update effect --package-lock-only --ignore-scripts --no-audit --no-fund`. It completed and generated lockfile commit `2db7510a5725c2f777ca396d53565692b7fe2dba`.
-- Verified checked-in lockfile metadata: `node_modules/effect` resolves to version `3.22.1` with its registry tarball and integrity hash. This confirms lockfile resolution only, not successful install or audit.
-- Added a CI guard requiring the lockfile's exact Effect version to be `3.22.1`. Version 0.1.30 triggers a fresh validation run against the updated lockfile; previous in-flight runs target an older SHA and do not qualify.
+- The transitive `effect` ReDoS advisory GHSA-7589-6fvf-x4pw / CVE-2026-121707 was addressed by pinning `effect@3.22.1` through the root npm override and regenerating the lockfile.
+- Verified lockfile head `f9036228d249c91b39898e23d737b7943a3e4b90`: root package and lock versions are `0.1.30`; `node_modules/effect` resolves to `3.22.1` with registry integrity metadata.
+- Push workflow [44672869387](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44672869387) completed successfully on code SHA `0cb582590ba763af255829fc72cdb246d679b777`. Platform validation passed dependency install, explicit patched-version guard, Prisma validate/generate/migrate, npm ls, audit, lint, typecheck, tests, PostgreSQL backup/restore and production build. Windows runtime smoke passed helper builds, unprovisioned fail-closed checks, API typecheck/tests and API build.
+- The lockfile bot then committed root lock metadata as `f9036228...`; that generated commit is only two package-lock metadata lines and did not trigger a new Actions run. Version 0.1.31 is the next code commit and will trigger validation against the latest lockfile head.
 
-### Credential Vault status
+### Windows helper security hardening
 
-- AES-256-GCM envelope crypto core, DPAPI helper, keyring core, bounded helper protocol, Node helper-session client and .NET storage-helper groundwork exist.
-- Windows helper remains unprovisioned; Node storage adapter remains unregistered. No production credential persistence is enabled.
-- Before registration: harden all path components from ProgramData to vault directory against reparse points/TOCTOU; verify service SID token attributes (enabled, not deny-only); validate exact owner/DACL from handles; prove cross-process locking, durable atomic replacement, crash recovery and tampered-ACL rejection on real Windows.
-- Dedicated service provisioning, installer lifecycle and independent recovery restore drill are not implemented.
+- Keyring helper now checks service SID token-group attributes: a group SID must be enabled and not deny-only; merely appearing in TokenGroups is no longer enough. A service SID represented as the token user remains valid.
+- Added `WINDOWS_SERVICE_HOST_PROVISIONING_DESIGN.md` with the dedicated virtual service account, SCM host proposal, executable ACL policy, separate ProgramData data paths, service lifecycle and acceptance tests.
+- **Still blocked:** current helper verifies only the final CredentialVault directory handle. It does not yet establish a complete handle-bound trust chain from ProgramData through every parent component. Reparse-point/TOCTOU hardening, actual service identity provisioning, positive DPAPI/keyring integration tests, recovery drill and installer lifecycle remain incomplete.
+- Storage client remains unregistered. Do not store real equipment credentials.
 
 ### Network discovery safety
 
@@ -29,6 +28,8 @@
 
 - PR #8 remains Draft/unmerged. No installer or GitHub Release is authorized or claimed.
 - Release requires real clean-Windows install, service identity/ACL provisioning, upgrade, uninstall, rollback, database migration/restore and independent recovery drills.
+
+---
 
 ---
 

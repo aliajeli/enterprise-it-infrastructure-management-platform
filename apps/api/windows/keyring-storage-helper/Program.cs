@@ -12,6 +12,8 @@ internal static class Program
 {
     private const byte V=1, Begin=1, Read=2, Write=3, End=4, BeginOk=0x81, ReadResult=0x82, WriteOk=0x83, EndOk=0x84, Error=0xff;
     private const int Header=6, Max=32768;
+    private const int TokenGroupsInformation=2;
+    private const uint GroupEnabled=0x00000004, GroupUseForDenyOnly=0x00000010;
     private const uint ReadControl=0x20000, FileReadAttributes=0x80, GenericRead=0x80000000, GenericWrite=0x40000000;
     private const uint OpenExisting=3, CreateNew=1, FileNormal=0x80, Reparse=0x400, WriteThrough=0x80000000, OpenReparse=0x200000, BackupSemantics=0x2000000;
     private const uint ShareRead=1, ShareWrite=2, ShareDelete=4, ReplaceExisting=1, MoveWriteThrough=8;
@@ -176,11 +178,52 @@ internal static class Program
 
     private static SecurityIdentifier GetServiceSid()
     {
-        using var id=WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
-        var found=new List<SecurityIdentifier>();
-        if(id.User is SecurityIdentifier user && user.Value.StartsWith("S-1-5-80-",StringComparison.Ordinal)) found.Add(user);
-        found.AddRange(id.Groups?.OfType<SecurityIdentifier>().Where(x=>x.Value.StartsWith("S-1-5-80-",StringComparison.Ordinal)) ?? []);
-        var unique=found.GroupBy(x=>x.Value,StringComparer.Ordinal).Select(x=>x.First()).ToArray();
+        using var identity=WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
+        var candidates=new List<SecurityIdentifier>();
+
+        // A service SID may be the token user for a virtual service account.
+        if(identity.User is SecurityIdentifier user &&
+           user.Value.StartsWith("S-1-5-80-",StringComparison.Ordinal))
+            candidates.Add(user);
+
+        // When represented as a token group, accept only an enabled SID that is
+        // not marked deny-only. Merely appearing in TokenGroups is insufficient.
+        var token=identity.AccessToken;
+        _=GetTokenInformation(token.DangerousGetHandle(),TokenGroupsInformation,IntPtr.Zero,0,out var required);
+        var firstGroupOffset=Marshal.OffsetOf<TokenGroupsLayout>(nameof(TokenGroupsLayout.FirstGroup)).ToInt32();
+        if(required<firstGroupOffset || required>1024*1024) throw new UnauthorizedAccessException();
+
+        var buffer=Marshal.AllocHGlobal(required);
+        try
+        {
+            if(!GetTokenInformation(token.DangerousGetHandle(),TokenGroupsInformation,buffer,required,out var returned) ||
+               returned<firstGroupOffset || returned>required)
+                throw new UnauthorizedAccessException();
+
+            var count=Marshal.ReadInt32(buffer);
+            var entrySize=Marshal.SizeOf<SidAndAttributes>();
+            if(count<0 || count>4096 || returned<firstGroupOffset+(long)count*entrySize)
+                throw new UnauthorizedAccessException();
+
+            for(var i=0;i<count;i++)
+            {
+                var entry=Marshal.PtrToStructure<SidAndAttributes>(IntPtr.Add(buffer,firstGroupOffset+i*entrySize));
+                if(entry.Sid==IntPtr.Zero ||
+                   (entry.Attributes&GroupEnabled)==0 ||
+                   (entry.Attributes&GroupUseForDenyOnly)!=0)
+                    continue;
+
+                var sid=new SecurityIdentifier(entry.Sid);
+                if(sid.Value.StartsWith("S-1-5-80-",StringComparison.Ordinal))
+                    candidates.Add(sid);
+            }
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+
+        var unique=candidates.GroupBy(x=>x.Value,StringComparer.Ordinal).Select(x=>x.First()).ToArray();
         if(unique.Length!=1) throw new UnauthorizedAccessException();
         return unique[0];
     }
@@ -241,8 +284,11 @@ internal static class Program
         await output.WriteAsync(frame); await output.FlushAsync(); CryptographicOperations.ZeroMemory(frame);
     }
 
+    [StructLayout(LayoutKind.Sequential)] private struct SidAndAttributes{public IntPtr Sid;public uint Attributes;}
+    [StructLayout(LayoutKind.Sequential)] private struct TokenGroupsLayout{public uint GroupCount;public SidAndAttributes FirstGroup;}
     [StructLayout(LayoutKind.Sequential)] private struct SecurityAttributes{public int Length;public IntPtr SecurityDescriptor;[MarshalAs(UnmanagedType.Bool)]public bool InheritHandle;}
     [StructLayout(LayoutKind.Sequential)] private struct FileAttributeTagInfo{public uint FileAttributes;public uint ReparseTag;}
+    [DllImport("advapi32.dll",SetLastError=true)] private static extern bool GetTokenInformation(IntPtr token,int informationClass,IntPtr information,int informationLength,out int returnLength);
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] private static extern SafeFileHandle CreateFile(string n,uint a,uint s,IntPtr sa,uint d,uint f,IntPtr t);
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true,EntryPoint="CreateFileW")] private static extern SafeFileHandle CreateFileWithSecurity(string n,uint a,uint s,ref SecurityAttributes sa,uint d,uint f,IntPtr t);
     [DllImport("kernel32.dll",SetLastError=true)] private static extern bool GetFileInformationByHandleEx(SafeFileHandle h,int c,out FileAttributeTagInfo i,int z);
