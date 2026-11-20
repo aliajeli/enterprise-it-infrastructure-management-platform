@@ -1,23 +1,28 @@
 # Project handover
-## Current observed snapshot — Effect advisory remediated; service identity hardening underway (2026-11-20)
+## Current verified snapshot — patched dependency and service SID hardening CI passed (2026-11-20)
 
 **Branch:** `phase3/m2-inventory-ui`  
-**Previous head:** `f9036228d249c91b39898e23d737b7943a3e4b90`  
+**Verified code commit:** `720ca7caa1813a6c81647578601ddf47b70c6261`  
+**Current branch head:** `a1214f0e5b60fce3167a27363404eda3aa393572` (lockfile metadata refresh only)  
 **PR:** [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8) — Draft/open/unmerged.
 
-### Dependency remediation and CI
+### Exact-head CI evidence
 
-- The transitive `effect` ReDoS advisory GHSA-7589-6fvf-x4pw / CVE-2026-121707 was addressed by pinning `effect@3.22.1` through the root npm override and regenerating the lockfile.
-- Verified lockfile head `f9036228d249c91b39898e23d737b7943a3e4b90`: root package and lock versions are `0.1.30`; `node_modules/effect` resolves to `3.22.1` with registry integrity metadata.
-- Push workflow [44672869387](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44672869387) completed successfully on code SHA `0cb582590ba763af255829fc72cdb246d679b777`. Platform validation passed dependency install, explicit patched-version guard, Prisma validate/generate/migrate, npm ls, audit, lint, typecheck, tests, PostgreSQL backup/restore and production build. Windows runtime smoke passed helper builds, unprovisioned fail-closed checks, API typecheck/tests and API build.
-- The lockfile bot then committed root lock metadata as `f9036228...`; that generated commit is only two package-lock metadata lines and did not trigger a new Actions run. Version 0.1.31 is the next code commit and will trigger validation against the latest lockfile head.
+- Push workflow [44673439072](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44673439072) completed successfully on code SHA `720ca7caa1813a6c81647578601ddf47b70c6261`; all jobs passed: Platform validation, Windows API runtime smoke, and lockfile refresh.
+- Platform validation passed: install dependencies, exact Effect lockfile guard, Prisma validate/generate/migrate, dependency tree, npm audit, lint, typecheck, unit tests, PostgreSQL backup/restore and production build.
+- Windows smoke passed: DPAPI helper build and non-service identity rejection; keyring helper build and unprovisioned fail-closed check; Windows dependency install; Prisma package build; API/test typecheck; API and Argon2id tests; API service build.
+- The lockfile workflow then pushed `a1214f0e5b60fce3167a27363404eda3aa393572`, changing only root package-lock metadata. Verified package and lock versions are both `0.1.31`; `node_modules/effect` is `3.22.1` with its npm registry integrity value.
 
-### Windows helper security hardening
+### Security work completed in 0.1.31
 
-- Keyring helper now checks service SID token-group attributes: a group SID must be enabled and not deny-only; merely appearing in TokenGroups is no longer enough. A service SID represented as the token user remains valid.
-- Added `WINDOWS_SERVICE_HOST_PROVISIONING_DESIGN.md` with the dedicated virtual service account, SCM host proposal, executable ACL policy, separate ProgramData data paths, service lifecycle and acceptance tests.
-- **Still blocked:** current helper verifies only the final CredentialVault directory handle. It does not yet establish a complete handle-bound trust chain from ProgramData through every parent component. Reparse-point/TOCTOU hardening, actual service identity provisioning, positive DPAPI/keyring integration tests, recovery drill and installer lifecycle remain incomplete.
-- Storage client remains unregistered. Do not store real equipment credentials.
+- Keyring helper now accepts a service SID from the token user or only from an enabled, non-deny-only TokenGroups entry. Disabled and deny-only group SIDs are ignored; ambiguous active service SIDs fail closed.
+- Added `WINDOWS_SERVICE_HOST_PROVISIONING_DESIGN.md` defining a dedicated virtual API service identity, .NET SCM host proposal, immutable executable ACLs, separate mutable ProgramData layout, process supervision, installer lifecycle and acceptance tests.
+
+### Remaining Credential Vault blockers
+
+- Current helper validates the final CredentialVault directory handle only; a complete trusted handle-bound chain from ProgramData through every parent is not implemented. Reparse-point, junction, mount-point and TOCTOU handling remains a production blocker.
+- Dedicated service provisioning, positive DPAPI/keyring integration tests under the real service identity, cross-process crash/recovery tests, independent recovery drill, installer/upgrade/uninstall/rollback are not complete.
+- Storage client remains unregistered; no production credential persistence. Do not store real equipment credentials.
 
 ### Network discovery safety
 
@@ -28,6 +33,8 @@
 
 - PR #8 remains Draft/unmerged. No installer or GitHub Release is authorized or claimed.
 - Release requires real clean-Windows install, service identity/ACL provisioning, upgrade, uninstall, rollback, database migration/restore and independent recovery drills.
+
+---
 
 ---
 

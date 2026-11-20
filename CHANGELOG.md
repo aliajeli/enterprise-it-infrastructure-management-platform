@@ -1,3 +1,10 @@
+## 0.1.32 — Record service SID hardening CI verification (2026-11-20)
+
+- Recorded successful exact-code validation for the TokenGroups service SID hardening and Windows service provisioning design milestone.
+- CI run [44673439072](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44673439072) passed all three jobs on code SHA `720ca7caa1813a6c81647578601ddf47b70c6261`; the follow-up lockfile-only commit `a1214f0e5b60fce3167a27363404eda3aa393572` keeps root and lock versions aligned at `0.1.31` and Effect at `3.22.1`.
+- Full parent-path/reparse-point hardening and positive service-identity integration remain mandatory before registering storage. This release note does not claim production readiness.
+- Root application version advanced to `0.1.32`. No installer or Release created.
+
 ## 0.1.31 — Harden service SID token validation and define Windows service provisioning (2026-11-20)
 
 - Keyring storage helper now accepts a service SID from the token user or only from an enabled, non-deny-only TokenGroups entry; disabled and deny-only service SID groups are ignored, and ambiguous active service SIDs fail closed.
