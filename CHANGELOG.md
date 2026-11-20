@@ -1,3 +1,10 @@
+## 0.1.27 — Remediate transitive Effect ReDoS advisory (2026-11-20)
+
+- Added a root npm override pinning the transitive `effect` package to the patched `^3.22.1` line, addressing GHSA-7589-6fvf-x4pw / CVE-2026-121707 reported through Prisma's `@prisma/config` dependency.
+- The override is a compatible patch-line update; no Prisma major-version downgrade or forced dependency-tree rewrite was applied.
+- The lockfile bootstrap workflow is expected to regenerate the exact npm lock metadata on push. The dependency audit and full platform validation remain unverified until the follow-up run completes.
+- Root application version advanced to `0.1.27`. No installer, Release, or production credential-vault registration is created.
+
 ## 0.1.26 — Correct helper shutdown test fixture (2026-11-20)
 
 - Corrected the fake helper constructor used by the new process-exit tests so its configured exit code is initialized in a single constructor.

@@ -1,32 +1,42 @@
 # Project handover
-## Current verified snapshot — Credential Vault cryptographic core added; platform integration pending (2026-11-19)
+## Current observed snapshot — dependency audit remediation pending CI (2026-11-20)
 
 **Branch:** `phase3/m2-inventory-ui`  
-**Previous verified head:** `4b67a718ce1210a7dc8a634b811bbdf5c8af0814` — both Push run [44579435913](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44579435913) and PR run [44579448547](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44579448547) passed on that exact SHA.  
+**Previous head:** `8ea9de882014b76e157bc9fd1bea1016568e34c4`  
 **PR:** [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8) — Draft/open/unmerged.
 
-### Credential Vault progress
+### Latest CI result on 0.1.26
 
-- Added a tested AES-256-GCM envelope-encryption core: a fresh random 256-bit data-encryption key per credential, unique 96-bit nonces for data and key wrapping, 128-bit authentication tags, and authenticated context binding to credential/branch/asset/type.
-- The 32-byte key-encryption key is supplied only through a `CredentialKeyProvider` contract. No environment-variable, plaintext-file or hard-coded production-key fallback exists.
-- Added key-version identifiers so a future DPAPI-backed provider can retain old KEK versions during rotation.
-- Added unit tests for round-trip, randomization, cross-asset substitution, ciphertext/tag/wrapped-key tampering, rotation and missing-key fail-closed behavior.
+- Windows API runtime smoke passed on exact SHA `8ea9de882014b76e157bc9fd1bea1016568e34c4` in both Push run [44668937423](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44668937423) and PR run [44668945827](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/44668945827).
+- Platform validation failed at `npm audit --audit-level=high` before lint, typecheck, tests, backup/restore smoke or production build.
+- Audit identified `effect@3.20.0` through `prisma@7.10.1 -> @prisma/config@7.10.1`, affected by GHSA-7589-6fvf-x4pw / CVE-2026-121707. The advisory's patched version is `effect@3.22.1`.
 
-### Explicitly not implemented / not verified
+### 0.1.27 remediation in progress
 
-- No Windows DPAPI provider, machine/service key provisioning, separately-held recovery export, restore drill or Windows service identity/ACL validation.
-- No Prisma credential table, credential CRUD/reveal API, credential-use endpoint, RBAC integration or audit lifecycle.
-- No production key provider is registered; the cryptographic core is not wired into the running API and must not be used to store real equipment credentials.
-- No discovery handler is registered; no network equipment is contacted.
+- Root `package.json` adds npm override `effect: ^3.22.1`; this avoids the suggested `npm audit fix --force` path, which proposed a Prisma downgrade and is not accepted.
+- The push workflow's lockfile-bootstrap job must regenerate `package-lock.json`; until that exact generated lock is committed and CI reruns, the remediation is not verified.
+- Do not mark platform validation successful until audit, lint, typecheck, tests, PostgreSQL backup/restore and production build all pass on the same exact head.
 
-### Next gates
+### Credential Vault status and security gates
 
-1. Implement the Windows DPAPI-backed key provider and a separately protected recovery mechanism; prove clean-host restore and key rotation before production use.
-2. Add branch-scoped credential records and ADMIN-only management APIs, with OPERATOR denied stored-credential use as required by the approved role matrix.
-3. Add credential access audit/redaction and integration tests; then connect discovery only after the API and vault gates pass.
-4. Keep PR #8 Draft/unmerged. No installer or Release is claimed.
+- AES-256-GCM envelope crypto core, DPAPI helper, keyring core, bounded helper protocol, Node helper-session client and .NET storage helper groundwork exist.
+- The Windows helper remains unprovisioned and the Node storage adapter remains unregistered. No production credential persistence is enabled.
+- Before registration, harden every path component from ProgramData to the vault directory against reparse points/TOCTOU; verify token SID attributes (enabled, not deny-only); validate exact owner/DACL from handles; and prove process-safe lock, durable atomic replacement, crash recovery and tampered-ACL rejection on real Windows.
+- Installer/service provisioning and a dedicated service identity are not implemented. Recovery key custody and clean-host restore remain design-only.
+
+### Network discovery safety
+
+- No subnet sweeps, port scans, port-range probing, NAT/DST-NAT/port-forward changes, SNMP SET, firewall edits or automatic MikroTik unblocking.
+- Discovery must remain read-only and target-scoped. Use SNMP UDP/161 only after an administrator confirms the management path; stop the target run on timeout/possible filtering rather than trying alternate ports or protocols. A timeout is not proof of a router block.
+
+### Release gates
+
+- PR #8 remains Draft/unmerged. No installer or GitHub Release is authorized or claimed.
+- Release requires real clean-Windows install, service identity/ACL provisioning, upgrade, uninstall, rollback, database migration/restore, and independent recovery drills.
 
 ---
+
+
 
 
 ## Current verified snapshot — Worker queue foundation CI passed (2026-11-19)
