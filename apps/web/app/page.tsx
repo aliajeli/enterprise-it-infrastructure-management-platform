@@ -197,8 +197,8 @@ export default function DashboardPage() {
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: "Branches", value: "—", note: "No branch records yet", icon: Network },
-              { label: "Managed devices", value: "—", note: "Inventory not connected", icon: Monitor },
+              { label: "Branches", value: "—", note: "Manage branches in User management", icon: Network },
+              { label: "Managed devices", value: "—", note: "Browse registered assets in Device inventory", icon: Monitor },
               { label: "Online agents", value: "—", note: "Agent service not deployed", icon: Activity },
               { label: "Active alerts", value: "—", note: "Monitoring not configured", icon: Bell },
             ].map(({ label, value, note, icon: Icon }) => (
@@ -240,11 +240,11 @@ export default function DashboardPage() {
               </div>
               <div className="mt-5 space-y-4">
                 {[
-                  { label: "Web interface", detail: "Next.js application", state: "Scaffolded", color: "text-emerald-300" },
-                  { label: "API service", detail: "Authentication and domain API", state: "Planned", color: "text-slate-400" },
-                  { label: "Background worker", detail: "Durable jobs and monitoring", state: "Planned", color: "text-slate-400" },
-                  { label: "PostgreSQL", detail: "Dedicated database service", state: "Planned", color: "text-slate-400" },
-                  { label: "TLS edge", detail: "HTTPS and WSS entry point", state: "Planned", color: "text-slate-400" },
+                  { label: "Web interface", detail: "Next.js application and inventory UI", state: "Implemented", color: "text-emerald-300" },
+                  { label: "API service", detail: "Authentication, users, branches and inventory APIs", state: "Implemented", color: "text-emerald-300" },
+                  { label: "Background worker", detail: "Queue and lease foundation; no active job handlers", state: "Foundation only", color: "text-amber-300" },
+                  { label: "PostgreSQL", detail: "PostgreSQL 18 local preview via Docker Compose", state: "Local preview", color: "text-emerald-300" },
+                  { label: "TLS edge", detail: "Production HTTPS/WSS termination", state: "Not configured", color: "text-slate-400" },
                 ].map((item, index) => (
                   <div key={item.label} className="flex items-center gap-3">
                     <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-slate-900 text-slate-400">
@@ -266,7 +266,7 @@ export default function DashboardPage() {
           </div>
 
           <footer className="mt-8 flex flex-col gap-2 border-t border-slate-700/40 pt-5 text-[10px] text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-            <span>Infrastructure Control Center · Bootstrap 0.1.0</span>
+            <span>Infrastructure Control Center · Local preview v0.1.39</span>
             <span>Development environment · No production connection</span>
           </footer>
         </div>

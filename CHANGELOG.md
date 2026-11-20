@@ -1,3 +1,10 @@
+## 0.1.39 — Correct dashboard implementation status (2026-11-20)
+
+- Updated dashboard component states to distinguish implemented API/authentication/inventory capabilities from the worker foundation and unconfigured production TLS edge.
+- Replaced stale static notes claiming inventory was not connected or no branches existed with actionable links/context for existing management workflows.
+- Added dashboard regression assertions for the implementation status labels and preview version.
+- Synchronized root package and lockfile version metadata at 0.1.39. This is a UI/status accuracy improvement; it does not add monitoring, production services or an installer.
+
 ## 0.1.38 — Add a repeatable local preview acceptance guide (2026-11-20)
 
 - Added a manual Windows preview checklist for administrator bootstrap, branch administration, branch-scoped OPERATOR/VIEWER access, asset and switch-port metadata, optimistic concurrency and authorization checks.

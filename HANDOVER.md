@@ -1,3 +1,11 @@
+## 2026-11-20 — Dashboard implementation status accuracy (v0.1.39)
+
+- Dashboard no longer labels the API and PostgreSQL foundations as planned/scaffolded: API auth/user/branch/inventory routes are implemented, and PostgreSQL 18 is available for the documented local preview.
+- Worker is accurately labeled as a queue/lease foundation without active job handlers; production TLS edge remains unconfigured.
+- Dashboard empty-state notes now direct admins to branch administration and users to the inventory workspace instead of implying those modules do not exist.
+- Added regression tests asserting these status labels and the preview version. Exact-head CI is required.
+- Root package and lockfile versions synchronized at 0.1.39. PR #8 remains Draft/open/unmerged. No installer or GitHub Release created.
+
 ## 2026-11-20 — Local preview acceptance guide (v0.1.38)
 
 - Added `PREVIEW_TEST_GUIDE.md` with reproducible manual checks for first-admin bootstrap, branch creation/edit, branch-scoped OPERATOR access, VIEWER read-only access, asset and switch-port metadata, optimistic concurrency and authorization boundaries.

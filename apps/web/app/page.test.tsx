@@ -17,11 +17,22 @@ describe("infrastructure dashboard foundation", () => {
     const markup = renderToStaticMarkup(createElement(DashboardPage));
 
     expect(markup).toContain("No infrastructure data available");
-    expect(markup).toContain("No branch records yet");
-    expect(markup).toContain("Inventory not connected");
+    expect(markup).toContain("Manage branches in User management");
+    expect(markup).toContain("Browse registered assets in Device inventory");
     expect(markup).toContain("Agent service not deployed");
     expect(markup).toContain("Monitoring not configured");
     expect(markup).toContain("Status reflects implementation, not simulated health.");
+  });
+
+  it("reports implemented foundations accurately without implying production readiness", () => {
+    const markup = renderToStaticMarkup(createElement(DashboardPage));
+
+    expect(markup).toContain("Authentication, users, branches and inventory APIs");
+    expect(markup).toContain("Implemented");
+    expect(markup).toContain("Foundation only");
+    expect(markup).toContain("Local preview");
+    expect(markup).toContain("Not configured");
+    expect(markup).toContain("Local preview v0.1.39");
   });
 
   it("exposes a real Overview link and marks planned modules as unavailable", () => {
