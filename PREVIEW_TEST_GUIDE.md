@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.47`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.48`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -131,3 +131,15 @@ Expected: late responses from an earlier selection are ignored. This protects UI
 4. Confirm a VIEWER with branch access can read history, and a port ID that does not belong to the requested switch returns 404.
 
 Expected: history is read-only, branch-authorized and paginated. The endpoint does not trigger discovery and does not expose raw discovery metadata.
+
+
+## 9. Switch-port observation history UI
+
+1. Open a synthetic switch and expand its port list.
+2. Select **View history** for a port with observations.
+3. Confirm rows are newest-first and show observed time, source, administrative/operational state, VLAN, speed, IP and MAC.
+4. Confirm the total count and Previous/Next controls work when more than 10 observations exist.
+5. Use a port with no observations and confirm the empty state appears.
+6. Use browser throttling to start a history request, then close the history panel; confirm a late response cannot repopulate the closed panel.
+
+Expected: history is a read-only view of already-recorded data. Opening it does not trigger SNMP polling, port scanning, NAT/port mapping or switch configuration.

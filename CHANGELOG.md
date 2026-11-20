@@ -1,3 +1,9 @@
+## 0.1.48 — Switch-port observation history UI
+
+- Connected the inventory switch-port dialog to the branch-authorized, read-only observation-history API. Each port now has a View history action with observed time, source, administrative/operational state, VLAN, speed, IP and MAC fields.
+- Added bounded 10-row pagination, total count, loading/empty/error states and request sequencing so late history responses cannot overwrite a newer port selection or a closed dialog.
+- The history view performs no polling and sends no switch configuration. Root package and lockfile versions synchronized at 0.1.48; no installer or Release.
+
 ## 0.1.47 — Paginated switch-port observation history API
 
 - Added a branch-authorized, read-only endpoint for a switch port's append-only observation history, with bounded pagination (1–100 rows), deterministic newest-first ordering and a total count.

@@ -1,3 +1,10 @@
+## 2026-11-20 — Switch-port observation history UI (v0.1.48)
+
+- Connected the existing read-only history endpoint to the inventory switch-port dialog. Each port exposes View history; the panel shows timestamp, source, admin/oper state, VLAN, speed, IP and MAC.
+- Added 10-row pagination, total count, loading/empty/error handling and request-ID protection against stale responses after switching ports or closing the history panel.
+- History reads remain branch-authorized and do not initiate SNMP/ICMP/HTTP polling or modify switch settings. Root package and lockfile metadata synchronized at 0.1.48.
+- Exact-head Push and PR CI required. PR #8 remains Draft/open/unmerged. No installer or Release.
+
 ## 2026-11-20 — Switch-port observation history API (v0.1.47)
 
 - Added GET /api/v1/inventory/assets/:assetId/switch-ports/:portId/observations. It verifies the port belongs to the requested non-deleted switch, enforces the existing branch-scoped switch.metadata.read permission, and returns read-only observations ordered newest-first with bounded limit/offset pagination.

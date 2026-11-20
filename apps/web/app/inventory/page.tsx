@@ -15,6 +15,7 @@ type AssetKind =
 
 type Branch = { id: string; branchCode: string; name: string; status: string };
 type Observation = {
+  id: string;
   source: string;
   observedAt: string;
   adminState: string;
@@ -102,6 +103,14 @@ function InventoryContent() {
   const [ports, setPorts] = useState<Port[]>([]);
   const [portsLoading, setPortsLoading] = useState(false);
   const [portSaving, setPortSaving] = useState(false);
+  const [historyPort, setHistoryPort] = useState<Port | null>(null);
+  const [historyRows, setHistoryRows] = useState<Observation[]>([]);
+  const [historyOffset, setHistoryOffset] = useState(0);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const historyRequestId = useRef(0);
+  const historyPageSize = 10;
   const [assetForm, setAssetForm] = useState({
     assetCode: "", name: "", kind: "SWITCH" as AssetKind, primaryIp: "",
     hostname: "", vendor: "", model: "", location: "",
@@ -192,9 +201,49 @@ function InventoryContent() {
     }
   }
 
+  async function openPortHistory(port: Port, offset = 0) {
+    if (!selectedSwitch) return;
+    const requestId = ++historyRequestId.current;
+    setHistoryPort(port);
+    setHistoryRows([]);
+    setHistoryOffset(offset);
+    setHistoryTotal(0);
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      const params = new URLSearchParams({ limit: String(historyPageSize), offset: String(offset) });
+      const payload = await requestJson<{
+        port: { id: string; ifIndex: number };
+        observations: Observation[];
+        page: { limit: number; offset: number; total: number };
+      }>(`/api/v1/inventory/assets/${selectedSwitch.id}/switch-ports/${port.id}/observations?${params.toString()}`);
+      if (requestId === historyRequestId.current) {
+        setHistoryRows(payload.observations);
+        setHistoryTotal(payload.page.total);
+      }
+    } catch (cause) {
+      if (requestId === historyRequestId.current) {
+        setHistoryError(cause instanceof Error ? cause.message : "Could not load port observation history.");
+      }
+    } finally {
+      if (requestId === historyRequestId.current) setHistoryLoading(false);
+    }
+  }
+
+  function closePortHistory() {
+    historyRequestId.current += 1;
+    setHistoryPort(null);
+    setHistoryRows([]);
+    setHistoryOffset(0);
+    setHistoryTotal(0);
+    setHistoryLoading(false);
+    setHistoryError("");
+  }
+
   function closeSwitch() {
     // Invalidate any in-flight response so a late result cannot repopulate a closed or newer dialog.
     switchPortsRequestId.current += 1;
+    closePortHistory();
     setSelectedSwitch(null);
     setPorts([]);
     setPortsLoading(false);
@@ -395,6 +444,7 @@ function InventoryContent() {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
               Register equipment and maintain switch-port labels, VLAN metadata and connected-device notes.
             </p>
+            <p className="mt-2 max-w-2xl text-xs text-slate-500">Switch-port observation history is available from each port and is read-only; opening it never triggers a device poll.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select aria-label="Branch" value={branchId} onChange={(event) => { setBranchId(event.target.value); setOffset(0); }} className="min-w-56 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100">
@@ -521,8 +571,9 @@ function InventoryContent() {
         <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
           <section role="dialog" aria-modal="true" aria-labelledby="switch-ports-title" className="my-8 w-full max-w-5xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl sm:p-7">
             <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-widest text-blue-300">Switch inventory</p><h3 id="switch-ports-title" className="mt-1 text-lg font-semibold text-white">{selectedSwitch.name}</h3><p className="mt-1 text-xs text-slate-500">{selectedSwitch.primaryIp ?? "No management IP"} · {selectedSwitch.vendor ?? ""} {selectedSwitch.model ?? ""}</p></div><button type="button" onClick={closeSwitch} aria-label="Close switch ports" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"><X size={18} /></button></div>
-            <div className="mt-5 overflow-x-auto rounded-xl border border-slate-800">
-              {portsLoading ? <div className="p-8 text-center text-sm text-slate-400">Loading switch ports…</div> : ports.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No port metadata recorded yet.</div> : <table className="w-full min-w-[720px] text-left text-xs"><thead className="bg-slate-900 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">Interface</th><th className="px-4 py-3">Alias / device</th><th className="px-4 py-3">Configured VLAN</th><th className="px-4 py-3">Observed state</th><th className="px-4 py-3">Observed IP / MAC</th></tr></thead><tbody className="divide-y divide-slate-800">{ports.map((port) => { const observation = port.observations[0]; return <tr key={port.id}><td className="px-4 py-3"><p className="font-mono text-slate-200">{port.name ?? `ifIndex ${port.ifIndex}`}</p><p className="mt-1 text-[10px] text-slate-600">Index {port.ifIndex}</p></td><td className="px-4 py-3"><p className="text-slate-200">{port.alias ?? "—"}</p><p className="mt-1 text-[10px] text-slate-500">{port.connectedDeviceLabel ?? port.description ?? "—"}</p><button type="button" onClick={() => beginEditPort(port)} className="mt-2 rounded-md border border-slate-700 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-800">Edit metadata</button></td><td className="px-4 py-3 text-slate-300">{port.configuredVlanId ?? "—"}{port.configuredTaggedVlans.length ? ` / tagged ${port.configuredTaggedVlans.join(", ")}` : ""}</td><td className="px-4 py-3"><span className={observation?.operState === "UP" ? "text-emerald-300" : observation?.operState === "DOWN" ? "text-rose-300" : "text-slate-500"}>{observation?.operState ?? "Not observed"}</span><p className="mt-1 text-[10px] text-slate-600">{observation ? `${observation.source} · ${new Date(observation.observedAt).toLocaleString()}` : "No observation"}</p></td><td className="px-4 py-3 font-mono text-[10px] text-slate-400">{observation?.ipAddress ?? "—"}<p className="mt-1">{observation?.macAddress ?? "—"}</p></td></tr>; })}</tbody></table>}
+            <p className="mt-4 text-xs text-slate-500">Select <span className="font-medium text-slate-300">View history</span> on a port to inspect its recorded observations. History is read-only and does not trigger a device poll.</p>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-slate-800">
+              {portsLoading ? <div className="p-8 text-center text-sm text-slate-400">Loading switch ports…</div> : ports.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No port metadata recorded yet.</div> : <table className="w-full min-w-[720px] text-left text-xs"><thead className="bg-slate-900 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">Interface</th><th className="px-4 py-3">Alias / device</th><th className="px-4 py-3">Configured VLAN</th><th className="px-4 py-3">Observed state</th><th className="px-4 py-3">Observed IP / MAC</th></tr></thead><tbody className="divide-y divide-slate-800">{ports.map((port) => { const observation = port.observations[0]; return <tr key={port.id}><td className="px-4 py-3"><p className="font-mono text-slate-200">{port.name ?? `ifIndex ${port.ifIndex}`}</p><p className="mt-1 text-[10px] text-slate-600">Index {port.ifIndex}</p></td><td className="px-4 py-3"><p className="text-slate-200">{port.alias ?? "—"}</p><p className="mt-1 text-[10px] text-slate-500">{port.connectedDeviceLabel ?? port.description ?? "—"}</p><div className="mt-2 flex flex-wrap gap-1.5"><button type="button" onClick={() => void openPortHistory(port)} className="rounded-md border border-blue-500/40 px-2 py-1 text-[10px] text-blue-200 hover:bg-blue-500/10">View history</button><button type="button" onClick={() => beginEditPort(port)} className="rounded-md border border-slate-700 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-800">Edit metadata</button></div></td><td className="px-4 py-3 text-slate-300">{port.configuredVlanId ?? "—"}{port.configuredTaggedVlans.length ? ` / tagged ${port.configuredTaggedVlans.join(", ")}` : ""}</td><td className="px-4 py-3"><span className={observation?.operState === "UP" ? "text-emerald-300" : observation?.operState === "DOWN" ? "text-rose-300" : "text-slate-500"}>{observation?.operState ?? "Not observed"}</span><p className="mt-1 text-[10px] text-slate-600">{observation ? `${observation.source} · ${new Date(observation.observedAt).toLocaleString()}` : "No observation"}</p></td><td className="px-4 py-3 font-mono text-[10px] text-slate-400">{observation?.ipAddress ?? "—"}<p className="mt-1">{observation?.macAddress ?? "—"}</p></td></tr>; })}</tbody></table>}
             </div>
             <div className="mt-5 rounded-xl border border-slate-700/70 bg-slate-900/40 p-4">
               <h4 className="text-xs font-semibold text-slate-200">Add port metadata</h4>
@@ -537,6 +588,46 @@ function InventoryContent() {
                 <div className="flex flex-wrap items-center justify-between gap-2 sm:col-span-3"><p className="text-[10px] text-slate-500">This stores inventory metadata only. It does not configure the physical switch.</p><button disabled={portSaving} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{portSaving && <LoaderCircle size={14} className="animate-spin" />} Save port metadata</button></div>
               </form>
             </div>
+          </section>
+        </div>
+      )}
+
+      {historyPort && selectedSwitch && (
+        <div className="fixed inset-0 z-[55] flex items-center justify-center overflow-y-auto bg-black/75 p-4">
+          <section role="dialog" aria-modal="true" aria-labelledby="port-history-title" className="my-8 w-full max-w-4xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl sm:p-7">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-blue-300">Switch port · ifIndex {historyPort.ifIndex}</p>
+                <h3 id="port-history-title" className="mt-1 text-lg font-semibold text-white">Observation history</h3>
+                <p className="mt-1 text-xs text-slate-500">{historyPort.name ?? historyPort.alias ?? `Interface ${historyPort.ifIndex}`} · {historyTotal} recorded observations</p>
+              </div>
+              <button type="button" onClick={closePortHistory} aria-label="Close observation history" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"><X size={18} /></button>
+            </div>
+            {historyError && <div role="alert" className="mt-4 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">{historyError}</div>}
+            <div className="mt-5 overflow-x-auto rounded-xl border border-slate-800">
+              {historyLoading ? <div className="p-8 text-center text-sm text-slate-400"><LoaderCircle size={16} className="mr-2 inline animate-spin" />Loading observation history…</div>
+                : historyRows.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">{historyError ? "History could not be loaded." : "No observations have been recorded for this port."}</div>
+                : <table className="w-full min-w-[900px] text-left text-xs">
+                  <thead className="bg-slate-900 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-3 py-3">Observed at</th><th className="px-3 py-3">Source</th><th className="px-3 py-3">Admin / Oper</th><th className="px-3 py-3">VLAN</th><th className="px-3 py-3">Speed</th><th className="px-3 py-3">IP address</th><th className="px-3 py-3">MAC address</th></tr></thead>
+                  <tbody className="divide-y divide-slate-800">{historyRows.map((row) => <tr key={row.id}>
+                    <td className="whitespace-nowrap px-3 py-3 text-slate-300">{new Date(row.observedAt).toLocaleString()}</td>
+                    <td className="px-3 py-3 text-slate-400">{row.source}</td>
+                    <td className="px-3 py-3"><span className="text-slate-300">{row.adminState}</span><span className="mx-1 text-slate-600">/</span><span className={row.operState === "UP" ? "text-emerald-300" : row.operState === "DOWN" ? "text-rose-300" : "text-slate-400"}>{row.operState}</span></td>
+                    <td className="px-3 py-3 text-slate-300">{row.vlanId ?? "—"}</td>
+                    <td className="px-3 py-3 text-slate-300">{row.speedMbps === null ? "—" : `${row.speedMbps} Mbps`}</td>
+                    <td className="px-3 py-3 font-mono text-slate-400">{row.ipAddress ?? "—"}</td>
+                    <td className="px-3 py-3 font-mono text-slate-400">{row.macAddress ?? "—"}</td>
+                  </tr>)}</tbody>
+                </table>}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">{historyTotal === 0 ? "0 records" : `Showing ${historyOffset + 1}–${Math.min(historyOffset + historyRows.length, historyTotal)} of ${historyTotal}`}</p>
+              <div className="flex items-center gap-2">
+                <button type="button" disabled={historyLoading || historyOffset === 0} onClick={() => void openPortHistory(historyPort, Math.max(0, historyOffset - historyPageSize))} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 disabled:opacity-40">Previous</button>
+                <button type="button" disabled={historyLoading || historyOffset + historyPageSize >= historyTotal} onClick={() => void openPortHistory(historyPort, historyOffset + historyPageSize)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 disabled:opacity-40">Next</button>
+              </div>
+            </div>
+            <p className="mt-4 text-[10px] text-slate-600">Historical observations only. This view never polls the switch or changes its configuration.</p>
           </section>
         </div>
       )}
