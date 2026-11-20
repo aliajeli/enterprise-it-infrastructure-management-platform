@@ -1,3 +1,8 @@
+## 2026-11-20 — Service-host scaffold compile/metadata follow-up (v0.1.53)
+
+- Added the missing namespace import to the Windows API service-host entry point and synchronized both root package-lock version fields to 0.1.53.
+- Exact-head CI is required before calling the host scaffold validated. It remains an unregistered development artifact, not an installable Windows service.
+
 ## 2026-11-20 — Initial Windows API service-host scaffold (v0.1.52)
 
 - Added `apps/api/windows/service-host` as a .NET 10 Windows Service Host for the API process. It resolves only fixed package-relative `runtime/node.exe` and `apps/api/dist/server.js` paths, uses `ProcessStartInfo.ArgumentList` without a shell, and clears inherited environment variables before adding a narrow OS-variable allowlist and non-secret API defaults.

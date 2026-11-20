@@ -1,3 +1,8 @@
+## 0.1.53 — Correct Windows API host build metadata
+
+- Added the service-host namespace import required by the top-level host bootstrap and synchronized both root version fields in package-lock.json with package.json.
+- This is a compile/metadata correction only; Windows service registration, identity provisioning and production readiness remain unimplemented.
+
 ## 0.1.52 — Add initial Windows API service host
 
 - Added a .NET 10 Windows Service Host project for the API process. It launches only the fixed, installer-layout Node runtime and API entry point, without a shell or caller-supplied arguments.
