@@ -1,3 +1,9 @@
+## 2026-11-20 — Installer preflight CI correction (v0.1.51)
+
+- Fixed Windows CI test failure caused by naming a test-fixture parameter `$IsWindows`, which collides with PowerShell's automatic read-only platform variable. The parameter is now `WindowsPlatform`; the fixture output property remains `IsWindows`.
+- The v0.1.50 Linux/PostgreSQL validation passed; both Windows-containing workflows failed only at the new preflight unit-test invocation due to this parameter binding collision. v0.1.51 reruns both full workflows on the exact new SHA.
+- Installer remains unbuilt. Remaining gates: host support matrix, service host and five SCM services, keyring service identity/ACL hardening, offline payload, installer, upgrade/repair/uninstall/rollback tests.
+
 ## 2026-11-20 — Windows installer preflight baseline (v0.1.50)
 
 - Added `scripts/windows/installer-preflight.ps1`, a read-only host check for Windows, x64 architecture, elevated execution and ready local fixed volumes for Program Files and ProgramData. The minimum free-space floor is configurable (default 10 GB) and is only a staging baseline, not a final capacity recommendation.

@@ -8,7 +8,7 @@ function Assert-Condition {
 
 function New-TestFacts {
     param(
-        [bool]$IsWindows = $true,
+        [bool]$WindowsPlatform = $true,
         [bool]$Is64BitOS = $true,
         [bool]$IsElevated = $true,
         [string]$ProgramFilesDriveType = "Fixed",
@@ -17,7 +17,7 @@ function New-TestFacts {
         [int64]$ProgramDataFreeBytes = 20GB
     )
     return [pscustomobject]@{
-        IsWindows = $IsWindows
+        IsWindows = $WindowsPlatform
         Is64BitOS = $Is64BitOS
         IsElevated = $IsElevated
         Locations = @(
@@ -38,7 +38,7 @@ Assert-Condition (-not $notElevated.ready) "A non-elevated process must fail."
 $wrongArchitecture = Test-InstallerPreflightFacts -Facts (New-TestFacts -Is64BitOS $false) -MinimumFreeSpaceGB $minimum
 Assert-Condition (-not $wrongArchitecture.ready) "A non-x64 operating system must fail."
 
-$notWindows = Test-InstallerPreflightFacts -Facts (New-TestFacts -IsWindows $false) -MinimumFreeSpaceGB $minimum
+$notWindows = Test-InstallerPreflightFacts -Facts (New-TestFacts -WindowsPlatform $false) -MinimumFreeSpaceGB $minimum
 Assert-Condition (-not $notWindows.ready) "A non-Windows host must fail."
 
 $lowSpace = Test-InstallerPreflightFacts -Facts (New-TestFacts -ProgramDataFreeBytes 1GB) -MinimumFreeSpaceGB $minimum

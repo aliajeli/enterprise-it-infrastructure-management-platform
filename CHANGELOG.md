@@ -1,3 +1,8 @@
+## 0.1.51 — Fix Windows installer preflight test parameter collision
+
+- Renamed the test fixture parameter that collided with PowerShell's automatic read-only `$IsWindows` variable; the fixture still supplies the `IsWindows` fact consumed by the evaluator.
+- No runtime preflight behavior or host state changes. Version and lockfile synchronized.
+
 ## 0.1.50 — Windows installer host preflight baseline
 
 - Added a read-only PowerShell preflight for Windows x64, elevated execution, and ready local fixed Program Files/ProgramData volumes with a configurable free-space floor.
