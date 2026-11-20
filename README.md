@@ -15,6 +15,54 @@ The project is being implemented in reviewable milestones. **M0 is complete.** T
 - **Windows Agent target:** C# / .NET 10 LTS.
 - **Deployment target:** self-contained Windows installation with five independent Windows services.
 
+## Quick local preview (Windows)
+
+This preview runs PostgreSQL 18 in Docker and the API/web applications directly on Windows. It is intended for local UI and workflow evaluation, not production deployment. Docker Desktop with Linux containers, Node.js 26 and npm 11 are required.
+
+From the repository root, in PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d db
+docker compose ps
+node --version
+npm --version
+npm ci
+npm run db:validate
+npm run db:generate
+npm run db:migrate:deploy
+npm run build
+npm run bootstrap-admin
+```
+
+Use Node.js 26.x and npm 11.x. The bootstrap command interactively creates the first administrator; there is no default account or password.
+
+Open two separate PowerShell terminals in the repository root:
+
+Terminal 1 — API:
+
+```powershell
+npm run dev:api
+```
+
+Terminal 2 — web application:
+
+```powershell
+npm run dev
+```
+
+Then open **http://127.0.0.1:3000**. Sign in with the administrator credentials created by the bootstrap command. The web server proxies API requests to the local API service on port 13001.
+
+The Compose database port is bound to loopback only. The default password in `.env.example` is for an isolated local preview; change it before use and never reuse it outside this environment. No sample device/monitoring data is fabricated, and this preview does not perform SNMP discovery, port scanning, NAT/port mapping or MikroTik changes. Do not enter production equipment credentials.
+
+To stop PostgreSQL while preserving the database:
+
+```powershell
+docker compose down
+```
+
+**Destructive reset:** `docker compose down -v` deletes the local PostgreSQL volume and all preview data.
+
 ## First local administrator
 
 Copy the repository-root `.env.example` to `.env` and set a local PostgreSQL connection string. Start PostgreSQL, then run:

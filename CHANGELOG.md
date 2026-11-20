@@ -1,3 +1,10 @@
+## 0.1.36 — Add local preview database workflow (2026-11-20)
+
+- Added a PostgreSQL 18 Docker Compose service with a persistent named volume, health check and loopback-only published port.
+- Added a Windows PowerShell local-preview path for dependency installation, Prisma validation/generation/migrations, administrator bootstrap and separate API/web development processes.
+- Added explicit local-only credential, data-reset and network-discovery safety warnings. No installer, sample device data, discovery transport or GitHub Release is included.
+- Synchronized root package and npm lockfile version metadata to 0.1.36.
+
 ## 0.1.35 — Disambiguate Windows file-information interop calls (2026-11-20)
 
 - Corrected the Windows helper build failure in the new directory-chain primitive: the two GetFileInformationByHandleEx declarations now have distinct managed names while both retain the documented Win32 entry point.

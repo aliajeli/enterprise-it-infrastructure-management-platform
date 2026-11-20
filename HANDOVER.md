@@ -1,3 +1,12 @@
+## 2026-11-20 — Local preview path (v0.1.36)
+
+- Added `compose.yaml` with PostgreSQL 18, persistent named storage, health check and loopback-only host binding. The application services still run locally through Node.js/npm; this is not a full containerized deployment.
+- Added a Windows PowerShell quick-preview guide to README: copy root environment template, start DB, install Node workspaces, validate/generate Prisma, apply migrations, build, interactively bootstrap the first administrator, then run API and web in separate terminals.
+- Root `package.json` and the two root metadata entries in `package-lock.json` are synchronized at 0.1.36.
+- No seed/demo device data is fabricated. No SNMP/SSH discovery, port scan, NAT/port mapping, RouterOS change, or automatic unblock is introduced. The preview database is loopback-only and its default password is explicitly local-only.
+- Current PR #8 head before this change was `cd343c55f869db234c5cb9123c16fd09cc9933b3`; its PR workflow ended `action_required` with zero check runs. Previous successful CI on `6f5b0d7` does not validate that newer head. CI for this preview commit must be checked independently.
+- PR #8 remains Draft/open/unmerged. No installer or Release is created by this milestone.
+
 ## 2026-11-20 — Correct native interop overload ambiguity (v0.1.35)
 - Exact Windows CI on commit 64b82dcc3c4d96c9b697a615cea04a91218c8750 failed while compiling WindowsDirectoryHandleChain.cs with CS0121: overloaded GetFileInformationByHandleEx P/Invoke declarations made both out-var calls ambiguous.
 - Renamed the managed declarations to GetFileAttributeTagInfo and GetFileIdentityInfo while retaining EntryPoint=GetFileInformationByHandleEx. This addresses the compile-time ambiguity; exact-head CI must still prove the correction.
