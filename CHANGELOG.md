@@ -1,3 +1,9 @@
+## 0.1.37 — Harden local preview startup instructions (2026-11-20)
+
+- Wait for PostgreSQL health before continuing with migrations using Docker Compose `--wait`.
+- Clarify that `POSTGRES_PASSWORD` and the password component of `DATABASE_URL` must match; recommend URL-safe generated values.
+- Added an environment-template reminder and synchronized root package/lockfile version metadata.
+
 ## 0.1.36 — Add local preview database workflow (2026-11-20)
 
 - Added a PostgreSQL 18 Docker Compose service with a persistent named volume, health check and loopback-only published port.

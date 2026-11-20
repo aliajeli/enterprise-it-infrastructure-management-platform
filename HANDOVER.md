@@ -1,3 +1,11 @@
+## 2026-11-20 — Preview startup reliability follow-up (v0.1.37)
+
+- Updated the Windows preview procedure to use `docker compose up -d --wait db`, preventing migration/bootstrap steps from racing PostgreSQL initialization.
+- Clarified the required equality of `POSTGRES_PASSWORD` and the password in `DATABASE_URL`, with a URL-safe password generation example.
+- Root package and lockfile version metadata synchronized at 0.1.37. This is a documentation/configuration hardening follow-up; it does not create an installer or Release.
+- CI on parent 0.1.36 commit `65e0b7ad7499a2f52963c1840c0c3e28ef885488` passed both Platform validation and Windows API runtime smoke. This new exact commit still requires its own CI result.
+- PR #8 remains Draft/open/unmerged.
+
 ## 2026-11-20 — Local preview path (v0.1.36)
 
 - Added `compose.yaml` with PostgreSQL 18, persistent named storage, health check and loopback-only host binding. The application services still run locally through Node.js/npm; this is not a full containerized deployment.

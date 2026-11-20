@@ -23,7 +23,7 @@ From the repository root, in PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
-docker compose up -d db
+docker compose up -d --wait db
 docker compose ps
 node --version
 npm --version
@@ -53,7 +53,7 @@ npm run dev
 
 Then open **http://127.0.0.1:3000**. Sign in with the administrator credentials created by the bootstrap command. The web server proxies API requests to the local API service on port 13001.
 
-The Compose database port is bound to loopback only. The default password in `.env.example` is for an isolated local preview; change it before use and never reuse it outside this environment. No sample device/monitoring data is fabricated, and this preview does not perform SNMP discovery, port scanning, NAT/port mapping or MikroTik changes. Do not enter production equipment credentials.
+The Compose database port is bound to loopback only. If you change `POSTGRES_PASSWORD` in `.env`, change the password in `DATABASE_URL` to exactly the same value as well; otherwise Prisma/API connections will fail. Prefer a URL-safe password (for example, generate one with `node -e "console.log(require('node:crypto').randomBytes(24).toString('base64url'))"`) so it does not need URL encoding. The example password is for an isolated local preview only; never reuse it outside this environment. No sample device/monitoring data is fabricated, and this preview does not perform SNMP discovery, port scanning, NAT/port mapping or MikroTik changes. Do not enter production equipment credentials.
 
 To stop PostgreSQL while preserving the database:
 
