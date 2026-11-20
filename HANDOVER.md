@@ -1,3 +1,11 @@
+## 2026-11-20 — Local preview acceptance guide (v0.1.38)
+
+- Added `PREVIEW_TEST_GUIDE.md` with reproducible manual checks for first-admin bootstrap, branch creation/edit, branch-scoped OPERATOR access, VIEWER read-only access, asset and switch-port metadata, optimistic concurrency and authorization boundaries.
+- Updated README to accurately describe M2 UI/API implementation on Draft PR #8 rather than claiming the inventory UI is still future work.
+- Explicitly documents that this is a local workflow test only: no fake monitoring data, no device discovery, no MikroTik/RouterOS changes, no real credentials, and no installer.
+- Root package and lockfile versions are synchronized at 0.1.38. Exact-head CI is required before this commit is considered validated.
+- PR #8 must remain Draft/open/unmerged. No installer or GitHub Release was created.
+
 ## 2026-11-20 — Preview startup reliability follow-up (v0.1.37)
 
 - Updated the Windows preview procedure to use `docker compose up -d --wait db`, preventing migration/bootstrap steps from racing PostgreSQL initialization.

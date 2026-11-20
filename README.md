@@ -4,7 +4,7 @@
 
 **Current phase:** Phase 3 — Implementation (owner-authorized 2026-11-19).
 
-The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration and role policy are implemented in Draft PRs [#5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) and [#6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), both unmerged. The initial M2 inventory and switch-port API/schema slice is implemented and CI-verified in Draft PR #7 (unmerged). M1 still requires clean Windows service integration and production encrypted backup/restore evidence. M2 discovery transports, UI and hardware validation remain future work. The platform is not production-ready.
+The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration and role policy are implemented in Draft PRs [#5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) and [#6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), both unmerged. M2 inventory API/schema and the first branch-aware inventory UI are implemented in Draft PRs [#7](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/7) and [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), both unmerged. The local preview path is documented below and in [PREVIEW_TEST_GUIDE.md](PREVIEW_TEST_GUIDE.md). M1 still requires clean Windows service integration and production encrypted backup/restore evidence. Device discovery, monitoring transports, hardware validation and production packaging remain future work. The platform is not production-ready.
 
 ## Application baseline
 
@@ -120,6 +120,7 @@ The development server binds to `127.0.0.1`. The initial dashboard is an impleme
 - [Security policy](SECURITY_POLICY.md)
 - [Desktop Bridge PoC specification](DESKTOP_BRIDGE_POC.md)
 - [Testing strategy](TESTING_STRATEGY.md)
+- [Local preview and manual acceptance checklist](PREVIEW_TEST_GUIDE.md)
 - [Release process](RELEASE_PROCESS.md)
 - [Versioning policy](VERSIONING_POLICY.md)
 - [Decision log](DECISION_LOG.md)
@@ -148,5 +149,5 @@ All behavior described as planned or not implemented remains unverified until im
 - M0 web application foundation: complete and merged.
 - M1 identity/authentication/persistence: merged.
 - M1 user and branch administration: implemented in [PR #5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5), CI-verified and awaiting review; not yet merged.
-- M2 initial inventory/switch-port schema and API slice: implemented on feature branch, awaiting CI/review; no real discovery or switch configuration.
-- Windows Agent, monitoring, SNMP/SSH integrations, installer, updater and release milestones remain future work.
+- M2 branch-aware inventory UI, asset CRUD, switch-port metadata and API/schema: implemented on Draft PR #8; CI passed on exact head `d208b490`; manual Windows preview acceptance is still required. No real discovery or switch configuration.
+- Windows Agent, monitoring, SNMP/SSH integrations, installer, updater and release milestones remain future work. No installer or GitHub Release exists yet.

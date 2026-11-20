@@ -1,3 +1,10 @@
+## 0.1.38 — Add a repeatable local preview acceptance guide (2026-11-20)
+
+- Added a manual Windows preview checklist for administrator bootstrap, branch administration, branch-scoped OPERATOR/VIEWER access, asset and switch-port metadata, optimistic concurrency and authorization checks.
+- Updated README project status to reflect the implemented branch-aware inventory UI and the current Draft PR #8.
+- Documented explicit preview boundaries: no fabricated monitoring data, device discovery, port scanning/mapping, MikroTik configuration changes, production credentials or installer claim.
+- Synchronized root package and lockfile version metadata at 0.1.38. This is documentation and QA enablement only; it is not an installable release.
+
 ## 0.1.37 — Harden local preview startup instructions (2026-11-20)
 
 - Wait for PostgreSQL health before continuing with migrations using Docker Compose `--wait`.
