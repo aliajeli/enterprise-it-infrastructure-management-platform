@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.45`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.46`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -112,3 +112,12 @@ docker compose down -v
 ```
 
 The second command is destructive. Verify that the Compose project points only to the local preview database before using it.
+
+## 7. Switch selection and dialog request consistency
+
+1. Create two synthetic switch assets in the test branch, each with at least one port metadata row.
+2. Open the first switch's port dialog, then immediately open the second switch before the first request completes (use browser throttling if needed).
+3. Confirm the dialog displays only the second switch's port rows once loading finishes.
+4. Repeat, but close the dialog while its port request is pending; confirm the closed dialog does not reappear and no stale port list is shown when another switch is opened.
+
+Expected: late responses from an earlier selection are ignored. This protects UI state only; it does not cancel server-side work or perform network discovery.

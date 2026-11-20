@@ -85,6 +85,7 @@ function InventoryContent() {
   const [totalAssets, setTotalAssets] = useState(0);
   const [offset, setOffset] = useState(0);
   const assetsRequestId = useRef(0);
+  const switchPortsRequestId = useRef(0);
   const pageSize = 100;
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState("");
@@ -171,20 +172,33 @@ function InventoryContent() {
   );
 
   async function openSwitch(asset: Asset) {
+    const requestId = ++switchPortsRequestId.current;
     setSelectedSwitch(asset);
+    setPorts([]);
     setPortsLoading(true);
     setError("");
     try {
       const payload = await requestJson<{ ports: Port[] }>(
         `/api/v1/inventory/assets/${asset.id}/switch-ports`,
       );
-      setPorts(payload.ports);
+      if (requestId === switchPortsRequestId.current) setPorts(payload.ports);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load switch ports.");
-      setPorts([]);
+      if (requestId === switchPortsRequestId.current) {
+        setError(cause instanceof Error ? cause.message : "Could not load switch ports.");
+        setPorts([]);
+      }
     } finally {
-      setPortsLoading(false);
+      if (requestId === switchPortsRequestId.current) setPortsLoading(false);
     }
+  }
+
+  function closeSwitch() {
+    // Invalidate any in-flight response so a late result cannot repopulate a closed or newer dialog.
+    switchPortsRequestId.current += 1;
+    setSelectedSwitch(null);
+    setPorts([]);
+    setPortsLoading(false);
+    setEditingPort(null);
   }
 
   async function createAsset(event: FormEvent<HTMLFormElement>) {
@@ -506,7 +520,7 @@ function InventoryContent() {
       {selectedSwitch && (
         <div className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
           <section role="dialog" aria-modal="true" aria-labelledby="switch-ports-title" className="my-8 w-full max-w-5xl rounded-2xl border border-slate-700 bg-slate-950 p-5 shadow-2xl sm:p-7">
-            <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-widest text-blue-300">Switch inventory</p><h3 id="switch-ports-title" className="mt-1 text-lg font-semibold text-white">{selectedSwitch.name}</h3><p className="mt-1 text-xs text-slate-500">{selectedSwitch.primaryIp ?? "No management IP"} · {selectedSwitch.vendor ?? ""} {selectedSwitch.model ?? ""}</p></div><button type="button" onClick={() => setSelectedSwitch(null)} aria-label="Close switch ports" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"><X size={18} /></button></div>
+            <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] uppercase tracking-widest text-blue-300">Switch inventory</p><h3 id="switch-ports-title" className="mt-1 text-lg font-semibold text-white">{selectedSwitch.name}</h3><p className="mt-1 text-xs text-slate-500">{selectedSwitch.primaryIp ?? "No management IP"} · {selectedSwitch.vendor ?? ""} {selectedSwitch.model ?? ""}</p></div><button type="button" onClick={closeSwitch} aria-label="Close switch ports" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"><X size={18} /></button></div>
             <div className="mt-5 overflow-x-auto rounded-xl border border-slate-800">
               {portsLoading ? <div className="p-8 text-center text-sm text-slate-400">Loading switch ports…</div> : ports.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">No port metadata recorded yet.</div> : <table className="w-full min-w-[720px] text-left text-xs"><thead className="bg-slate-900 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">Interface</th><th className="px-4 py-3">Alias / device</th><th className="px-4 py-3">Configured VLAN</th><th className="px-4 py-3">Observed state</th><th className="px-4 py-3">Observed IP / MAC</th></tr></thead><tbody className="divide-y divide-slate-800">{ports.map((port) => { const observation = port.observations[0]; return <tr key={port.id}><td className="px-4 py-3"><p className="font-mono text-slate-200">{port.name ?? `ifIndex ${port.ifIndex}`}</p><p className="mt-1 text-[10px] text-slate-600">Index {port.ifIndex}</p></td><td className="px-4 py-3"><p className="text-slate-200">{port.alias ?? "—"}</p><p className="mt-1 text-[10px] text-slate-500">{port.connectedDeviceLabel ?? port.description ?? "—"}</p><button type="button" onClick={() => beginEditPort(port)} className="mt-2 rounded-md border border-slate-700 px-2 py-1 text-[10px] text-slate-300 hover:bg-slate-800">Edit metadata</button></td><td className="px-4 py-3 text-slate-300">{port.configuredVlanId ?? "—"}{port.configuredTaggedVlans.length ? ` / tagged ${port.configuredTaggedVlans.join(", ")}` : ""}</td><td className="px-4 py-3"><span className={observation?.operState === "UP" ? "text-emerald-300" : observation?.operState === "DOWN" ? "text-rose-300" : "text-slate-500"}>{observation?.operState ?? "Not observed"}</span><p className="mt-1 text-[10px] text-slate-600">{observation ? `${observation.source} · ${new Date(observation.observedAt).toLocaleString()}` : "No observation"}</p></td><td className="px-4 py-3 font-mono text-[10px] text-slate-400">{observation?.ipAddress ?? "—"}<p className="mt-1">{observation?.macAddress ?? "—"}</p></td></tr>; })}</tbody></table>}
             </div>

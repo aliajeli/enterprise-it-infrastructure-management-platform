@@ -1,3 +1,9 @@
+## 2026-11-20 — Switch-port request race protection (v0.1.46)
+
+- Switch-port detail reads now use a monotonically increasing request ID. Responses from an earlier switch selection cannot overwrite the port list, error state or loading state for a newer selection.
+- Opening a different switch clears the previous switch's port rows immediately; closing the dialog invalidates pending reads and clears transient selection state.
+- Root package and both root lockfile version fields synchronized at 0.1.46. Exact-head Push/PR CI required. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Inventory pagination and request consistency (v0.1.45)
 
 - Inventory UI now consumes the API pagination contract and exposes Previous/Next controls, current page, visible range and total matching result count.

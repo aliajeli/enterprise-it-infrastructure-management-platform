@@ -1,3 +1,9 @@
+## 0.1.46 — Prevent stale switch-port responses
+
+- Added request sequencing to switch-port detail loading. When operators open another switch or close the dialog while a request is in flight, late responses are ignored instead of replacing the currently selected switch's ports or changing its loading/error state.
+- Clear the previous port list immediately when switching devices, and invalidate pending reads when the dialog closes.
+- Root package and lockfile version metadata synchronized at 0.1.46. This is a UI consistency fix; it does not add live discovery, device configuration, an installer or a Release.
+
 ## 0.1.45 — Add inventory pagination and accurate totals
 
 - Added offset-based pagination controls to the inventory workspace using the API's existing `limit`, `offset` and `page.total` contract.
