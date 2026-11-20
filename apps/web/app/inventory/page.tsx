@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { AuthGuard } from "../components/auth-guard";
 import { LogoutButton } from "../components/logout-button";
 import {
@@ -82,6 +82,10 @@ function InventoryContent() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [branchId, setBranchId] = useState("");
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [totalAssets, setTotalAssets] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const assetsRequestId = useRef(0);
+  const pageSize = 100;
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState("");
   const [loading, setLoading] = useState(true);
@@ -122,25 +126,34 @@ function InventoryContent() {
   }, []);
 
   const loadAssets = useCallback(async () => {
+    const requestId = ++assetsRequestId.current;
     if (!branchId) {
       setAssets([]);
+      setTotalAssets(0);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const params = new URLSearchParams({ branchId, limit: "100" });
+      const params = new URLSearchParams({ branchId, limit: String(pageSize), offset: String(offset) });
       if (kind) params.set("kind", kind);
       if (search.trim()) params.set("q", search.trim());
-      const payload = await requestJson<{ assets: Asset[] }>(`/api/v1/inventory/assets?${params.toString()}`);
-      setAssets(payload.assets);
-      setError("");
+      const payload = await requestJson<{ assets: Asset[]; page: { total: number } }>(
+        `/api/v1/inventory/assets?${params.toString()}`,
+      );
+      if (requestId === assetsRequestId.current) {
+        setAssets(payload.assets);
+        setTotalAssets(payload.page.total);
+        setError("");
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load inventory.");
+      if (requestId === assetsRequestId.current) {
+        setError(cause instanceof Error ? cause.message : "Could not load inventory.");
+      }
     } finally {
-      setLoading(false);
+      if (requestId === assetsRequestId.current) setLoading(false);
     }
-  }, [branchId, kind, search]);
+  }, [branchId, kind, offset, search]);
 
   // Defer data loading to a microtask so effects schedule external work rather
   // than synchronously invoking functions that enqueue React state updates.
@@ -370,7 +383,7 @@ function InventoryContent() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <select aria-label="Branch" value={branchId} onChange={(event) => setBranchId(event.target.value)} className="min-w-56 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100">
+            <select aria-label="Branch" value={branchId} onChange={(event) => { setBranchId(event.target.value); setOffset(0); }} className="min-w-56 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100">
               {branches.length === 0 && <option value="">No accessible branches</option>}
               {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.branchCode} · {branch.name}</option>)}
             </select>
@@ -384,8 +397,8 @@ function InventoryContent() {
         </div>
 
         <div className="mt-7 grid gap-3 sm:grid-cols-3">
-          <div className="panel rounded-xl p-4"><p className="text-xs text-slate-500">Assets in this branch</p><p className="mt-2 text-2xl font-semibold text-white">{assets.length}</p></div>
-          <div className="panel rounded-xl p-4"><p className="text-xs text-slate-500">Switches</p><p className="mt-2 text-2xl font-semibold text-white">{assets.filter((asset) => asset.kind === "SWITCH").length}</p></div>
+          <div className="panel rounded-xl p-4"><p className="text-xs text-slate-500">Matching assets</p><p className="mt-2 text-2xl font-semibold text-white">{totalAssets}</p></div>
+          <div className="panel rounded-xl p-4"><p className="text-xs text-slate-500">Switches on this page</p><p className="mt-2 text-2xl font-semibold text-white">{assets.filter((asset) => asset.kind === "SWITCH").length}</p></div>
           <div className="panel rounded-xl p-4"><p className="text-xs text-slate-500">Branch</p><p className="mt-2 truncate text-lg font-semibold text-white">{selectedBranch?.name ?? "—"}</p></div>
         </div>
 
@@ -398,9 +411,9 @@ function InventoryContent() {
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/60 px-3">
                 <Search size={15} className="text-slate-500" />
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, code, hostname or IP" className="w-full bg-transparent py-2 text-xs text-slate-100 outline-none placeholder:text-slate-600 sm:w-64" />
+                <input value={search} onChange={(event) => { setSearch(event.target.value); setOffset(0); }} placeholder="Search name, code, hostname or IP" className="w-full bg-transparent py-2 text-xs text-slate-100 outline-none placeholder:text-slate-600 sm:w-64" />
               </div>
-              <select aria-label="Filter by equipment type" value={kind} onChange={(event) => setKind(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200">
+              <select aria-label="Filter by equipment type" value={kind} onChange={(event) => { setKind(event.target.value); setOffset(0); }} className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-200">
                 <option value="">All types</option>
                 {kinds.map((value) => <option key={value} value={value}>{value}</option>)}
               </select>
@@ -435,7 +448,17 @@ function InventoryContent() {
               </table>
             </div>
           )}
-          <div className="border-t border-slate-700/50 px-5 py-3 text-[10px] text-slate-500">Showing up to 100 matching assets · Source: application inventory · No live discovery is running</div>
+          <div className="flex flex-col gap-3 border-t border-slate-700/50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[10px] text-slate-500">
+              {totalAssets === 0 ? "No matching assets" : "Showing " + (offset + 1) + "–" + Math.min(offset + assets.length, totalAssets) + " of " + totalAssets + " matching assets"}
+              {" · Source: application inventory · No live discovery is running"}
+            </p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setOffset((current) => Math.max(0, current - pageSize))} disabled={loading || offset === 0} className="rounded-md border border-slate-700 px-3 py-1.5 text-[10px] text-slate-300 disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+              <span className="min-w-16 text-center text-[10px] text-slate-500">{totalAssets === 0 ? "0 / 0" : (Math.floor(offset / pageSize) + 1) + " / " + Math.ceil(totalAssets / pageSize)}</span>
+              <button type="button" onClick={() => setOffset((current) => current + pageSize)} disabled={loading || offset + assets.length >= totalAssets} className="rounded-md border border-slate-700 px-3 py-1.5 text-[10px] text-slate-300 disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+            </div>
+          </div>
         </section>
       </div>
 

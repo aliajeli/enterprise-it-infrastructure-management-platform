@@ -1,3 +1,10 @@
+## 0.1.45 — Add inventory pagination and accurate totals
+
+- Added offset-based pagination controls to the inventory workspace using the API's existing `limit`, `offset` and `page.total` contract.
+- The summary now displays the total number of matching assets rather than only the currently loaded first 100; the switch count is explicitly scoped to the visible page.
+- Branch, type and search changes reset pagination to the first page. Concurrent asset-list requests are sequenced so a slower stale response cannot overwrite newer filters or page results.
+- Added PostgreSQL integration coverage for offset and total semantics. Root package and both lockfile version fields synchronized at 0.1.45. Exact-head CI is required; no installer or Release.
+
 ## 0.1.44 — Fix inventory search IP filter semantics
 
 - Fixed inventory asset search so the IP-address predicate is included only when the search term is a valid IP address. Non-IP searches no longer pass an `equals: undefined` condition to Prisma, which could be omitted and broaden the OR query unexpectedly.

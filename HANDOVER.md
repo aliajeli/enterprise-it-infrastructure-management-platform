@@ -1,3 +1,11 @@
+## 2026-11-20 — Inventory pagination and request consistency (v0.1.45)
+
+- Inventory UI now consumes the API pagination contract and exposes Previous/Next controls, current page, visible range and total matching result count.
+- Branch/type/search changes reset to offset zero. Summary wording distinguishes all matching assets from switch assets on the current page.
+- Added request sequencing to ignore stale asset-list responses when filters, branch or page change while a prior request is still in flight.
+- Added PostgreSQL integration coverage confirming offset pagination preserves the total count. Root package and both lockfile version fields synchronized at 0.1.45.
+- Exact-head Push/PR validation required. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Inventory search predicate hardening (v0.1.44)
 
 - Corrected asset search construction: the primary-IP equality predicate is now added only when the query is a syntactically valid IPv4/IPv6 address. This avoids an undefined Prisma predicate being omitted from an OR expression and potentially widening text searches.

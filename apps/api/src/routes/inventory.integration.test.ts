@@ -123,6 +123,15 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
     expect(exactIpSearch.json().page.total).toBe(1);
     expect(exactIpSearch.json().assets[0].id).toBe(switchAssetId);
 
+    const secondPage = await app.inject({
+      method: "GET",
+      url: `/api/v1/inventory/assets?branchId=${branchId}&limit=1&offset=1`,
+      headers: { cookie: operatorCookie },
+    });
+    expect(secondPage.statusCode).toBe(200);
+    expect(secondPage.json().assets).toHaveLength(0);
+    expect(secondPage.json().page).toEqual({ limit: 1, offset: 1, total: 1 });
+
     const nonMatchingSearch = await app.inject({
       method: "GET",
       url: `/api/v1/inventory/assets?branchId=${branchId}&q=NO-SUCH-ASSET-9F2C`,
