@@ -1,3 +1,9 @@
+## 0.1.41 — Correct nullable VLAN update schema
+
+- Corrected the API schema placement for explicit null VLAN clearing: create-port continues to accept only a numeric VLAN, while update-port accepts either a valid VLAN ID or null.
+- This keeps the create contract aligned with its TypeScript type and enables the new update-only clear operation.
+- Root package and lockfile versions synchronized at 0.1.41. Exact-head CI remains required.
+
 ## 0.1.40 — Allow clearing switch-port metadata
 
 - Fixed switch-port PATCH handling so blank text fields clear persisted metadata instead of being treated as omitted updates.

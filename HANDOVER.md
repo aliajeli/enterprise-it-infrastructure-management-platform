@@ -1,3 +1,9 @@
+## 2026-11-20 — VLAN clear schema correction (v0.1.41)
+
+- Follow-up to the switch-port clear fix: explicit null is accepted only by the PATCH/update schema. The POST/create schema remains integer-only, matching CreatePortBody and preventing null from being sent to Prisma on create.
+- Root package and lockfile synchronized at 0.1.41. Exact-head CI must validate the complete change set.
+- PR #8 remains Draft/open/unmerged. No installer or Release.
+
 ## 2026-11-20 — Switch-port metadata clear semantics (v0.1.40)
 
 - Fixed the switch-port PATCH route: a supplied empty text value now persists as SQL NULL for name, alias, description and connected-device label; omitted properties remain unchanged.
