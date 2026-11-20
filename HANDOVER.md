@@ -1,3 +1,10 @@
+## 2026-11-20 — Branch inventory CSV export (v0.1.49)
+
+- Added an inventory CSV export action respecting the currently selected branch, search term and equipment-type filter. It fetches matching records in 100-row API pages and downloads a UTF-8 BOM CSV.
+- Export is limited to 10,000 assets and checks the server-reported total on each page to avoid presenting a partial export as complete if inventory changes during pagination.
+- CSV cells are quoted/escaped and values beginning with spreadsheet formula triggers are prefixed with an apostrophe. A unit test covers quoting, multiline fields and formula neutralization.
+- Exact-head Push and PR CI required. PR #8 remains Draft/open/unmerged. No installer or Release.
+
 ## 2026-11-20 — Switch-port observation history UI (v0.1.48)
 
 - Connected the existing read-only history endpoint to the inventory switch-port dialog. Each port exposes View history; the panel shows timestamp, source, admin/oper state, VLAN, speed, IP and MAC.

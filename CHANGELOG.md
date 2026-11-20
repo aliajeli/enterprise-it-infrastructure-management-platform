@@ -1,3 +1,9 @@
+## 0.1.49 — Branch inventory CSV export
+
+- Added a CSV export action that follows the active branch, search text and equipment-type filters and retrieves all matching records in bounded 100-row pages.
+- Export is capped at 10,000 assets, checks the result total between pages to detect concurrent inventory changes, and reports actionable errors instead of silently producing a partial file.
+- CSV fields are quoted/escaped, UTF-8 BOM is included for spreadsheet compatibility, and formula-like cell values are prefixed to mitigate spreadsheet formula injection. Root package and lockfile versions synchronized at 0.1.49.
+
 ## 0.1.48 — Switch-port observation history UI
 
 - Connected the inventory switch-port dialog to the branch-authorized, read-only observation-history API. Each port now has a View history action with observed time, source, administrative/operational state, VLAN, speed, IP and MAC fields.

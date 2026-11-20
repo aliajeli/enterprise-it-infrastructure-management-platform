@@ -143,3 +143,16 @@ Expected: history is read-only, branch-authorized and paginated. The endpoint do
 6. Use browser throttling to start a history request, then close the history panel; confirm a late response cannot repopulate the closed panel.
 
 Expected: history is a read-only view of already-recorded data. Opening it does not trigger SNMP polling, port scanning, NAT/port mapping or switch configuration.
+
+
+## 10. Branch-scoped inventory CSV export
+
+1. Select a test branch and confirm the inventory list shows its matching asset count.
+2. Apply a search term and/or equipment-type filter; export CSV.
+3. Open the downloaded file in a spreadsheet application and verify only records matching the selected branch and filters are present, including assets beyond the first 100 rows when available.
+4. Confirm commas, quotation marks and multiline descriptions remain in one correctly parsed cell.
+5. Confirm values beginning with `=`, `+`, `-` or `@` are exported as text to reduce spreadsheet formula-injection risk.
+6. Confirm the export action is disabled while the list is loading and while an export is in progress.
+7. For a test dataset above 10,000 matching assets, confirm the UI asks the operator to narrow filters rather than downloading a truncated file.
+
+Expected: export reads existing inventory only. It does not poll devices, initiate SNMP/ICMP scans, modify MikroTik rules or change equipment configuration.

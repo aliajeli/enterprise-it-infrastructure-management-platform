@@ -55,6 +55,39 @@ type Asset = {
   switch: null | { sysName: string | null; firmwareVersion: string | null; reportedPortCount: number | null; portCount: number };
 };
 
+function csvCell(value: unknown): string {
+  const raw = value === null || value === undefined ? "" : String(value);
+  const safe = /^[\s]*[=+\-@]/.test(raw) ? "'" + raw : raw;
+  return '"' + safe.replace(/"/g, '""') + '"';
+}
+
+export function buildInventoryCsv(assets: Asset[], branchCode: string): string {
+  const columns: Array<[string, (asset: Asset) => unknown]> = [
+    ["Branch code", () => branchCode],
+    ["Asset code", (asset) => asset.assetCode],
+    ["Name", (asset) => asset.name],
+    ["Type", (asset) => asset.kind],
+    ["Status", (asset) => asset.status],
+    ["Hostname", (asset) => asset.hostname],
+    ["Management IP", (asset) => asset.primaryIp],
+    ["MAC address", (asset) => asset.macAddress],
+    ["Vendor", (asset) => asset.vendor],
+    ["Model", (asset) => asset.model],
+    ["Location", (asset) => asset.location],
+    ["Description", (asset) => asset.description],
+    ["Version", (asset) => asset.version],
+    ["Switch system name", (asset) => asset.switch?.sysName],
+    ["Switch firmware", (asset) => asset.switch?.firmwareVersion],
+    ["Reported port count", (asset) => asset.switch?.reportedPortCount],
+    ["Recorded port count", (asset) => asset.switch?.portCount],
+  ];
+  const rows = [
+    columns.map(([heading]) => csvCell(heading)).join(","),
+    ...assets.map((asset) => columns.map(([, value]) => csvCell(value(asset))).join(",")),
+  ];
+  return "\uFEFF" + rows.join("\r\n") + "\r\n";
+}
+
 const kinds: AssetKind[] = [
   "COMPUTER", "SERVER", "SWITCH", "ROUTER", "FIREWALL",
   "NVR", "CAMERA", "PRINTER", "POS", "UPS", "OTHER",
@@ -92,6 +125,7 @@ function InventoryContent() {
   const [kind, setKind] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -179,6 +213,72 @@ function InventoryContent() {
     () => branches.find((branch) => branch.id === branchId),
     [branches, branchId],
   );
+
+
+  async function exportInventoryCsv() {
+    if (!branchId || exporting) return;
+    const exportBranchId = branchId;
+    const exportBranchCode = selectedBranch?.branchCode ?? "branch";
+    const exportKind = kind;
+    const exportSearch = search.trim();
+    const maxExportRows = 10_000;
+
+    setExporting(true);
+    setError("");
+    setNotice("");
+    try {
+      const exported: Asset[] = [];
+      let expectedTotal: number | null = null;
+      for (let currentOffset = 0; ; currentOffset += 100) {
+        const params = new URLSearchParams({
+          branchId: exportBranchId,
+          limit: "100",
+          offset: String(currentOffset),
+        });
+        if (exportKind) params.set("kind", exportKind);
+        if (exportSearch) params.set("q", exportSearch);
+        const payload = await requestJson<{ assets: Asset[]; page: { total: number } }>(
+          "/api/v1/inventory/assets?" + params.toString(),
+        );
+        if (expectedTotal === null) {
+          expectedTotal = payload.page.total;
+          if (expectedTotal > maxExportRows) {
+            throw new Error("This export contains " + expectedTotal + " assets. Refine the filters to 10,000 assets or fewer before exporting.");
+          }
+          if (expectedTotal === 0) {
+            setNotice("There are no matching assets to export.");
+            return;
+          }
+        }
+        if (payload.page.total !== expectedTotal || payload.assets.length === 0) {
+          throw new Error("Inventory changed while the export was being prepared. Refresh the list and try again.");
+        }
+        exported.push(...payload.assets);
+        if (exported.length >= expectedTotal) break;
+        if (payload.assets.length < 100) {
+          throw new Error("The inventory export returned an incomplete page. Refresh the list and try again.");
+        }
+      }
+
+      if (exported.length !== expectedTotal) {
+        throw new Error("The inventory export was incomplete. Refresh the list and try again.");
+      }
+      const blob = new Blob([buildInventoryCsv(exported, exportBranchCode)], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "inventory-" + exportBranchCode + "-" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNotice("Exported " + exported.length + " assets for branch " + exportBranchCode + ".");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not export inventory.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function openSwitch(asset: Asset) {
     const requestId = ++switchPortsRequestId.current;
@@ -453,6 +553,9 @@ function InventoryContent() {
             </select>
             <button type="button" onClick={() => void loadAssets()} disabled={loading || !branchId} className="grid h-10 w-10 place-items-center rounded-lg border border-slate-700 bg-slate-900 text-slate-300 disabled:opacity-40" aria-label="Refresh inventory">
               <RefreshCw size={16} />
+            </button>
+            <button type="button" onClick={() => void exportInventoryCsv()} disabled={!branchId || exporting || loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-xs font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-40">
+              {exporting ? <LoaderCircle size={14} className="animate-spin" /> : <Boxes size={14} />} {exporting ? "Exporting…" : "Export CSV"}
             </button>
             <button type="button" onClick={() => setShowCreate(true)} disabled={!branchId} className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-400 disabled:opacity-40">
               <Plus size={16} /> Add equipment
