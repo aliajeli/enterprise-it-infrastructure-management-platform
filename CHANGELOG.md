@@ -1,3 +1,10 @@
+## 0.1.28 — Refresh transitive dependency lockfile for Effect security fix (2026-11-20)
+
+- Pin the transitive `effect` package to exactly `3.22.1`, the first release fixing GHSA-7589-6fvf-x4pw / CVE-2026-121707.
+- Corrected the lockfile bootstrap workflow to run `npm update effect --package-lock-only`; a plain `npm install --package-lock-only` only synchronized root metadata and left the vulnerable transitive version locked.
+- Workflow-generated lockfile refresh and exact-head dependency audit are still pending; this change is not yet security-verified.
+- Root application version advanced to `0.1.28`. No installer, Release, or production credential-vault registration is created.
+
 ## 0.1.27 — Remediate transitive Effect ReDoS advisory (2026-11-20)
 
 - Added a root npm override pinning the transitive `effect` package to the patched `^3.22.1` line, addressing GHSA-7589-6fvf-x4pw / CVE-2026-121707 reported through Prisma's `@prisma/config` dependency.

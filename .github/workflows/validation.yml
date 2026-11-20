@@ -227,7 +227,7 @@ jobs:
         run: npm run build --workspace @platform/api
 
   lockfile-bootstrap:
-    name: Bootstrap npm lockfile
+    name: Refresh npm dependency lockfile
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -245,7 +245,7 @@ jobs:
           node-version: 26
 
       - name: Generate or refresh lockfile without executing package scripts
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+        run: npm update effect --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Commit and push lockfile when newly generated
         env:
@@ -263,6 +263,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package-lock.json
-          git commit -m "chore: add npm dependency lockfile"
+          git commit -m "chore(deps): refresh lockfile for v$(node -p \"require(\u0027./package.json\u0027).version\")"
           AUTH="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${AUTH}" push origin "HEAD:${GITHUB_REF_NAME}"

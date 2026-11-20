@@ -1,7 +1,7 @@
 {
   "name": "enterprise-it-infrastructure-management-platform",
   "private": true,
-  "version": "0.1.27",
+  "version": "0.1.28",
   "description": "Centralized enterprise IT infrastructure management platform",
   "workspaces": [
     "apps/*",
@@ -24,6 +24,6 @@
     "build": "npm run build --workspace @platform/database && npm run build --workspace @platform/api && npm run build --workspace @platform/web && npm run build --workspace @platform/worker"
   },
   "overrides": {
-    "effect": "^3.22.1"
+    "effect": "3.22.1"
   }
 }

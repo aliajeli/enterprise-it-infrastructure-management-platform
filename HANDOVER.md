@@ -1,4 +1,42 @@
 # Project handover
+## Current observed snapshot — Effect transitive dependency remediation requires lockfile refresh (2026-11-20)
+
+**Branch:** `phase3/m2-inventory-ui`  
+**Previous head:** `ca8a4ced08b4b487641a4988402c7031ab10c2d5`  
+**PR:** [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8) — Draft/open/unmerged.
+
+### Latest verified CI observations
+
+- On `8ea9de882014b76e157bc9fd1bea1016568e34c4`, Windows API runtime smoke passed in Push and PR workflows. Platform validation failed at `npm audit --audit-level=high` due to `effect@3.20.0` via `prisma@7.10.1 -> @prisma/config@7.10.1`.
+- On `cdf73fb7b66b170a6922f40fc3b7f4b31be5e49c`, root override was added, but lockfile bootstrap ran only `npm install --package-lock-only`; it did not update the transitive package. The subsequent dependency-tree verification reported `invalid: effect@3.20.0` and stopped before audit/tests/build.
+- Lockfile-only automation pushed `ca8a4ced08b4b487641a4988402c7031ab10c2d5` without changing the resolved Effect package. This is confirmed, not assumed.
+
+### 0.1.28 remediation
+
+- Root override pins `effect` to exactly `3.22.1`, the first patched release for GHSA-7589-6fvf-x4pw / CVE-2026-121707.
+- Lockfile workflow now explicitly runs `npm update effect --package-lock-only --ignore-scripts --no-audit --no-fund`; it must update the transitive resolution before CI can pass.
+- Do not call the advisory remediated until the generated lockfile contains `node_modules/effect@3.22.1`, `npm ls --all` succeeds, and `npm audit --audit-level=high` passes on the exact same commit.
+
+### Credential Vault and deployment status
+
+- AES-256-GCM envelope crypto core, DPAPI helper, keyring core, bounded helper protocol, Node helper-session client and .NET storage-helper groundwork exist.
+- Windows helper remains unprovisioned; Node storage adapter remains unregistered. No production credential persistence is enabled.
+- Before registration: harden all path components from ProgramData to vault directory against reparse points/TOCTOU; verify service SID token attributes (enabled, not deny-only); validate exact owner/DACL from handles; prove cross-process locking, durable atomic replacement, crash recovery and tampered-ACL rejection on real Windows.
+- Dedicated service provisioning, installer lifecycle and independent recovery restore drill are not implemented.
+
+### Network discovery safety
+
+- No subnet sweeps, port scans, port-range probing, NAT/DST-NAT/port-forward changes, SNMP SET, firewall edits or automatic MikroTik unblocking.
+- Discovery must remain read-only and target-scoped. SNMP UDP/161 only after administrator confirmation. On timeout/possible filtering, stop that target run; do not try alternate ports/protocols. Timeout is not proof of a router block.
+
+### Release gates
+
+- PR #8 remains Draft/unmerged. No installer or GitHub Release is authorized or claimed.
+- Release requires real clean-Windows install, service identity/ACL provisioning, upgrade, uninstall, rollback, database migration/restore and independent recovery drills.
+
+---
+
+# Project handover
 ## Current observed snapshot — dependency audit remediation pending CI (2026-11-20)
 
 **Branch:** `phase3/m2-inventory-ui`  
