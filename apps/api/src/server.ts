@@ -43,7 +43,7 @@ process.stdin.on("data", (chunk: string) => {
     return;
   }
 
-  const newline = hostControlBuffer.indexOf("\\n");
+  const newline = hostControlBuffer.indexOf("\n");
   if (newline < 0) return;
 
   const command = hostControlBuffer.slice(0, newline).trim();

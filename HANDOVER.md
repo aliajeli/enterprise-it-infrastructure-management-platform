@@ -1,3 +1,11 @@
+## 2026-11-20 — API host readiness gate and graceful-stop correction (v0.1.54)
+
+- The .NET Windows API host now performs a bounded readiness gate against its own fixed loopback endpoint, `http://127.0.0.1:13001/health/ready`. It retries transient connection failures and non-200 responses for at most 60 seconds; the request itself is limited to two seconds and connection establishment to one second. If readiness is not reached, the child process tree is terminated and host startup fails rather than treating an unhealthy API as ready.
+- The host's `StartAsync` now waits for the readiness task, so the hosted-service startup does not complete merely because Node was spawned. This does not yet prove SCM health reporting or a production recovery policy.
+- Corrected a control-pipe parsing defect in `apps/api/src/server.ts`: it previously searched for the two-character sequence backslash+n while .NET `WriteLineAsync` sends an actual newline. The parser now detects the actual newline and can process the host's `SHUTDOWN` message.
+- Exact-head Push and PR CI must pass before this increment is considered validated. Real Windows service identity, service SID/token validation, inherited child SID proof, immutable ACLs, log forwarding and clean-VM service lifecycle tests remain outstanding.
+- No device probing, port scanning, port mapping, NAT/DST-NAT, firewall changes or MikroTik automation. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Service-host scaffold compile/metadata follow-up (v0.1.53)
 
 - Added the missing namespace import to the Windows API service-host entry point and synchronized both root package-lock version fields to 0.1.53.

@@ -169,3 +169,16 @@ Run from an elevated PowerShell session on a Windows x64 test host:
 The command emits a JSON report and exits with code `0` only when Windows, x64, elevation and the Program Files/ProgramData local fixed-volume checks pass; exit code `2` means one or more required checks failed. The default 10 GB threshold is a preliminary staging floor and must be revisited after payload sizing. The script is read-only: it does not create directories, alter ACLs, register services, bind or probe ports, change firewall policy, initialize PostgreSQL or install the application.
 
 Expected: this check is only a host prerequisite baseline. A passing report does not establish supported-OS certification, service readiness, successful installation or production suitability.
+
+
+## 12. Windows API service-host readiness and shutdown smoke checks (development validation)
+
+On a disposable Windows x64 test host with the API payload staged in the documented immutable layout:
+
+1. Start the API host under a test service identity and verify that the host does not complete startup while PostgreSQL is unavailable.
+2. Start the disposable PostgreSQL instance and confirm the API host completes startup only after `GET http://127.0.0.1:13001/health/ready` returns HTTP 200.
+3. Keep the database unavailable for the full 60-second startup budget; confirm the host fails startup and terminates the Node child process tree.
+4. Request a normal service stop and confirm the host's newline-delimited `SHUTDOWN` command is accepted, Fastify closes and Prisma disconnects before the 20-second graceful-stop limit.
+5. Confirm no external address, managed-device address, alternate port or non-loopback endpoint is contacted by the readiness probe.
+
+Expected: the readiness probe targets only the API process's fixed loopback health endpoint. This is not a network discovery operation and does not contact switches, routers, NVRs or MikroTik. These checks still require execution on a real disposable Windows host; CI compilation alone is not acceptance evidence.

@@ -1,3 +1,9 @@
+## 0.1.54 — Gate Windows API service startup on readiness
+
+- The Windows API host now waits for the fixed loopback `/health/ready` endpoint before completing hosted-service startup. The probe is bounded to 60 seconds, retries transient connection/503 responses, and terminates the child process if readiness is not reached.
+- Corrected the Node host-control parser to recognize the actual newline written by the Windows host, so the `SHUTDOWN` command can trigger Fastify close and Prisma disconnect.
+- This remains a service-host development increment, not service registration or installer approval. The host still lacks provisioned service-SID identity, child-token proof, immutable ACL enforcement and clean-VM lifecycle acceptance.
+
 ## 0.1.53 — Correct Windows API host build metadata
 
 - Added the service-host namespace import required by the top-level host bootstrap and synchronized both root version fields in package-lock.json with package.json.
