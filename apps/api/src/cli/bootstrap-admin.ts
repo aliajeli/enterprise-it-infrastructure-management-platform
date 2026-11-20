@@ -101,7 +101,7 @@ async function main(): Promise<void> {
     confirmation = "";
 
     const created = await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(735901224)`;
+      await tx.$queryRaw`WITH advisory_lock AS MATERIALIZED (SELECT pg_advisory_xact_lock(735901224)) SELECT 1::int AS locked FROM advisory_lock`;
 
       const existingUsers = await tx.user.count();
       if (existingUsers !== 0) {

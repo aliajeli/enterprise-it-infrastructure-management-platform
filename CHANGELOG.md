@@ -1,3 +1,8 @@
+## 0.1.42 — Fix administrator bootstrap advisory-lock query
+
+- Fixed the bootstrap transaction's PostgreSQL advisory-lock query to materialize the void-returning lock call internally and return a supported integer result to Prisma. The transaction-scoped lock and concurrent-bootstrap protection remain intact.
+- Root package and lockfile versions synchronized at 0.1.42. Exact-head CI is required; no installer or Release is created.
+
 ## 0.1.41 — Correct nullable VLAN update schema
 
 - Corrected the API schema placement for explicit null VLAN clearing: create-port continues to accept only a numeric VLAN, while update-port accepts either a valid VLAN ID or null.

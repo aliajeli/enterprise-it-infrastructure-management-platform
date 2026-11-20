@@ -1,3 +1,9 @@
+## 2026-11-20 — Administrator bootstrap Prisma raw-query fix (v0.1.42)
+
+- Fixed `bootstrap-admin.ts`: the transaction-scoped PostgreSQL advisory lock is now evaluated in a MATERIALIZED CTE while the outer query returns an integer column, avoiding Prisma's unsupported PostgreSQL `void` deserialization.
+- The lock is preserved; bootstrap still serializes concurrent attempts and checks that no user exists before creating the initial administrator.
+- Exact-head Linux/PostgreSQL and Windows CI must pass. PR #8 remains Draft/open/unmerged. No installer or Release.
+
 ## 2026-11-20 — VLAN clear schema correction (v0.1.41)
 
 - Follow-up to the switch-port clear fix: explicit null is accepted only by the PATCH/update schema. The POST/create schema remains integer-only, matching CreatePortBody and preventing null from being sent to Prisma on create.
