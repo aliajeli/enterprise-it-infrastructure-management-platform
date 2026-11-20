@@ -1,3 +1,11 @@
+## 2026-11-20 — Switch-port metadata clear semantics (v0.1.40)
+
+- Fixed the switch-port PATCH route: a supplied empty text value now persists as SQL NULL for name, alias, description and connected-device label; omitted properties remain unchanged.
+- Configured access VLAN now accepts explicit JSON null for clearing; tagged VLANs are cleared with an empty array. The web editor sends null when the access VLAN input is blank.
+- Added integration assertions for all clear operations and updated the manual preview acceptance guide.
+- This is metadata-only. It does not push VLAN configuration to a switch or perform discovery. Exact-head PostgreSQL and Windows CI must pass before considering the fix validated.
+- Root package and lockfile synchronized at 0.1.40. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-20 — Dashboard implementation status accuracy (v0.1.39)
 
 - Dashboard no longer labels the API and PostgreSQL foundations as planned/scaffolded: API auth/user/branch/inventory routes are implemented, and PostgreSQL 18 is available for the documented local preview.

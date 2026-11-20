@@ -222,11 +222,32 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
     expect(updatePort.json().port.version).toBe(2);
     expect(updatePort.json().port.configuredTaggedVlans).toEqual([30, 40]);
 
+    const clearPortMetadata = await app.inject({
+      method: "PATCH",
+      url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}`,
+      headers: { origin, cookie: operatorCookie },
+      payload: {
+        version: 2,
+        alias: "",
+        description: "",
+        connectedDeviceLabel: "",
+        configuredVlanId: null,
+        configuredTaggedVlans: [],
+      },
+    });
+    expect(clearPortMetadata.statusCode).toBe(200);
+    expect(clearPortMetadata.json().port.version).toBe(3);
+    expect(clearPortMetadata.json().port.alias).toBeNull();
+    expect(clearPortMetadata.json().port.description).toBeNull();
+    expect(clearPortMetadata.json().port.connectedDeviceLabel).toBeNull();
+    expect(clearPortMetadata.json().port.configuredVlanId).toBeNull();
+    expect(clearPortMetadata.json().port.configuredTaggedVlans).toEqual([]);
+
     const duplicateTaggedVlans = await app.inject({
       method: "PATCH",
       url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}`,
       headers: { origin, cookie: operatorCookie },
-      payload: { version: 2, configuredTaggedVlans: [30, 30] },
+      payload: { version: 3, configuredTaggedVlans: [30, 30] },
     });
     expect(duplicateTaggedVlans.statusCode).toBe(400);
 
@@ -234,7 +255,7 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
       method: "PATCH",
       url: `/api/v1/inventory/assets/${switchAssetId}/switch-ports/${portId}`,
       headers: { origin, cookie: operatorCookie },
-      payload: { version: 2, configuredVlanId: 4095 },
+      payload: { version: 3, configuredVlanId: 4095 },
     });
     expect(outOfRangeVlan.statusCode).toBe(400);
 

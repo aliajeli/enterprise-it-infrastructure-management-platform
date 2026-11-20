@@ -1,3 +1,11 @@
+## 0.1.40 — Allow clearing switch-port metadata
+
+- Fixed switch-port PATCH handling so blank text fields clear persisted metadata instead of being treated as omitted updates.
+- Allowed an explicit null for configured access VLAN so operators can remove a previously set VLAN value; an empty tagged-VLAN list continues to clear tagged VLANs.
+- Updated the inventory editor to send an explicit null when the access VLAN field is cleared.
+- Added PostgreSQL integration coverage for clearing alias, description, connected-device label, access VLAN and tagged VLANs.
+- Expanded the local preview checklist to exercise clearing port metadata. Root package and lockfile versions synchronized at 0.1.40.
+
 ## 0.1.39 — Correct dashboard implementation status (2026-11-20)
 
 - Updated dashboard component states to distinguish implemented API/authentication/inventory capabilities from the worker foundation and unconfigured production TLS edge.

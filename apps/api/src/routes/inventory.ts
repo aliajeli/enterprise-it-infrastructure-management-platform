@@ -65,8 +65,9 @@ interface CreatePortBody {
   connectedDeviceLabel?: string;
 }
 
-interface UpdatePortBody extends CreatePortBody {
+interface UpdatePortBody extends Omit<CreatePortBody, "configuredVlanId"> {
   version: number;
+  configuredVlanId?: number | null;
 }
 
 function clean(value: PortText, max: number): string | undefined {
@@ -79,8 +80,8 @@ function validMac(value: string): boolean {
   return /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(value);
 }
 
-function validVlan(value: number | undefined): boolean {
-  return value === undefined || (Number.isInteger(value) && value >= 1 && value <= 4094);
+function validVlan(value: number | null | undefined): boolean {
+  return value === undefined || value === null || (Number.isInteger(value) && value >= 1 && value <= 4094);
 }
 
 function validTaggedVlans(values: number[] | undefined): boolean {
@@ -424,7 +425,7 @@ export async function registerInventoryRoutes(
             name: { type: "string", maxLength: 160 },
             alias: { type: "string", maxLength: 160 },
             description: { type: "string", maxLength: 1000 },
-            configuredVlanId: { type: "integer", minimum: 1, maximum: 4094 },
+            configuredVlanId: { type: ["integer", "null"], minimum: 1, maximum: 4094 },
             configuredTaggedVlans: { type: "array", maxItems: 4094, uniqueItems: true, items: { type: "integer", minimum: 1, maximum: 4094 } },
             connectedDeviceLabel: { type: "string", maxLength: 255 },
           },
@@ -524,12 +525,12 @@ export async function registerInventoryRoutes(
         const changed = await tx.switchPort.updateMany({
           where: { id: request.params.portId, switchId: asset.switch!.id, version: body.version },
           data: {
-            ...(body.name !== undefined ? { name: clean(body.name, 160) } : {}),
-            ...(body.alias !== undefined ? { alias: clean(body.alias, 160) } : {}),
-            ...(body.description !== undefined ? { description: clean(body.description, 1000) } : {}),
+            ...(body.name !== undefined ? { name: clean(body.name, 160) ?? null } : {}),
+            ...(body.alias !== undefined ? { alias: clean(body.alias, 160) ?? null } : {}),
+            ...(body.description !== undefined ? { description: clean(body.description, 1000) ?? null } : {}),
             ...(body.configuredVlanId !== undefined ? { configuredVlanId: body.configuredVlanId } : {}),
             ...(body.configuredTaggedVlans !== undefined ? { configuredTaggedVlans: body.configuredTaggedVlans } : {}),
-            ...(body.connectedDeviceLabel !== undefined ? { connectedDeviceLabel: clean(body.connectedDeviceLabel, 255) } : {}),
+            ...(body.connectedDeviceLabel !== undefined ? { connectedDeviceLabel: clean(body.connectedDeviceLabel, 255) ?? null } : {}),
             version: { increment: 1 },
           },
         });

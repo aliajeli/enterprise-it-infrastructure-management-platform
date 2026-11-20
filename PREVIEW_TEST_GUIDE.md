@@ -55,9 +55,11 @@ Expected: an OPERATOR can use inventory only for active branches with a current 
 2. Open the switch and add a port with a unique interface index (for example, `1`).
 3. Enter operator-maintained metadata: port name, alias, description, access VLAN (for example, `7`) and connected-device label (for example, `QA workstation`).
 4. Save and reopen the port; confirm the metadata persists.
-5. Edit the switch asset and update its description or location; confirm the change persists.
-6. Clear an optional Management IP or MAC value using the UI's blank-field behavior and confirm it is removed after refresh.
-7. If the UI displays observations, distinguish them from manually maintained port labels/VLAN metadata. Do not interpret absent observations as an offline device.
+5. Edit the port again, clear Alias, Description, connected-device label and configured access VLAN, then save; confirm these fields are cleared and tagged VLANs can be emptied with a blank list.
+6. Re-enter the metadata if you want to retain a populated sample for the remaining checks.
+7. Edit the switch asset and update its description or location; confirm the change persists.
+8. Clear an optional Management IP or MAC value using the UI's blank-field behavior and confirm it is removed after refresh.
+9. If the UI displays observations, distinguish them from manually maintained port labels/VLAN metadata. Do not interpret absent observations as an offline device.
 
 Expected: asset and port edits use version checks and are audited. The UI records inventory metadata; it does not configure a physical switch or discover live port state.
 

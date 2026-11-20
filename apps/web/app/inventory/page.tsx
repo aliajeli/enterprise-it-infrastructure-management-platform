@@ -285,7 +285,7 @@ function InventoryContent() {
           name: editPortForm.name,
           alias: editPortForm.alias,
           description: editPortForm.description,
-          configuredVlanId: vlan,
+          configuredVlanId: editPortForm.configuredVlanId.trim() ? vlan : null,
           configuredTaggedVlans: tagged,
           connectedDeviceLabel: editPortForm.connectedDeviceLabel,
         }),
