@@ -1,3 +1,10 @@
+## 0.1.29 — Fix lockfile refresh workflow quoting (2026-11-20)
+
+- Corrected the shell quoting in the lockfile refresh commit step; the preceding `npm update effect --package-lock-only` command completed, but the commit step failed during shell parsing before staging or pushing the generated lockfile.
+- The workflow now reads the root package version into a shell variable and uses it in the generated lockfile commit message.
+- Exact lockfile contents and the security audit remain pending a successful bootstrap push and CI rerun.
+- Root application version advanced to `0.1.29`. No installer, Release, or production credential-vault registration is created.
+
 ## 0.1.28 — Refresh transitive dependency lockfile for Effect security fix (2026-11-20)
 
 - Pin the transitive `effect` package to exactly `3.22.1`, the first release fixing GHSA-7589-6fvf-x4pw / CVE-2026-121707.
