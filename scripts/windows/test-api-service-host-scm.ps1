@@ -42,7 +42,7 @@ try {
 
     Invoke-Sc @("create", $serviceName, "binPath=", $hostExe, "start=", "demand")
     $serviceCreated = $true
-    Invoke-Sc @("config", $serviceName, "obj= NT SERVICE\EnterpriseITApi", 'password= ""')
+    Invoke-Sc @("config", $serviceName, "obj=", "NT SERVICE\EnterpriseITApi", "password=", "")
     Invoke-Sc @("sidtype", $serviceName, "unrestricted")
 
     & icacls.exe $root /grant "NT SERVICE\EnterpriseITApi:(OI)(CI)(RX)" /T /C | Out-Host

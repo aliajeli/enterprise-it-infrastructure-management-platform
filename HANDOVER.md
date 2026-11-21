@@ -1,3 +1,9 @@
+## 2026-11-21 — Virtual service-account SCM argument correction (v0.1.70)
+
+- Follow-up static review found the sc.exe config call still passed obj= plus its account value and password= plus its empty value as single arguments. Split both pairs into separate native arguments, consistent with the documented sc.exe syntax.
+- The v0.1.69 Windows workflow was still running when this correction was committed and will be superseded by v0.1.70. No SCM acceptance is claimed yet.
+- Host runtime changes from v0.1.68 remain; PR #8 stays Draft/open/unmerged.
+
 ## 2026-11-21 — SCM harness argument correction (v0.1.69)
 
 - The first real Windows runner attempt passed service-host compilation and all 17 lifecycle tests, then failed in the PowerShell harness at sc.exe create because sc.exe requires option tokens and values as separate arguments (for example binPath= followed by the executable path, and start= followed by demand).

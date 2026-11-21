@@ -1,3 +1,9 @@
+## 0.1.70 — Correct virtual service-account SCM argument tokenization
+
+- Corrected the remaining sc.exe config invocation so obj= and password= option names are passed separately from their values, matching the native Service Controller command-line contract.
+- The 0.1.69 harness correction split create arguments; static review found the config call still grouped its option/value pairs. The current Windows CI run will be superseded by this exact-head attempt.
+- No host runtime code changed. SCM integration acceptance remains pending until the Windows runner completes the temporary service start, child-token, readiness, stop and failed-start checks.
+
 ## 0.1.69 — Correct Windows SCM smoke command-line tokenization
 
 - Corrected the PowerShell SCM smoke harness to pass sc.exe option names and values as separate native arguments. The first hosted Windows execution had already confirmed host compilation and all 17 lifecycle unit tests, but stopped at sc.exe create with an invalid start= argument before the service was created.

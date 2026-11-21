@@ -228,3 +228,8 @@ This is a hosted Windows runner integration smoke, not a substitute for clean Wi
 ## 17. SCM harness command tokenization correction
 
 Version 0.1.69 corrects the PowerShell invocation of sc.exe so each option name and value are passed as separate native arguments. The preceding Windows run built the host and passed all 17 lifecycle tests, but failed before service creation. Re-run the exact-head Windows CI before treating SCM acceptance as passed.
+
+
+## 18. Virtual service-account SCM argument correction
+
+Version 0.1.70 also separates the sc.exe config obj= and password= option tokens from their values. SCM acceptance remains pending until the new exact-head Windows run completes.
