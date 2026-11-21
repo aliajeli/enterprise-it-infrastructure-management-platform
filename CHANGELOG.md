@@ -1,3 +1,9 @@
+## 0.1.81 — Make API service provisioning dry-run safe
+
+- The API provisioning function now returns an explicit dry-run plan immediately under -WhatIf, before payload checks or any SCM/SID/ACL command. This prevents a dry run from attempting to query a service SID that has not been created.
+- Removed icacls /C so ACL application failures are not deliberately suppressed while the script reports success.
+- Added a policy test asserting -WhatIf returns a dry-run result and never reports the service started.
+
 ## 0.1.80 — Add guarded API service provisioning
 
 - Added installer-owned provisioning for the API Windows service. It accepts only a versioned Program Files\\EnterpriseIT\\<version> payload and validates the fixed host, Node runtime and API entry-point layout.

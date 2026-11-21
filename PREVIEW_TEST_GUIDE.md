@@ -287,3 +287,8 @@ The SCM smoke validates the service SID and child token under a temporary LocalS
 ## Windows API service provisioning policy (v0.1.80)
 
 The provisioning script is not part of the ordinary source preview. On a disposable elevated Windows Server VM only, stage the immutable payload under %ProgramFiles%\\EnterpriseIT\\<version>, inspect the script with -WhatIf first, and verify the service identity, service SID, recovery actions and ACLs. Do not run it on production before clean-VM acceptance and a backup/rollback plan. The script does not start the service; PostgreSQL and protected configuration must be ready first.
+
+
+## Provisioning dry-run behavior (v0.1.81)
+
+Invoke the provisioning script with `-WhatIf` on a disposable Windows test host to inspect the intended operation. The script must return an explicit dry-run result without calling SCM service creation, service SID lookup or ACL mutation. A real provisioning run is privileged and must be restricted to a clean test VM until acceptance is complete.

@@ -23,6 +23,9 @@ function Invoke-Sc([string[]]$Arguments) {
 function Invoke-ApiServiceProvisioning {
     [CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="High")]
     param([Parameter(Mandatory=$true)][pscustomobject]$Plan)
+    if($WhatIfPreference){
+        return [pscustomobject]@{serviceName=$Plan.ServiceName;serviceAccount=$Plan.ServiceAccount;serviceSidType=$Plan.ServiceSidType;installRoot=$Plan.InstallRoot;dryRun=$true;serviceStarted=$false;note="WhatIf requested: no SCM, SID or ACL changes were performed."}
+    }
     foreach($file in @($Plan.ServiceHostPath,$Plan.NodePath,$Plan.ApiEntryPoint)){
         if(-not (Test-Path -LiteralPath $file -PathType Leaf)){throw "Required immutable API payload file is missing."}
     }
@@ -45,7 +48,7 @@ function Invoke-ApiServiceProvisioning {
     if(-not $m.Success){throw "SCM returned an invalid API service SID."}
     $sid=$m.Value
     if($PSCmdlet.ShouldProcess($Plan.InstallRoot,"Apply immutable Program Files ACL")){
-        & icacls.exe $Plan.InstallRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*"+$sid+":(OI)(CI)(RX)") /T /C | Out-Host
+        & icacls.exe $Plan.InstallRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*"+$sid+":(OI)(CI)(RX)") /T | Out-Host
         if($LASTEXITCODE -ne 0){throw "Could not apply API installation ACL."}
     }
     $sidConfig=(& sc.exe qsidtype $Plan.ServiceName 2>&1 | Out-String)

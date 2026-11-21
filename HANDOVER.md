@@ -903,3 +903,10 @@ An earlier application-repository inspection reported an empty clone before the 
 
 ## 2026-11-20 — Shutdown test fixture correction (v0.1.26)
 - Corrected a duplicate constructor declaration in the FakeHelper test fixture introduced with the process-exit lifecycle tests. The runtime transport changes from v0.1.25 are unchanged.
+
+
+## 2026-11-21 — Harden API provisioning dry-run and ACL failure behavior (v0.1.81)
+
+- `Invoke-ApiServiceProvisioning -WhatIf` now returns a dry-run plan before checking payload files or invoking SCM/SID/ACL tools; this avoids a false failure when a dry run skips service creation but later attempts `sc.exe showsid`.
+- Removed `icacls /C` so recursive ACL errors are not intentionally ignored while reporting success.
+- Added a test for the explicit dry-run result. Exact-head CI remains required; the provisioning script has not yet passed clean Windows Server acceptance under `NT SERVICE\EnterpriseITApi`.

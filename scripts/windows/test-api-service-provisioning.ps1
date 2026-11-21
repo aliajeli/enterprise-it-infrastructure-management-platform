@@ -10,3 +10,15 @@ if($plan.StartService){throw "Provisioning must not start the API before DB/conf
 $invalid=@((Join-Path $env:TEMP "EnterpriseIT\1.2.3"),(Join-Path $pf "EnterpriseIT\current"),(Join-Path $pf "OtherProduct\1.2.3"),(Join-Path $pf "EnterpriseIT\1.2.3\Nested"))
 foreach($root in $invalid){$rejected=$false;try{Get-ApiServiceProvisioningPlan -InstallRoot $root|Out-Null}catch{$rejected=$true};if(-not $rejected){throw "Unsafe install root accepted: $root"}}
 Write-Host "API service provisioning policy tests passed."
+
+$dryPlan=[pscustomobject]@{
+    ServiceName="EnterpriseITApi";ServiceAccount="NT SERVICE\EnterpriseITApi";ServiceSidType="unrestricted"
+    InstallRoot=(Join-Path $pf "EnterpriseIT\1.2.3")
+    ServiceHostPath=(Join-Path $pf "EnterpriseIT\1.2.3\EnterpriseIT.ApiServiceHost.exe")
+    NodePath=(Join-Path $pf "EnterpriseIT\1.2.3\runtime\node.exe")
+    ApiEntryPoint=(Join-Path $pf "EnterpriseIT\1.2.3\apps\api\dist\server.js")
+    RecoveryResetSeconds=86400;RecoveryActions='restart/60000/restart/300000/""/0';StartService=$false
+}
+$dryResult=Invoke-ApiServiceProvisioning -Plan $dryPlan -WhatIf
+if(-not $dryResult.dryRun){throw "WhatIf must return an explicit dry-run result."}
+if($dryResult.serviceStarted){throw "WhatIf must never start the API service."}
