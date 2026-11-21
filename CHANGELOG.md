@@ -1,3 +1,8 @@
+## 0.1.58 — Ensure API child process is reaped during service stop
+
+- Hardened Windows API host shutdown so cancellation of the host stop token no longer bypasses the child-process cleanup path. The host requests graceful API shutdown, then terminates and waits for the child process tree if the graceful window expires or is cancelled.
+- The host continues to drain redirected output streams and dispose the process handle after the child has exited. This is lifecycle hardening, not proof of SCM recovery configuration or clean-VM service acceptance.
+
 ## 0.1.57 — Validate Windows token size-query failure
 
 - Hardened service-SID token inspection: the initial `GetTokenInformation(TokenGroups)` sizing call must fail specifically with `ERROR_INSUFFICIENT_BUFFER` and report a bounded required buffer size. Unexpected success or any other Win32 error now fails closed instead of allowing an untrusted/invalid size result to proceed.

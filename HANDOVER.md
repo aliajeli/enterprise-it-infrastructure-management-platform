@@ -1,3 +1,9 @@
+## 2026-11-21 — Harden API child cleanup on service stop (v0.1.58)
+
+- Updated `NodeApiProcessService.StopAsync` so cancellation during the graceful `SHUTDOWN` handshake or wait does not skip child cleanup. The host now ensures the Node process tree is terminated and awaited before completing the stop path.
+- Output drain tasks are awaited and the process handle is disposed after child exit. No arbitrary process is targeted: only the child process created and retained by this host instance.
+- Exact-head Windows and platform CI are required. SCM recovery actions, actual service-state reporting, provisioned service identity and clean-VM integration acceptance remain outstanding. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-21 — Harden Windows service-token size query (v0.1.57)
 
 - The TokenGroups sizing probe now requires the documented `ERROR_INSUFFICIENT_BUFFER` result and a bounded required size before allocating memory. Unexpected success, unexpected Win32 errors, undersized buffers and oversized buffers all fail closed.

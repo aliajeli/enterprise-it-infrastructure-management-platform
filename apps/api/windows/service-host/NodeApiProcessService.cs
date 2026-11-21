@@ -145,43 +145,64 @@ internal sealed class NodeApiProcessService : BackgroundService
             {
                 if (!process.HasExited)
                 {
-                    await process.StandardInput.WriteLineAsync("SHUTDOWN");
-                    await process.StandardInput.FlushAsync(cancellationToken);
-                    process.StandardInput.Close();
-
-                    using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
-                        cancellationToken);
-                    timeout.CancelAfter(GracefulShutdownTimeout);
-
                     try
                     {
+                        await process.StandardInput.WriteLineAsync("SHUTDOWN");
+                        await process.StandardInput.FlushAsync(cancellationToken);
+                        process.StandardInput.Close();
+
+                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
+                            cancellationToken);
+                        timeout.CancelAfter(GracefulShutdownTimeout);
                         await process.WaitForExitAsync(timeout.Token);
                     }
-                    catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                    catch (OperationCanceledException)
                     {
                         _logger.LogWarning(
-                            "API child process did not stop within the grace period; terminating its process tree.");
-                        if (!process.HasExited)
-                        {
-                            process.Kill(entireProcessTree: true);
-                            await process.WaitForExitAsync(CancellationToken.None);
-                        }
+                            "API child process did not complete graceful shutdown before the stop deadline; terminating its process tree.");
+                    }
+                    catch (InvalidOperationException) when (process.HasExited)
+                    {
+                        // The child exited while the stop request was being delivered.
                     }
                 }
+
+                // Always reap the child before returning, including when the host's stop
+                // token was cancelled while the graceful shutdown request was in flight.
+                if (!process.HasExited)
+                {
+                    try
+                    {
+                        process.Kill(entireProcessTree: true);
+                    }
+                    catch (InvalidOperationException) when (process.HasExited)
+                    {
+                        // The child exited between the state check and termination request.
+                    }
+                    await process.WaitForExitAsync(CancellationToken.None);
+                }
             }
-            catch (InvalidOperationException) when (process.HasExited)
+            finally
             {
-                // The child exited while the stop request was being delivered.
+                try
+                {
+                    await base.StopAsync(cancellationToken);
+                }
+                finally
+                {
+                    if (_stdoutDrain is not null && _stderrDrain is not null)
+                    {
+                        await Task.WhenAll(_stdoutDrain, _stderrDrain);
+                    }
+                    process.Dispose();
+                    _process = null;
+                }
             }
+
+            return;
         }
 
         await base.StopAsync(cancellationToken);
-        if (_stdoutDrain is not null && _stderrDrain is not null)
-        {
-            await Task.WhenAll(_stdoutDrain, _stderrDrain);
-        }
-        process?.Dispose();
-        _process = null;
     }
 
     private static async Task WaitForReadinessAsync(
