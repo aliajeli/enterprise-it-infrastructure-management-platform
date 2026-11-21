@@ -1,3 +1,14 @@
+## 2026-11-21 — Implement Windows Web service foundation (v0.1.84)
+
+- Added a dedicated .NET 10 Windows SCM host under apps/web/windows/service-host. It supervises bundled Node 26 and the staged Next.js standalone launcher as EnterpriseITWeb.
+- Parent and child tokens are checked for the enabled EnterpriseITWeb service SID. Fixed payload paths, sanitized environment allow-list, loopback readiness at 127.0.0.1:13000/health/ready, bounded startup/shutdown and child-process-tree reaping are implemented.
+- Added apps/web/windows/service-entry.cjs: it prepares Next.js, binds only to 127.0.0.1:13000, handles stdin SHUTDOWN, drains connections and closes the Next application.
+- Added /health/ready as a local dynamic Next route and removed the broad /health rewrite to API. Existing /api rewrites remain unchanged.
+- Added scripts/windows/stage-web-standalone.ps1 and provision-web-service.ps1 with fixed versioned Program Files path validation, virtual account, unrestricted service SID, SCM recovery, immutable payload ACL, mismatched-service refusal and WhatIf. Provisioning never starts Web.
+- Added Web host lifecycle and provisioning policy tests to Windows CI. CI result for this commit remains to be verified after push.
+- Web receives no DATABASE_URL, database credentials or Credential Vault access. No firewall/NAT/MikroTik changes or port scans are performed.
+- Clean-VM virtual-account acceptance, Edge/TLS/WSS, PostgreSQL Windows packaging and installer integration remain open. Installer progress remains 3/9 (33%); milestone 4 active. No installer or Release exists. PR #9 remains Draft/unmerged; PR #8 and #7 remain unmerged.
+
 ## 2026-11-21 — Add Worker loopback readiness (v0.1.83)
 
 - Added the Worker health endpoint at the fixed contract address 127.0.0.1:13002/health/ready. It checks PostgreSQL on each request, returns 200 only when the dependency probe succeeds, and returns a sanitized 503 on unavailable/throwing probes.

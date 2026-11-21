@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.83`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.84`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -312,3 +312,18 @@ From another terminal, check its fixed loopback readiness endpoint:
 Expected: HTTP 200 with {"status":"ready"} while PostgreSQL accepts the health query. If PostgreSQL becomes unavailable, the endpoint returns HTTP 503 with {"status":"not_ready"} and does not expose database error details. The listener binds only to 127.0.0.1.
 
 Stop the Worker with Ctrl+C and confirm it exits without waiting for the full polling interval. No discovery source handler is registered in this milestone; no queued discovery run should be claimed or processed. This is a Node process readiness check, not Windows SCM installation or service-identity acceptance.
+
+## 19. Windows Web service payload and readiness
+
+Build Web, then stage its standalone output into a disposable versioned payload:
+
+    npm run build --workspace @platform/web
+    pwsh -NoProfile -File scripts/windows/stage-web-standalone.ps1 -StandaloneDirectory apps/web/.next/standalone -InstallRoot $env:ProgramFiles\EnterpriseIT\0.1.84
+
+The staging script copies standalone dependencies, static assets, public assets and the launcher. The host expects runtime\node.exe and apps\web\.next\standalone\service-entry.cjs.
+
+Provision only after staging the complete versioned payload:
+
+    pwsh -NoProfile -File scripts/windows/provision-web-service.ps1 -InstallRoot $env:ProgramFiles\EnterpriseIT\0.1.84
+
+Provisioning configures identity, service SID, recovery and immutable payload ACLs; it does not start the service. On a clean Windows Server acceptance VM, verify the only Web listener is 127.0.0.1:13000 and query http://127.0.0.1:13000/health/ready. Confirm /api still rewrites to API and Web has no database credentials. CI policy tests do not prove actual virtual-account acceptance.

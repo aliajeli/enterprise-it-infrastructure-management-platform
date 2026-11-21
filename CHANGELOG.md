@@ -1,3 +1,12 @@
+## 0.1.84 — Implement the Windows Web service foundation
+
+- Added a dedicated .NET 10 Windows SCM host for Next.js, using the independent EnterpriseITWeb virtual account and validating the enabled service SID in parent and child tokens.
+- Added a fixed Node launcher bound only to 127.0.0.1:13000, a local /health/ready route and bounded graceful shutdown through the host-owned stdin SHUTDOWN channel.
+- Added staging for Next.js standalone runtime, static assets, public assets and service launcher. Web receives no database credentials or Credential Vault access.
+- Added guarded Web service provisioning with explicit WhatIf, immutable Program Files ACL and bounded SCM recovery; provisioning does not start the service.
+- Added Windows host lifecycle and provisioning policy checks to CI. Removed the Web-to-API /health rewrite; /api rewrites remain unchanged.
+- Clean-VM virtual-account acceptance, Edge/TLS/WSS, installer integration and production packaging remain release gates.
+
 ## 0.1.83 — Add loopback Worker readiness endpoint
 
 - Added the Worker readiness listener on fixed loopback address 127.0.0.1:13002/health/ready. It returns 200 only while the database probe succeeds and fails closed with 503 without leaking dependency errors.

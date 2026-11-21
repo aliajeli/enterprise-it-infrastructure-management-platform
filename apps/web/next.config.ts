@@ -9,10 +9,6 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${apiOrigin}/api/:path*`,
       },
-      {
-        source: "/health/:path*",
-        destination: `${apiOrigin}/health/:path*`,
-      },
     ];
   },
   output: "standalone",
