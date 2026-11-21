@@ -228,38 +228,9 @@ internal sealed class NodeApiProcessService : BackgroundService
                 }
 
                 // Cancellation or a broken stdin pipe must not bypass child cleanup.
-                if (!process.HasExited)
-                {
-                    try
-                    {
-                        process.Kill(entireProcessTree: true);
-                    }
-                    catch (InvalidOperationException) when (process.HasExited)
-                    {
-                        // The child exited between the state check and termination request.
-                    }
-                    catch (Exception exception)
-                    {
-                        _logger.LogCritical(
-                            exception,
-                            "Failed to terminate the API child process tree during service shutdown.");
-                        throw;
-                    }
-
-                    using var reapTimeout = new CancellationTokenSource(ProcessReapTimeout);
-                    try
-                    {
-                        await process.WaitForExitAsync(reapTimeout.Token);
-                    }
-                    catch (OperationCanceledException) when (reapTimeout.IsCancellationRequested)
-                    {
-                        _logger.LogCritical(
-                            "API child process did not exit within {ReapTimeout} after termination was requested.",
-                            ProcessReapTimeout);
-                        throw new TimeoutException(
-                            "The API child process could not be reaped within the shutdown deadline.");
-                    }
-                }
+                await TerminateAndReapAsync(
+                    process,
+                    "Service shutdown requires API child process-tree termination.");
             }
             finally
             {
@@ -299,38 +270,21 @@ internal sealed class NodeApiProcessService : BackgroundService
         if (process.HasExited)
             return;
 
-        _logger.LogWarning("{CleanupReason} Terminating the API child process tree.", reason);
+        _logger.LogWarning("{CleanupReason}", reason);
         try
         {
-            process.Kill(entireProcessTree: true);
-        }
-        catch (InvalidOperationException) when (process.HasExited)
-        {
-            // The child exited between the state check and termination request.
+            await ChildProcessTermination.TerminateAndReapAsync(
+                () => process.HasExited,
+                () => process.Kill(entireProcessTree: true),
+                process.WaitForExitAsync,
+                ProcessReapTimeout);
         }
         catch (Exception exception)
         {
             _logger.LogCritical(
                 exception,
-                "Failed to terminate the API child process tree during startup cleanup.");
+                "Failed to terminate and reap the API child process tree.");
             throw;
-        }
-
-        if (process.HasExited)
-            return;
-
-        using var reapTimeout = new CancellationTokenSource(ProcessReapTimeout);
-        try
-        {
-            await process.WaitForExitAsync(reapTimeout.Token);
-        }
-        catch (OperationCanceledException) when (reapTimeout.IsCancellationRequested)
-        {
-            _logger.LogCritical(
-                "API child process did not exit within {ReapTimeout} during startup cleanup.",
-                ProcessReapTimeout);
-            throw new TimeoutException(
-                "The API child process could not be reaped within the startup cleanup deadline.");
         }
     }
 

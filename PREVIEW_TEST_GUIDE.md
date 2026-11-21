@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.61`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.62`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -196,3 +196,14 @@ On a disposable, clean Windows VM after an administrator has provisioned the exa
 6. Confirm the host does not create the service, change service configuration, grant privileges or modify ACLs at runtime.
 
 Expected: identity mismatch prevents API process launch. This test requires a real Windows SCM service configuration; compilation in GitHub Actions does not prove the service identity or child-token behavior.
+
+
+## 14. Windows API child-process lifecycle policy unit tests
+
+The Windows CI workflow runs:
+
+```powershell
+dotnet test apps/api/windows/service-host-tests/EnterpriseIT.ApiServiceHost.Tests.csproj --configuration Release
+```
+
+The test project covers an already-exited child, successful termination/reap, an exit race during the kill request, kill failure propagation, and bounded reap timeout. These deterministic tests do not install a Windows service and do not replace the clean-VM SCM/service-SID/process-tree acceptance checks in the provisioning design.

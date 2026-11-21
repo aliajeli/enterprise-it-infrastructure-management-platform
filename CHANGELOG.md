@@ -1,3 +1,9 @@
+## 0.1.62 — Test bounded Windows API child-process cleanup
+
+- Extracted the API child terminate-and-reap policy into a small internal component shared by startup-failure and normal shutdown paths. Both paths now use the same bounded wait and process-exit race handling.
+- Added a Windows-targeted .NET test project covering already-exited children, successful termination/reap, exit races during termination, kill failures, and reap timeouts. The Windows CI job runs these tests after building the service host.
+- These tests validate the deterministic lifecycle policy with controlled process delegates; they do not replace a clean-VM test of a real SCM service, service SID inheritance, or OS process-tree termination.
+
 ## 0.1.61 — Bound API child startup-failure cleanup
 
 - Replaced unbounded process waits in the API host's service-SID validation and readiness-failure paths with a shared bounded terminate-and-reap routine.

@@ -142,6 +142,9 @@ jobs:
       - name: Build Windows API service host
         run: dotnet build apps/api/windows/service-host/EnterpriseIT.ApiServiceHost.csproj --configuration Release
 
+      - name: Test Windows API service-host process lifecycle policy
+        run: dotnet test apps/api/windows/service-host-tests/EnterpriseIT.ApiServiceHost.Tests.csproj --configuration Release
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 

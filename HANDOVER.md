@@ -1,3 +1,10 @@
+## 2026-11-21 — Add API child-process lifecycle policy tests (v0.1.62)
+
+- Consolidated startup and stop cleanup onto the same bounded child-process terminate-and-reap policy. The policy handles already-exited processes and the race where the process exits while Kill is being requested; kill and reap failures remain surfaced.
+- Added `apps/api/windows/service-host-tests` with controlled-delegate tests for already-exited, normal kill/reap, exit race, kill failure and reap timeout behavior.
+- Added the Windows CI test step after the service-host build. These are policy unit tests, not proof of real SCM service operation, service SID inheritance or OS process-tree termination on a clean VM.
+- Version and root package-lock versions updated to 0.1.62. PR #8 remains Draft/open/unmerged; no installer or Release exists.
+
 ## 2026-11-21 — Bound API child cleanup after startup failure (v0.1.61)
 
 - The service-SID validation and API readiness failure paths no longer call unbounded WaitForExitAsync(CancellationToken.None) after killing the Node child.
