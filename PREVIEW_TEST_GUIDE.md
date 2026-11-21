@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.53`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.56`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -192,7 +192,7 @@ On a disposable, clean Windows VM after an administrator has provisioned the exa
 2. Confirm startup proceeds only when the exact service SID is present as the token user or as an enabled, non-deny-only token group.
 3. Run negative controls under LocalSystem, an interactive administrator, a standard user and an unrelated service identity; confirm the host fails before starting Node.
 4. If feasible in a dedicated test service, configure the expected service SID as disabled and confirm startup fails closed.
-5. Inspect the Node child token in a test-only diagnostic harness and prove the enabled service SID is inherited; do not log or export the full token.
+5. Confirm the host itself accepts the Node child only when the child process token contains the same exact enabled, non-deny-only service SID as the parent. The host performs this check with query-only token access and terminates the child on mismatch. Use a test-only diagnostic harness only as independent corroboration; do not log or export the full token.
 6. Confirm the host does not create the service, change service configuration, grant privileges or modify ACLs at runtime.
 
 Expected: identity mismatch prevents API process launch. This test requires a real Windows SCM service configuration; compilation in GitHub Actions does not prove the service identity or child-token behavior.

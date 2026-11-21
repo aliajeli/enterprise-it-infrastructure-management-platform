@@ -1,3 +1,11 @@
+## 2026-11-21 — Verify API child process service SID (v0.1.56)
+
+- Added a second identity gate immediately after Node process creation. The host opens the child process token using `OpenProcessToken` with `TOKEN_QUERY`, constructs a Windows identity from that token, and validates the exact expected `NT SERVICE\\EnterpriseITApi` SID as token user or enabled, non-deny-only group.
+- The parent and child checks must return the same SID. Any child-token open/parse/identity mismatch kills the process tree, waits for exit, disposes the process handle and fails host startup before readiness probing.
+- The child token is not logged. Token access is query-only; no privileges, ACLs, service configuration or firewall rules are changed.
+- Exact-head Push and PR CI are required. This still does not replace clean-VM SCM tests under the provisioned virtual service account, including negative controls and explicit service-SID configuration.
+- PR #8 remains Draft/open/unmerged. No installer/Release, device probing, port scanning, port mapping, NAT/DST-NAT, firewall changes or MikroTik automation.
+
 ## 2026-11-21 — Enforce API service SID before child startup (v0.1.55)
 
 - Added `WindowsServiceIdentity.RequireEnabledServiceSid("EnterpriseITApi")` and invoke it before resolving or launching the Node runtime. The validator resolves the exact expected `NT SERVICE\\EnterpriseITApi` SID, inspects the current Windows access token's TokenGroups and accepts only an exact SID match that is enabled and not deny-only. It also accepts the exact SID as token user for a virtual service account.

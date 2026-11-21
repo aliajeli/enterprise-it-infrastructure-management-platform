@@ -71,6 +71,25 @@ internal sealed class NodeApiProcessService : BackgroundService
                 throw new InvalidOperationException("The API child process did not start.");
             }
 
+            try
+            {
+                var childServiceSid = WindowsServiceIdentity.RequireEnabledServiceSid(
+                    "EnterpriseITApi", process.Handle);
+                if (!serviceSid.Equals(childServiceSid))
+                    throw new UnauthorizedAccessException(
+                        "The API child process does not have the expected enabled service SID.");
+            }
+            catch
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync(CancellationToken.None);
+                }
+                process.Dispose();
+                throw;
+            }
+
             _process = process;
             _stdoutDrain = process.StandardOutput.BaseStream.CopyToAsync(Stream.Null);
             _stderrDrain = process.StandardError.BaseStream.CopyToAsync(Stream.Null);

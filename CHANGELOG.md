@@ -1,3 +1,9 @@
+## 0.1.56 — Verify API child process service SID
+
+- After launching the fixed Node API executable, the Windows host opens the child process token with query-only access and independently verifies the exact enabled, non-deny-only `NT SERVICE\\EnterpriseITApi` SID before accepting the child or starting readiness checks.
+- A missing, disabled, deny-only, ambiguous or mismatched child SID causes immediate process-tree termination and host startup failure. The child token is never logged or exported.
+- This is runtime token validation, not proof of installer provisioning or clean-VM SCM behavior. Real Windows tests must still verify parent/child token inheritance, service configuration and lifecycle.
+
 ## 0.1.55 — Enforce API Windows service SID at startup
 
 - Added a Windows token validator for the API host. Before launching Node, it resolves the exact `NT SERVICE\\EnterpriseITApi` SID and requires that SID to be the process token user or an enabled, non-deny-only token group.
