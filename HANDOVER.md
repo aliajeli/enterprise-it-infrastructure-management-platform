@@ -1,3 +1,9 @@
+## 2026-11-21 — SCM harness argument correction (v0.1.69)
+
+- The first real Windows runner attempt passed service-host compilation and all 17 lifecycle tests, then failed in the PowerShell harness at sc.exe create because sc.exe requires option tokens and values as separate arguments (for example binPath= followed by the executable path, and start= followed by demand).
+- Updated the harness to pass those native arguments separately. The service was not created during the failed attempt; the harness cleaned its temporary payload.
+- Runtime host code is unchanged from v0.1.68. Do not mark the Windows Service Host milestone complete until exact-head Windows SCM CI verifies the full service start/stop and failed-start cleanup flow.
+
 ## 2026-11-21 — API Windows Service Host SCM acceptance (v0.1.68)
 
 - Added a real Windows SCM CI smoke harness using a temporary service named EnterpriseITApi and the matching virtual service account. It configures SERVICE_SID_TYPE_UNRESTRICTED, grants only temporary read/execute access to the isolated test payload, and exercises the published host rather than only unit-test delegates.

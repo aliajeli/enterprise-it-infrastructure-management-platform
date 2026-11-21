@@ -40,7 +40,7 @@ try {
     & sc.exe query $serviceName 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) { throw "A service named $serviceName already exists; refusing to overwrite it." }
 
-    Invoke-Sc @("create", $serviceName, ("binPath= " + '"' + $hostExe + '"'), "start= demand")
+    Invoke-Sc @("create", $serviceName, "binPath=", $hostExe, "start=", "demand")
     $serviceCreated = $true
     Invoke-Sc @("config", $serviceName, "obj= NT SERVICE\EnterpriseITApi", 'password= ""')
     Invoke-Sc @("sidtype", $serviceName, "unrestricted")

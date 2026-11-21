@@ -223,3 +223,8 @@ The Windows CI job runs scripts/windows/test-api-service-host-scm.ps1. It publis
 The smoke test checks parent and child service-SID validation, loopback readiness, graceful shutdown through the stdin control pipe, SCM transition to Stopped, and absence of the child process after stop. It then repeats startup with readiness intentionally unavailable and verifies the host fails startup without orphaning the child. The script deletes its temporary service and payload in a finally block and refuses to overwrite a pre-existing service.
 
 This is a hosted Windows runner integration smoke, not a substitute for clean Windows Server VM acceptance, installer-created immutable ACLs, SCM recovery-policy verification, or the complete five-service installation/upgrade/uninstall tests.
+
+
+## 17. SCM harness command tokenization correction
+
+Version 0.1.69 corrects the PowerShell invocation of sc.exe so each option name and value are passed as separate native arguments. The preceding Windows run built the host and passed all 17 lifecycle tests, but failed before service creation. Re-run the exact-head Windows CI before treating SCM acceptance as passed.

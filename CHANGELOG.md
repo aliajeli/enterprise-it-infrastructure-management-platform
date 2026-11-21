@@ -1,3 +1,8 @@
+## 0.1.69 — Correct Windows SCM smoke command-line tokenization
+
+- Corrected the PowerShell SCM smoke harness to pass sc.exe option names and values as separate native arguments. The first hosted Windows execution had already confirmed host compilation and all 17 lifecycle unit tests, but stopped at sc.exe create with an invalid start= argument before the service was created.
+- No runtime behavior changed from 0.1.68. The exact-head Windows SCM smoke must pass before the API Service Host runtime milestone is marked complete.
+
 ## 0.1.68 — Complete API Windows Service Host runtime acceptance
 
 - Added a real Windows SCM smoke test to Windows CI. It temporarily provisions the API service under NT SERVICE\EnterpriseITApi, enables the service SID, launches the published host and a controlled child process, and verifies parent/child service-token validation, readiness, graceful stop and child reaping.
