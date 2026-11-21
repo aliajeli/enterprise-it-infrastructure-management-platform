@@ -1,3 +1,10 @@
+## 0.1.108 — Add immutable Node.js runtime staging
+
+- Added an offline staging script for the exact Node.js 26 runtime supplied by the build environment. It validates the source executable/version, requires a versioned Program Files install root, copies the complete runtime directory (including adjacent runtime files), and verifies the staged executable reports the same exact version.
+- The staging operation refuses to overwrite an existing immutable runtime directory and removes only its newly created incomplete destination if staging fails. It does not download packages, change firewall/router settings, or create an installer.
+- Added Windows policy coverage for the Node 26 requirement and versioned destination, and wired it into Windows CI. Exact-head CI remains blocked until GitHub assigns hosted runners; this change is not yet validated on Windows.
+- No installer or GitHub Release is produced.
+
 ## 0.1.107 — Fix Worker SCM smoke PID verification
 
 - Corrected the Windows Worker SCM smoke to read the child PID from the Get-Process object's `Id` property. The prior `ProcessId` lookup resolved to zero, causing the post-stop check to query System Idle (PID 0) and report a false orphan.

@@ -1,3 +1,11 @@
+## 2026-11-22 — Add Node.js runtime staging foundation (v0.1.108)
+
+- Added `scripts/windows/stage-node-runtime.ps1` to stage the complete Node.js 26 runtime directory supplied by the build environment into the immutable versioned Program Files payload at `runtime\`. The script verifies the source and staged executable report the same exact Node version, rejects unsupported major versions and refuses to overwrite an existing destination.
+- Added a Windows policy test and CI step using the Node runtime installed by setup-node. The script performs no network download and does not change firewall, NAT, MikroTik or router configuration.
+- The script is a payload-staging foundation only. API/Worker production dependency staging, PostgreSQL payload integration, complete offline bundle assembly, installer/repair/uninstall/rollback and clean-VM virtual-account acceptance remain open.
+- Exact-head CI is currently not executing: the last three jobs were completed with runner_id=0, empty runner names and zero steps; job log downloads return 404 because no runner logs were produced. This is an infrastructure-level Actions execution blocker, not a passing test result. Exact-head Windows validation is pending.
+- Root package/lock version advanced to 0.1.108. No installer or GitHub Release is created. PR #9 remains Draft/open/unmerged; PR #7/#8 remain unmerged.
+
 ## 2026-11-22 — Correct Worker SCM smoke PID assertion (v0.1.107)
 
 - Both exact-head CI runs for v0.1.106 passed Linux/PostgreSQL validation, including lint, typecheck, unit tests, production build and PostgreSQL backup/restore. Windows API, Web and Worker host builds and Worker lifecycle/provisioning policy tests also passed.
