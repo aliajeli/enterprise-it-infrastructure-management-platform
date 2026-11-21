@@ -1,5 +1,6 @@
 using System.Diagnostics;
-using System.Net;\nusing System.Security.Principal;
+using System.Net;
+using System.Security.Principal;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 namespace EnterpriseIT.WorkerServiceHost;
@@ -68,7 +69,8 @@ internal sealed class NodeWorkerProcessService : BackgroundService
         var systemRoot=Environment.GetEnvironmentVariable("SystemRoot");if(string.IsNullOrWhiteSpace(systemRoot))throw new InvalidOperationException("Windows system root is unavailable.");
         info.Environment["PATH"]=string.Join(Path.PathSeparator,Path.Combine(root,"runtime"),Path.Combine(systemRoot,"System32"));
         info.Environment["NODE_ENV"]="production";info.Environment["WORKER_ID"]="windows-service";info.Environment["WORKER_POLL_INTERVAL_MS"]="2000";
-        var databaseUrl=Environment.GetEnvironmentVariable("DATABASE_URL");if(string.IsNullOrWhiteSpace(databaseUrl))throw new InvalidOperationException("Worker database configuration is unavailable.");
+        var configPath=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),"EnterpriseIT","Worker","database.config.dpapi");
+        var databaseUrl=WorkerDatabaseConfiguration.Load(configPath,serviceSid);
         info.Environment["DATABASE_URL"]=databaseUrl;
     }
 }

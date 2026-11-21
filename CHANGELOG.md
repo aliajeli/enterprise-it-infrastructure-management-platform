@@ -1,3 +1,9 @@
+## 0.1.92 — Harden Worker DPAPI provisioning and fail-closed behavior
+
+- Corrected Worker host configuration loading so it decrypts the protected ProgramData envelope rather than reading DATABASE_URL from the parent environment.
+- Restricted the Worker config directory before writing the DPAPI envelope and fail before SCM/ACL changes if no SecureString database URL is supplied.
+- Added explicit xUnit import to Worker DPAPI URL policy tests. This commit repairs source substitutions before relying on CI.
+
 ## 0.1.91 — Protect Worker database configuration with DPAPI
 
 - Removed Worker database configuration from the inherited machine environment.

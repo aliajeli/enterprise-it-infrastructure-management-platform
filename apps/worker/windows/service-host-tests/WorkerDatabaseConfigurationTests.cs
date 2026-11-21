@@ -1,4 +1,5 @@
 using EnterpriseIT.WorkerServiceHost;
+using Xunit;
 namespace EnterpriseIT.WorkerServiceHost.Tests;
 public sealed class WorkerDatabaseConfigurationTests
 {

@@ -1,3 +1,9 @@
+## 2026-11-21 — Worker DPAPI provisioning hardening (v0.1.92)
+
+- Corrected the Worker host to load DATABASE_URL exclusively from the machine-DPAPI protected ProgramData envelope; no inherited-environment fallback remains.
+- Worker provisioning now requires a SecureString URL before any service/ACL changes, locks the ProgramData config directory to SYSTEM/Administrators/Worker service SID before writing the encrypted file, and verifies file creation.
+- Added the missing xUnit import for Worker database URL validation tests. Exact-head Windows CI is required to validate these corrections; clean-VM DPAPI and virtual-account acceptance remain open.
+
 ## 2026-11-21 — Protect Worker database configuration (v0.1.91)
 
 - Worker no longer reads DATABASE_URL from inherited machine/service environment. It loads a binary machine-DPAPI envelope from ProgramData\\EnterpriseIT\\Worker\\database.config.dpapi.
