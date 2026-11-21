@@ -48,7 +48,7 @@ try {
     Invoke-Sc @("sidtype", $serviceName, "unrestricted")
 
     $serviceConfiguration = (& sc.exe qc $serviceName 2>&1 | Out-String)
-    if ($LASTEXITCODE -ne 0 -or $serviceConfiguration -notmatch "NT AUTHORITY\LocalService") {
+    if ($LASTEXITCODE -ne 0 -or $serviceConfiguration -notlike "*NT AUTHORITY\LocalService*") {
         throw "The SCM smoke service is not running under the expected LocalService identity."
     }
 

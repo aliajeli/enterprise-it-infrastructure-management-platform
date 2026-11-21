@@ -1,4 +1,4 @@
-## Implementation status — v0.1.76
+## Implementation status — v0.1.77
 
 The .NET 10 Windows API Service Host runtime now has a real Windows SCM acceptance smoke test wired into the Windows CI job; the first runner attempt exposed and the next commit corrects a command-line tokenization issue in the test harness. The hosted-runner test provisions a temporary EnterpriseITApi service under LocalService because the runner rejected virtual-account assignment with Win32 1057; it enables the service SID, launches the published host and a controlled child executable through the fixed runtime/node.exe contract, and verifies parent/child service-token validation, readiness, graceful SCM stop, child reaping, and startup-readiness failure cleanup. The temporary service and payload are removed in a finally block.
 

@@ -265,3 +265,8 @@ Version 0.1.75 passes NT AUTHORITY\LocalService as the temporary SCM test accoun
 ## 24. LocalService account-name separator
 
 Version 0.1.76 corrects the CI harness account literal to NT AUTHORITY\LocalService with one separator. The prior Windows runner failed at CreateService because the script supplied a doubled separator. Exact-head CI remains required.
+
+
+## 25. Literal LocalService assertion
+
+Version 0.1.77 changes the service-account assertion from regex matching to a literal wildcard comparison. The previous Windows run successfully created the service and enabled its SID, then failed on regex parsing of the backslash in NT AUTHORITY\LocalService.

@@ -1,3 +1,9 @@
+## 2026-11-21 — Literal service-account assertion (v0.1.77)
+
+- The v0.1.76 Windows run reached CreateService SUCCESS and ChangeServiceConfig2 SUCCESS. It failed immediately afterward because the PowerShell -match operator treated the backslash in NT AUTHORITY\LocalService as a regex escape.
+- Changed the account assertion to -notlike with a literal wildcard pattern. This is a test-harness-only fix; no host runtime changes.
+- Next acceptance point: parent/child SID validation, readiness, graceful stop/reap and failed-readiness cleanup.
+
 ## 2026-11-21 — Correct LocalService account separator (v0.1.76)
 
 - The v0.1.75 harness still failed at CreateService. Source inspection showed the PowerShell account literal contained a doubled backslash (NT AUTHORITY\\LocalService) rather than the canonical single separator (NT AUTHORITY\LocalService).

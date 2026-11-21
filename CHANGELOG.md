@@ -1,3 +1,8 @@
+## 0.1.77 — Avoid regex parsing of Windows service account name
+
+- The hosted Windows runner now creates the service and enables SERVICE_SID_TYPE_UNRESTRICTED successfully. The smoke script then failed because PowerShell interpreted the backslash in the NT AUTHORITY\LocalService account string as a regular-expression escape.
+- Replaced regex matching with a literal wildcard comparison. No host runtime changes; the next run proceeds to token validation and service lifecycle assertions.
+
 ## 0.1.76 — Correct LocalService account separator in SCM harness
 
 - Fixed the temporary SCM account string to use the single Windows account separator in NT AUTHORITY\LocalService. The prior attempt passed a doubled separator and SCM returned 1057 during service creation.
