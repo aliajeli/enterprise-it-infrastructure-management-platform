@@ -1,3 +1,9 @@
+## 0.1.107 — Fix Worker SCM smoke PID verification
+
+- Corrected the Windows Worker SCM smoke to read the child PID from the Get-Process object's `Id` property. The prior `ProcessId` lookup resolved to zero, causing the post-stop check to query System Idle (PID 0) and report a false orphan.
+- Added an explicit zero-PID guard. Production Worker service code and shutdown semantics are unchanged.
+- Exact-head CI is required to verify the corrected SCM smoke. No installer or GitHub Release is produced.
+
 ## 0.1.106 — Fix Worker Windows SCM host activation
 
 - Fixed the Worker hosted-service constructor visibility required by the default .NET dependency-injection activator. The previous internal constructor caused the Windows SCM process to terminate before starting its Node child.

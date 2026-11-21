@@ -78,7 +78,8 @@ process.stdin.resume();
  $childDeadline=[DateTime]::UtcNow.AddSeconds(10)
  do{$children=Get-WorkerSmokeChild;if($children.Count-eq 1){break};Start-Sleep -Milliseconds 250}while([DateTime]::UtcNow-lt $childDeadline)
  if($children.Count-ne 1){$allNode=@(Get-Process -Name "node" -ErrorAction SilentlyContinue|Select-Object Id,Path);Write-Host ("Worker service state: "+(Get-Service -Name $serviceName).Status);Write-Host ("Node processes: "+($allNode|ConvertTo-Json -Compress));Write-WorkerSmokeDiagnostics -Since $smokeStartedAt;throw "Expected one Worker child after SCM startup; found $($children.Count)."}
- $childPid=[uint32]$children[0].ProcessId
+ $childPid=[uint32]$children[0].Id
+ if($childPid -eq 0){throw "Worker child PID resolved to zero; refusing an invalid post-stop process check."}
  $ready=$false
  for($i=0;$i-lt 20;$i++){try{$response=Invoke-WebRequest -Uri "http://127.0.0.1:13002/health/ready" -UseBasicParsing -TimeoutSec 2;if($response.StatusCode-eq 200){$ready=$true;break}}catch{};Start-Sleep -Milliseconds 500}
  if(-not $ready){throw "Worker loopback readiness endpoint did not return HTTP 200."}

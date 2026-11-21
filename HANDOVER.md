@@ -1,3 +1,11 @@
+## 2026-11-22 — Correct Worker SCM smoke PID assertion (v0.1.107)
+
+- Both exact-head CI runs for v0.1.106 passed Linux/PostgreSQL validation, including lint, typecheck, unit tests, production build and PostgreSQL backup/restore. Windows API, Web and Worker host builds and Worker lifecycle/provisioning policy tests also passed.
+- The only failing step was the Worker SCM smoke's post-stop process assertion. Log evidence showed the service reached Stopped, then the script queried Win32_Process using `$children[0].ProcessId` from Get-Process. Get-Process returns System.Diagnostics.Process objects whose PID property is Id, not ProcessId. The cast therefore produced PID 0, and the CIM query matched the always-present System Idle process. This was a false-negative in the test, not evidence of an orphaned Worker child.
+- Corrected the smoke to capture `.Id` and reject PID zero before checking the process after SCM stop. No production process lifecycle behavior was weakened or bypassed.
+- Root package/lock version advanced to 0.1.107. Exact-head Windows CI must pass before marking the Worker SCM integration gate complete. No installer or Release is created.
+- PR #9 remains Draft/open/unmerged. PR #7/#8 remain unmerged.
+
 ## 2026-11-22 — Fix Worker SCM dependency-injection activation (v0.1.106)
 
 - Inspected the exact failing Windows Actions event log from run 44951401240. The service process did not fail because of Node DLL staging or child discovery: .NET Runtime event 1026 reported `InvalidOperationException: A suitable constructor for type 'EnterpriseIT.WorkerServiceHost.NodeWorkerProcessService' could not be located`.
