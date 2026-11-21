@@ -1,3 +1,9 @@
+## 0.1.73 — Create API service directly with its virtual account
+
+- Changed the Windows SCM harness to create EnterpriseITApi with obj= "NT SERVICE\EnterpriseITApi" in the initial sc.exe create call and omit password= entirely. Windows virtual accounts do not use an administrator-supplied password; the preceding config attempts returned 1057 even after enabling the service SID.
+- The harness then sets SERVICE_SID_TYPE_UNRESTRICTED, grants the temporary identity read/execute access, and proceeds with start/stop and failed-readiness checks.
+- No service-host runtime code changed. Exact-head SCM acceptance is still pending.
+
 ## 0.1.72 — Quote Windows virtual service-account name for SCM
 
 - Corrected the SCM smoke harness to explicitly quote the virtual account name and empty password value when passing them to sc.exe config. The v0.1.71 run confirmed service SID provisioning succeeds, but SCM still returned error 1057 while parsing the account string containing a space.

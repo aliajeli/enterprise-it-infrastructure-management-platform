@@ -40,11 +40,10 @@ try {
     & sc.exe query $serviceName 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) { throw "A service named $serviceName already exists; refusing to overwrite it." }
 
-    Invoke-Sc @("create", $serviceName, "binPath=", $hostExe, "start=", "demand")
+    # CreateService accepts a virtual account directly; do not pass password= for it.
+    Invoke-Sc @("create", $serviceName, "obj=", '"NT SERVICE\EnterpriseITApi"', "binPath=", $hostExe, "start=", "demand")
     $serviceCreated = $true
-    # Create/enable the service SID first so the virtual account can be resolved by LSA.
     Invoke-Sc @("sidtype", $serviceName, "unrestricted")
-    Invoke-Sc @("config", $serviceName, "obj=", '"NT SERVICE\EnterpriseITApi"', "password=", '""')
 
     & icacls.exe $root /grant "NT SERVICE\EnterpriseITApi:(OI)(CI)(RX)" /T /C | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Could not grant temporary service read/execute access to the smoke payload." }

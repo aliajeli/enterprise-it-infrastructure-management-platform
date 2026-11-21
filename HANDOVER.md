@@ -1,3 +1,9 @@
+## 2026-11-21 — Create service with virtual account directly (v0.1.73)
+
+- The v0.1.72 Windows run showed SERVICE_SID_TYPE_UNRESTRICTED succeeded, but sc.exe config still returned 1057 for the virtual account even with explicit quotes. Microsoft documents virtual-account creation by passing obj= "NT SERVICE\ServiceName" to sc.exe create; a password is not supplied for a virtual account.
+- Updated the smoke harness to set the virtual account during CreateService and removed the follow-up config/password call. It then enables the service SID type before ACL setup and startup.
+- Runtime host unchanged. Exact-head Windows CI must prove this service account can start, the child inherits the SID, and shutdown/failure cleanup work.
+
 ## 2026-11-21 — Quote virtual service-account argument (v0.1.72)
 
 - The v0.1.71 Windows runner successfully created the temporary service and configured its service SID (SC ChangeServiceConfig2 SUCCESS), then returned error 1057 on the virtual service-account assignment.

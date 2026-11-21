@@ -243,3 +243,8 @@ Version 0.1.71 changes the temporary SCM smoke sequence: configure SERVICE_SID_T
 ## 20. Quote virtual service account in SCM configuration
 
 Version 0.1.72 quotes the NT SERVICE\EnterpriseITApi account value and empty password value in the native sc.exe config call. The previous runner verified SERVICE_SID_TYPE_UNRESTRICTED was applied, then failed with Win32 1057 parsing the account. Exact-head Windows CI remains the acceptance gate.
+
+
+## 21. Create the virtual account with the service
+
+Version 0.1.73 creates the temporary SCM service with obj= "NT SERVICE\EnterpriseITApi" in the sc.exe create call and deliberately omits password=. The prior config approach returned Win32 1057 even after the service SID was enabled. The Windows CI run is the acceptance gate for this provisioning sequence.
