@@ -1,3 +1,10 @@
+## 0.1.109 — Add offline payload integrity manifest
+
+- Added a SHA-256 inventory manifest for versioned offline payloads, recording relative paths, byte sizes and hashes. Verification rejects modified, missing, unexpected and path-traversal entries.
+- Reparse points are rejected so inventory cannot follow junctions or symbolic links outside the staged tree. Existing manifests cannot be overwritten.
+- Added Windows PowerShell policy tests for valid inventory, tampering, unexpected files, version mismatch and unsafe paths.
+- This is integrity metadata, not a complete offline installer or signed release. Exact-head CI must run before acceptance.
+
 ## 0.1.108 — Add immutable Node.js runtime staging
 
 - Added an offline staging script for the exact Node.js 26 runtime supplied by the build environment. It validates the source executable/version, requires a versioned Program Files install root, copies the complete runtime directory (including adjacent runtime files), and verifies the staged executable reports the same exact version.

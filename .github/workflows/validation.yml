@@ -206,7 +206,11 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-windows-service-host-staging.ps1
 
-      - name: Test Node.js runtime staging policy\n        shell: pwsh\n        run: pwsh -NoProfile -File scripts/windows/test-node-runtime-staging.ps1\n\n      - name: Build Windows DPAPI helper
+      - name: Test Node.js runtime staging policy\n        shell: pwsh\n        run: pwsh -NoProfile -File scripts/windows/test-node-runtime-staging.ps1\n\n      - name: Test offline payload manifest integrity
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-offline-payload-manifest.ps1
+
+      - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
       - name: Verify DPAPI helper rejects non-service identity

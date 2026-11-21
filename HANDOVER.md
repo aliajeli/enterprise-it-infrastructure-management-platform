@@ -1,3 +1,12 @@
+## 2026-11-22 — Add offline payload integrity manifest (v0.1.109)
+
+- Added scripts/windows/new-offline-payload-manifest.ps1 with Create and Verify operations. It records schema/version, relative paths, byte lengths and SHA-256 hashes.
+- Verification rejects missing/modified/unexpected files, unsafe paths, duplicate entries, unsupported schema/hash algorithm, version mismatch and filesystem reparse points. Creation refuses to overwrite an existing manifest.
+- Added Windows PowerShell tests for valid inventory, tampering, unexpected files, version mismatch and path traversal.
+- This is an integrity building block only; it does not assemble application payloads, sign artifacts, create an installer or publish a Release.
+- The previous commit accidentally inserted literal backslash-n text into the Workflow step and deployment decision note. This commit repairs both as actual line breaks; exact-head CI must parse and execute the corrected workflow before validation can be claimed.
+- Root package/lock version advanced to 0.1.109. PR #9 remains Draft/open/unmerged; no Releases exist.
+
 ## 2026-11-22 — Add Node.js runtime staging foundation (v0.1.108)
 
 - Added `scripts/windows/stage-node-runtime.ps1` to stage the complete Node.js 26 runtime directory supplied by the build environment into the immutable versioned Program Files payload at `runtime\`. The script verifies the source and staged executable report the same exact Node version, rejects unsupported major versions and refuses to overwrite an existing destination.
