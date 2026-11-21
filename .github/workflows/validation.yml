@@ -173,6 +173,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-worker-service-provisioning.ps1
 
+      - name: Verify Worker service host under Windows SCM
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-worker-service-host-scm.ps1
+
       - name: Build Windows Edge service host
         run: dotnet build apps/edge/windows/service-host/EnterpriseIT.EdgeServiceHost.csproj --configuration Release
 

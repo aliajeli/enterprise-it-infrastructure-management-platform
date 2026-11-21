@@ -1,3 +1,10 @@
+## 2026-11-21 — Worker SCM/DPAPI integration smoke (v0.1.100)
+
+- Added Windows Worker SCM smoke using the hosted runner's supported LocalService identity with EnterpriseITWorker service SID enabled.
+- Added a minimal TCP HTTP stub child that binds only to 127.0.0.1:13002, serves the readiness route and exits on the SHUTDOWN stdin command.
+- The smoke provisions the Worker machine-DPAPI config through the one-shot host command, starts the Windows service, verifies HTTP readiness, stops it through SCM and confirms the child process is reaped.
+- Hosted LocalService smoke is a lifecycle/DPAPI integration test only; it is not production virtual-account acceptance. Clean supported Windows Server validation under NT SERVICE\\EnterpriseITWorker remains open.
+
 ## 2026-11-21 — Self-contained Windows service host staging (v0.1.99)
 
 - Added scripts/windows/stage-windows-service-hosts.ps1 to publish API, Web, Worker and Edge .NET hosts as self-contained win-x64 single-file executables directly under the versioned Program Files payload root expected by their service provisioners.

@@ -1,3 +1,9 @@
+## 0.1.100 — Add Worker Windows SCM and DPAPI integration smoke
+
+- Added a Windows SCM smoke test for Worker using a LocalService runner identity with enabled EnterpriseITWorker service SID.
+- The smoke provisions the machine-DPAPI database config, starts the Worker host, verifies loopback readiness, sends SCM stop and confirms graceful child shutdown/reap.
+- The test explicitly does not claim hosted-runner acceptance of the production NT SERVICE virtual account.
+
 ## 0.1.99 — Add self-contained Windows service host staging
 
 - Added a versioned Program Files staging script that publishes API, Web, Worker and Edge .NET hosts as self-contained win-x64 single-file executables.
