@@ -33,6 +33,9 @@ internal sealed class NodeApiProcessService : BackgroundService
     {
         try
         {
+            var serviceSid = WindowsServiceIdentity.RequireEnabledServiceSid("EnterpriseITApi");
+            _logger.LogInformation("Validated enabled Windows service SID {ServiceSid}.", serviceSid.Value);
+
             var root = Path.GetFullPath(AppContext.BaseDirectory);
             var nodePath = Path.Combine(root, "runtime", "node.exe");
             var apiEntryPoint = Path.Combine(root, "apps", "api", "dist", "server.js");

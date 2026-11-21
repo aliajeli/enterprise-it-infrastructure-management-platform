@@ -182,3 +182,17 @@ On a disposable Windows x64 test host with the API payload staged in the documen
 5. Confirm no external address, managed-device address, alternate port or non-loopback endpoint is contacted by the readiness probe.
 
 Expected: the readiness probe targets only the API process's fixed loopback health endpoint. This is not a network discovery operation and does not contact switches, routers, NVRs or MikroTik. These checks still require execution on a real disposable Windows host; CI compilation alone is not acceptance evidence.
+
+
+## 13. Windows API service identity gate (clean-VM integration test)
+
+On a disposable, clean Windows VM after an administrator has provisioned the exact `EnterpriseITApi` service name and configured its service SID as enabled:
+
+1. Start the host through SCM under the dedicated `NT SERVICE\\EnterpriseITApi` virtual service account.
+2. Confirm startup proceeds only when the exact service SID is present as the token user or as an enabled, non-deny-only token group.
+3. Run negative controls under LocalSystem, an interactive administrator, a standard user and an unrelated service identity; confirm the host fails before starting Node.
+4. If feasible in a dedicated test service, configure the expected service SID as disabled and confirm startup fails closed.
+5. Inspect the Node child token in a test-only diagnostic harness and prove the enabled service SID is inherited; do not log or export the full token.
+6. Confirm the host does not create the service, change service configuration, grant privileges or modify ACLs at runtime.
+
+Expected: identity mismatch prevents API process launch. This test requires a real Windows SCM service configuration; compilation in GitHub Actions does not prove the service identity or child-token behavior.

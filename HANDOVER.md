@@ -1,3 +1,10 @@
+## 2026-11-21 — Enforce API service SID before child startup (v0.1.55)
+
+- Added `WindowsServiceIdentity.RequireEnabledServiceSid("EnterpriseITApi")` and invoke it before resolving or launching the Node runtime. The validator resolves the exact expected `NT SERVICE\\EnterpriseITApi` SID, inspects the current Windows access token's TokenGroups and accepts only an exact SID match that is enabled and not deny-only. It also accepts the exact SID as token user for a virtual service account.
+- TokenGroups parsing validates bounded allocation, returned buffer length, group count and entry-table bounds. Any missing, disabled, deny-only, ambiguous or unresolvable identity aborts startup. The log contains only the expected SID after successful validation; no token contents are logged.
+- This does not provision the service account, configure SCM service-SID type, prove the Node child inherits the enabled SID, or establish service ACLs. The installer must provision those settings and clean-VM Windows integration tests must verify the effective parent and child tokens.
+- Exact-head CI is pending for this increment. PR #8 remains Draft/open/unmerged. No installer/Release, device probing, port scanning, port mapping, NAT/DST-NAT, firewall changes or MikroTik automation.
+
 ## 2026-11-20 — API host readiness gate and graceful-stop correction (v0.1.54)
 
 - The .NET Windows API host now performs a bounded readiness gate against its own fixed loopback endpoint, `http://127.0.0.1:13001/health/ready`. It retries transient connection failures and non-200 responses for at most 60 seconds; the request itself is limited to two seconds and connection establishment to one second. If readiness is not reached, the child process tree is terminated and host startup fails rather than treating an unhealthy API as ready.

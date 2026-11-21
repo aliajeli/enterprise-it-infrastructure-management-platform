@@ -1,3 +1,9 @@
+## 0.1.55 — Enforce API Windows service SID at startup
+
+- Added a Windows token validator for the API host. Before launching Node, it resolves the exact `NT SERVICE\\EnterpriseITApi` SID and requires that SID to be the process token user or an enabled, non-deny-only token group.
+- Token group parsing is bounded and validates the returned buffer and group table before inspecting SID attributes. Missing, disabled, deny-only, ambiguous or unresolvable service identity fails closed; the host does not start the API child.
+- This is an enforcement gate, not service provisioning. The installer still must create/configure the service account and explicit service SID. Real SCM-token and child-token inheritance tests on a clean Windows VM remain mandatory.
+
 ## 0.1.54 — Gate Windows API service startup on readiness
 
 - The Windows API host now waits for the fixed loopback `/health/ready` endpoint before completing hosted-service startup. The probe is bounded to 60 seconds, retries transient connection/503 responses, and terminates the child process if readiness is not reached.
