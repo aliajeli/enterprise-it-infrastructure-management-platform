@@ -27,17 +27,36 @@ if($MyInvocation.InvocationName -ne "."){
   if(Test-Path -LiteralPath $destination){throw "Immutable service host payload already exists: $destination"}
  }
  New-Item -ItemType Directory -Path $plan.InstallRoot -Force|Out-Null
- $tempRoot=Join-Path $env:TEMP ("enterpriseit-hosts-"+[guid]::NewGuid().ToString("N"))
- New-Item -ItemType Directory -Path $tempRoot -Force|Out-Null
+ $tempRoot=Join-Path ([IO.Path]::GetTempPath()) ("enterpriseit-hosts-"+[guid]::NewGuid().ToString("N"))
+ $publishRoot=Join-Path $tempRoot "publish";$promotionRoot=Join-Path $tempRoot "promotion"
+ $promoted=[System.Collections.Generic.List[string]]::new()
+ New-Item -ItemType Directory -Path $publishRoot,$promotionRoot -Force|Out-Null
  try{
+  # Publish every host before touching the immutable installation directory.
   foreach($item in $plan.Services){
-   $output=Join-Path $tempRoot $item.Service
+   $output=Join-Path $publishRoot $item.Service
    dotnet publish $item.Project --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false --output $output
    if($LASTEXITCODE -ne 0){throw "Self-contained publish failed for $($item.Service)."}
    $source=Join-Path $output $item.Executable
    if(-not(Test-Path -LiteralPath $source -PathType Leaf)){throw "Expected single-file executable was not produced for $($item.Service)."}
-   Copy-Item -LiteralPath $source -Destination (Join-Path $plan.InstallRoot $item.Executable)
+   Copy-Item -LiteralPath $source -Destination (Join-Path $promotionRoot $item.Executable)
   }
-  [pscustomobject]@{installRoot=$plan.InstallRoot;services=@($plan.Services|ForEach-Object{$_.Service});runtimeIdentifier="win-x64";selfContained=$true;singleFile=$true;installerCreated=$false}|ConvertTo-Json -Depth 4
+  foreach($item in $plan.Services){
+   $destination=Join-Path $plan.InstallRoot $item.Executable
+   if(Test-Path -LiteralPath $destination){throw "Immutable service host destination appeared during promotion: $destination"}
+  }
+  # Promote only after all four self-contained executables have been built and staged.
+  foreach($item in $plan.Services){
+   $source=Join-Path $promotionRoot $item.Executable
+   $destination=Join-Path $plan.InstallRoot $item.Executable
+   [IO.File]::Move($source,$destination)
+   $promoted.Add($destination)
+  }
+  [pscustomobject]@{installRoot=$plan.InstallRoot;services=@($plan.Services|ForEach-Object{$_.Service});runtimeIdentifier="win-x64";selfContained=$true;singleFile=$true;atomicPromotion=$true;installerCreated=$false}|ConvertTo-Json -Depth 4
+ }catch{
+  foreach($destination in @($promoted.ToArray()|Select-Object -Reverse)){
+   if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue}
+  }
+  throw
  }finally{if(Test-Path $tempRoot){Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue}}
 }

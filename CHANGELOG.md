@@ -919,3 +919,10 @@
 - Replaced API, Worker and Database workspace links under node_modules/@platform with physical copies before module-resolution checks and promotion.
 - Extended Windows integration smoke tests to resolve Database dependencies from both API and Worker application directories after promotion.
 - No installer or release is created by this correction.
+
+
+## 0.1.115 — Transactional Windows service-host staging
+- Changed four-host staging to publish and validate all self-contained executables in a temporary workspace before modifying the versioned install directory.
+- Promotes the complete host set only after every publish succeeds; removes any executables promoted by the current run if a later promotion fails.
+- Extended Windows staging-plan checks for project presence, executable names and immutable payload policy.
+- This remains a payload staging operation, not the product installer.

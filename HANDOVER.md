@@ -1164,3 +1164,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Exact-head CI for v0.1.113 exposed a post-promotion `ERR_MODULE_NOT_FOUND` for `@platform/database`. The failure occurred after the temporary staging root was removed; npm's workspace link did not remain valid in the installed layout.
 - Replaced the three selected workspace links under `node_modules/@platform` with physical copies before final module resolution and promotion. Extended the integration test to resolve dependencies from the staged API and Worker directories after promotion.
 - This is a targeted correction to the runtime layout. It remains unaccepted until the exact-head Windows CI passes; no Installer or Release is claimed.
+
+
+## 2026-11-22 — Transactional service-host payload staging (v0.1.115)
+- Hardened `stage-windows-service-hosts.ps1`: all four self-contained .NET service hosts are published and copied into a temporary promotion area before the versioned installation directory is modified.
+- The script preflights all final destinations, promotes only after all four outputs exist, and removes outputs promoted by the current invocation if promotion fails. Existing immutable destinations are never overwritten.
+- Expanded plan tests. CI acceptance on the exact commit is still required; this does not create an installer or establish clean-VM installation acceptance.

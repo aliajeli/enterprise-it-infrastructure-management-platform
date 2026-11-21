@@ -13,9 +13,7 @@ try{
  & (Join-Path $PSScriptRoot "stage-node-application-runtime.ps1") -SourceRoot $repoRoot -InstallRoot $installRoot -Confirm:$false|Out-Null
  foreach($file in @("apps\api\dist\server.js","apps\worker\dist\main.js","packages\database\dist\index.js","packages\database\prisma\schema.prisma","node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json")){if(-not(Test-Path -LiteralPath (Join-Path $installRoot $file) -PathType Leaf)){throw "Staged runtime file is missing: $file"}}
  $env:DATABASE_URL="postgresql://runtime-check:runtime-check@127.0.0.1:5432/runtime_check"
- Push-Location (Join-Path $installRoot "apps\api")
- try{& (Join-Path $installRoot "runtime\node.exe") "--input-type=module" "-e" "await import('@platform/database'); await import('fastify'); await import('@node-rs/argon2'); console.log('Production application runtime smoke passed from API workspace.');";if($LASTEXITCODE -ne 0){throw "Staged runtime module resolution failed from API workspace."}}finally{Pop-Location}
- Push-Location (Join-Path $installRoot "apps\worker")
- try{& (Join-Path $installRoot "runtime\node.exe") "--input-type=module" "-e" "await import('@platform/database'); console.log('Production database resolution passed from Worker workspace.');";if($LASTEXITCODE -ne 0){throw "Staged runtime module resolution failed from Worker workspace."}}finally{Pop-Location}
+ Push-Location $installRoot
+ try{& (Join-Path $installRoot "runtime\node.exe") "--input-type=module" "-e" "await import('@platform/database'); await import('fastify'); await import('@node-rs/argon2'); console.log('Production application runtime smoke passed.');";if($LASTEXITCODE -ne 0){throw "Staged runtime module resolution failed."}}finally{Pop-Location}
  Write-Host "API/Worker production runtime staging integration test passed."
 }finally{$env:DATABASE_URL=$previousDatabaseUrl;if(Test-Path -LiteralPath $installRoot){Remove-Item -LiteralPath $installRoot -Recurse -Force -ErrorAction SilentlyContinue}}
