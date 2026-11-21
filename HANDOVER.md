@@ -1,3 +1,10 @@
+## 2026-11-21 — Edge and Worker CI compiler/policy corrections (v0.1.93)
+
+- Fixed Edge service SID validation to handle nullable WindowsIdentity.User without warnings-as-errors.
+- Fixed the Edge readiness ProblemDetails named argument to compile against the ASP.NET Core API.
+- Fixed Worker DPAPI config path policy assertion to match the canonical Windows path separator.
+- Exact-head Windows CI is required to confirm Edge build, Edge policy tests, Worker DPAPI tests, PostgreSQL policy tests and existing service gates.
+
 ## 2026-11-21 — Worker DPAPI provisioning hardening (v0.1.92)
 
 - Corrected the Worker host to load DATABASE_URL exclusively from the machine-DPAPI protected ProgramData envelope; no inherited-environment fallback remains.

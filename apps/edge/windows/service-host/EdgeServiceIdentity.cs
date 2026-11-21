@@ -7,6 +7,7 @@ internal static class EdgeServiceIdentity
   if(!OperatingSystem.IsWindows())throw new PlatformNotSupportedException();
   var sid=new NTAccount("NT SERVICE","EnterpriseITEdge").Translate(typeof(SecurityIdentifier)) as SecurityIdentifier??throw new UnauthorizedAccessException("Edge service SID could not be resolved.");
   using var identity=WindowsIdentity.GetCurrent();
-  if(!sid.Equals(identity.User)&&!new WindowsPrincipal(identity).IsInRole(sid))throw new UnauthorizedAccessException("Edge service SID is not enabled in this process token.");
+  var userMatches=identity.User is SecurityIdentifier user&&sid.Equals(user);
+  if(!userMatches&&!new WindowsPrincipal(identity).IsInRole(sid))throw new UnauthorizedAccessException("Edge service SID is not enabled in this process token.");
  }
 }

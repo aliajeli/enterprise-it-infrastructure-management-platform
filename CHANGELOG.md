@@ -1,3 +1,9 @@
+## 0.1.93 — Fix Edge host compiler errors and Worker policy path
+
+- Fixed nullable Windows token user handling in Edge service SID validation.
+- Corrected the ASP.NET Core ProblemDetails named argument in the Edge readiness endpoint.
+- Corrected the Worker ProgramData DPAPI config path assertion in its PowerShell policy test.
+
 ## 0.1.92 — Harden Worker DPAPI provisioning and fail-closed behavior
 
 - Corrected Worker host configuration loading so it decrypts the protected ProgramData envelope rather than reading DATABASE_URL from the parent environment.

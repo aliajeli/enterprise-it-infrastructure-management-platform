@@ -29,7 +29,7 @@ app.Use(async(ctx,next)=>{
 app.MapGet("/health/ready",async(IHttpClientFactory f,CancellationToken ct)=>{
  var c=f.CreateClient("edge-ready");var api=await Ready(c,"http://127.0.0.1:13001/health/ready",ct);var web=await Ready(c,"http://127.0.0.1:13000/health/ready",ct);
  var tls=DateTime.UtcNow>=certificate.NotBefore.ToUniversalTime()&&DateTime.UtcNow<certificate.NotAfter.ToUniversalTime()&&certificate.HasPrivateKey;
- return api&&web&&tls?Results.Ok(new{status="ready"}):Results.Problem(statusCode:503,title="Edge dependency readiness failed");
+ return api&&web&&tls?Results.Ok(new{status="ready"}):Results.Problem(statusCode:503,title: "Edge dependency readiness failed");
 });
 app.MapReverseProxy();await app.RunAsync();
 static async Task<bool> Ready(HttpClient c,string u,CancellationToken t){try{using var r=await c.GetAsync(u,HttpCompletionOption.ResponseHeadersRead,t);return r.StatusCode==HttpStatusCode.OK;}catch(HttpRequestException){return false;}catch(TaskCanceledException)when(!t.IsCancellationRequested){return false;}}
