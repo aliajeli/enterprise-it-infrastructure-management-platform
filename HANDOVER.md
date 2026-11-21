@@ -1,3 +1,12 @@
+## 2026-11-21 — Define five-service Windows deployment contract (v0.1.82)
+
+- Created `WINDOWS_SERVICE_DEPLOYMENT_DECISIONS.md` as the implementation contract for the five independent SCM services: Edge, Web, API, Worker and PostgreSQL.
+- Selected .NET 10 + YARP for the Edge prototype direction and PostgreSQL 18 as the Windows packaging major-version baseline. Exact PostgreSQL patch/build, redistribution review and production Edge acceptance remain open gates.
+- Fixed the internal listener contract: Web 127.0.0.1:13000, API 127.0.0.1:13001, Worker health 127.0.0.1:13002 and PostgreSQL 127.0.0.1:5432; only Edge may expose the configured LAN HTTPS listener.
+- Defined distinct service identities, payload ACLs, startup order, readiness and clean-VM acceptance requirements. No service is allowed to change Windows Firewall, MikroTik, NAT or device network configuration.
+- This is an architecture/implementation-contract commit, not implementation of all five services. API remains the only service with an implemented host/provisioning slice. Worker/Web hosts, Edge, PostgreSQL Windows packaging and end-to-end five-service validation remain open.
+- Installer-path progress remains 3/9 milestones complete (33%); milestone 4 remains active. No installer or Release exists. PR #8 remains Draft/open/unmerged.
+
 ## 2026-11-21 — Begin installer-owned API service provisioning (v0.1.80)
 
 - Added scripts/windows/provision-api-service.ps1 as the first installer-owned SCM provisioning slice for the completed API Host runtime.

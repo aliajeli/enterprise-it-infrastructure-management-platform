@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.66`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.82`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -292,3 +292,8 @@ The provisioning script is not part of the ordinary source preview. On a disposa
 ## Provisioning dry-run behavior (v0.1.81)
 
 Invoke the provisioning script with `-WhatIf` on a disposable Windows test host to inspect the intended operation. The script must return an explicit dry-run result without calling SCM service creation, service SID lookup or ACL mutation. A real provisioning run is privileged and must be restricted to a clean test VM until acceptance is complete.
+
+
+## Windows service deployment boundary (v0.1.82)
+
+The five-service Windows deployment is not yet available as an installable preview. The current API service-host/provisioning slice is not a complete installer. Do not register Worker, Web, Edge or PostgreSQL services manually using guessed executable paths or service identities. See `WINDOWS_SERVICE_DEPLOYMENT_DECISIONS.md` for the current service contract and remaining acceptance gates. The local Docker-based preview remains the supported way to exercise the application UI; it does not validate Windows SCM deployment.

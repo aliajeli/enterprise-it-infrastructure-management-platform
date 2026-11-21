@@ -1,3 +1,10 @@
+## 0.1.82 — Define the five-service Windows deployment contract
+
+- Added a concrete five-service deployment contract covering Edge, Next.js, API, Worker and PostgreSQL, including service names, fixed entry points, loopback listeners, identity boundaries and startup order.
+- Selected .NET 10 + YARP as the Edge prototype direction and PostgreSQL 18 as the packaging major-version baseline; exact PostgreSQL patch/build and production Edge acceptance remain explicit gates.
+- Documented that the API provisioning work is only the first service slice. Worker/Web hosts, Edge, PostgreSQL packaging, clean-VM virtual-account acceptance and end-to-end SCM validation remain outstanding.
+- No installer, firewall/NAT change, device scan or release was created by this architecture commit.
+
 ## 0.1.81 — Make API service provisioning dry-run safe
 
 - The API provisioning function now returns an explicit dry-run plan immediately under -WhatIf, before payload checks or any SCM/SID/ACL command. This prevents a dry run from attempting to query a service SID that has not been created.
