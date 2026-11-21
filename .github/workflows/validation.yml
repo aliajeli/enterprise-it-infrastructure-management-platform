@@ -149,6 +149,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-api-service-host-scm.ps1
 
+      - name: Test API service provisioning policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-api-service-provisioning.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 

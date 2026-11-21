@@ -1,3 +1,12 @@
+## 2026-11-21 — Begin installer-owned API service provisioning (v0.1.80)
+
+- Added scripts/windows/provision-api-service.ps1 as the first installer-owned SCM provisioning slice for the completed API Host runtime.
+- The plan accepts only a versioned Program Files\\EnterpriseIT\\<major.minor.patch> root and fixed host/Node/API payload paths. It refuses an existing service with an unexpected executable path or logon identity.
+- Provisions NT SERVICE\\EnterpriseITApi, enables SERVICE_SID_TYPE_UNRESTRICTED, configures SCM recovery (60s, then 300s, then none; reset after 24h), and applies SYSTEM/Administrators full-control plus service-SID read/execute ACLs to the immutable version directory.
+- It deliberately does not start the API: PostgreSQL and protected configuration must be ready first. It does not create/delete application data or change firewall, NAT, RouterOS or device network settings.
+- Added Windows PowerShell policy tests and CI validation. Exact-head CI is required; clean Windows Server acceptance under the actual virtual service account remains a production gate.
+- Installer-path progress remains 3/9 (33%); this is the first slice of milestone 4, not a completed milestone. PR #8 remains Draft/open/unmerged; no installer or Release exists.
+
 ## 2026-11-21 — API Windows Service Host runtime milestone complete (v0.1.79)
 
 - Exact-head v0.1.78 Windows Push CI run 44906623563: completed/success.

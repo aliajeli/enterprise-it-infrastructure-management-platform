@@ -1,3 +1,10 @@
+## 0.1.80 — Add guarded API service provisioning
+
+- Added installer-owned provisioning for the API Windows service. It accepts only a versioned Program Files\\EnterpriseIT\\<version> payload and validates the fixed host, Node runtime and API entry-point layout.
+- Configures NT SERVICE\\EnterpriseITApi, SERVICE_SID_TYPE_UNRESTRICTED, bounded SCM recovery (60 seconds, then 300 seconds, then no automatic restart; reset after 24 hours), and immutable version-directory ACLs.
+- Existing services with unexpected executable path or logon identity are rejected. The script deliberately does not start the API before PostgreSQL and protected configuration are ready.
+- Added PowerShell policy tests and Windows CI validation. This is the first API provisioning slice, not the complete five-service installer; clean Windows Server virtual-account acceptance remains required.
+
 ## 0.1.79 — Close API Windows Service Host runtime milestone
 
 - Recorded successful exact-head Windows CI acceptance for v0.1.78: Push run 44906623563 and PR run 44906628820 both completed successfully.

@@ -282,3 +282,8 @@ Version 0.1.78 verifies the authoritative service state becomes Stopped and no c
 Exact-head Windows CI passed on both Push run 44906623563 and PR run 44906628820. The Windows job passed the real SCM smoke, all 17 service-host lifecycle tests, DPAPI/keyring helper checks, installer preflight tests, Windows API typecheck/tests and API build.
 
 The SCM smoke validates the service SID and child token under a temporary LocalService account because the hosted runner returned Win32 1057 for NT SERVICE virtual-account assignment. This does not waive production provisioning: the installer must configure NT SERVICE\EnterpriseITApi and validate the installed service on a clean supported Windows Server VM.
+
+
+## Windows API service provisioning policy (v0.1.80)
+
+The provisioning script is not part of the ordinary source preview. On a disposable elevated Windows Server VM only, stage the immutable payload under %ProgramFiles%\\EnterpriseIT\\<version>, inspect the script with -WhatIf first, and verify the service identity, service SID, recovery actions and ACLs. Do not run it on production before clean-VM acceptance and a backup/rollback plan. The script does not start the service; PostgreSQL and protected configuration must be ready first.
