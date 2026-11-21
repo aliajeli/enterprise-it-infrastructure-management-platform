@@ -1,3 +1,9 @@
+## 2026-11-21 — Worker SCM smoke child detection correction (v0.1.101)
+
+- The hosted Worker service reached Running and passed its readiness gate, but the smoke test's CIM command-line substring filter failed to locate the child process.
+- Replaced that brittle filter with a direct ParentProcessId comparison against Win32_Service.ProcessId, which identifies the service-host child regardless of command-line normalization.
+- Exact-head CI must re-run the Worker SCM/DPAPI smoke and all downstream Edge/PostgreSQL/orchestration gates.
+
 ## 2026-11-21 — Worker SCM/DPAPI integration smoke (v0.1.100)
 
 - Added Windows Worker SCM smoke using the hosted runner's supported LocalService identity with EnterpriseITWorker service SID enabled.

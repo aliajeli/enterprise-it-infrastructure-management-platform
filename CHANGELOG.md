@@ -1,3 +1,8 @@
+## 0.1.101 — Fix Worker SCM smoke child-process detection
+
+- Changed the Worker SCM smoke to identify the child by its parent service-host PID rather than matching a potentially normalized command-line path.
+- The test still proves the child is running after readiness and has exited after graceful SCM stop.
+
 ## 0.1.100 — Add Worker Windows SCM and DPAPI integration smoke
 
 - Added a Windows SCM smoke test for Worker using a LocalService runner identity with enabled EnterpriseITWorker service SID.

@@ -12,7 +12,11 @@ $configRoot=Join-Path $env:ProgramData "EnterpriseIT\Worker"
 $configPath=Join-Path $configRoot "database.config.dpapi"
 $serviceCreated=$false;$configCreated=$false
 function Invoke-WorkerSmokeSc([string[]]$Arguments){& sc.exe @Arguments|Out-Null;if($LASTEXITCODE-ne 0){throw "sc.exe operation failed: $($Arguments -join ' '): $LASTEXITCODE"}}
-function Get-WorkerSmokeChild {@(Get-CimInstance Win32_Process|Where-Object{$_.CommandLine-and $_.CommandLine.Contains($entry,[StringComparison]::OrdinalIgnoreCase)})}
+function Get-WorkerSmokeChild {
+ $svc=Get-CimInstance Win32_Service -Filter "Name='EnterpriseITWorker'"
+ if($null -eq $svc -or $svc.ProcessId -eq 0){return @()}
+ @(Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq $svc.ProcessId })
+}
 try{
  if(Test-Path $root){Remove-Item $root -Recurse -Force}
  if(Test-Path $configRoot){throw "Worker DPAPI smoke config directory already exists; refusing overwrite."}
