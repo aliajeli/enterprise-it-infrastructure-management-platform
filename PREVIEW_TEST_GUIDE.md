@@ -270,3 +270,8 @@ Version 0.1.76 corrects the CI harness account literal to NT AUTHORITY\LocalServ
 ## 25. Literal LocalService assertion
 
 Version 0.1.77 changes the service-account assertion from regex matching to a literal wildcard comparison. The previous Windows run successfully created the service and enabled its SID, then failed on regex parsing of the backslash in NT AUTHORITY\LocalService.
+
+
+## 26. Failed-start SCM state assertion
+
+Version 0.1.78 verifies the authoritative service state becomes Stopped and no child process remains after readiness is deliberately unavailable. It no longer requires Start-Service to throw synchronously, because SCM may accept the start request and report the host's later startup failure asynchronously.

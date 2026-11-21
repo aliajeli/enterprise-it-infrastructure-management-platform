@@ -1,3 +1,9 @@
+## 0.1.78 — Assert failed-start state instead of PowerShell exception shape
+
+- The Windows SCM smoke now successfully creates the service under LocalService, enables the EnterpriseITApi service SID, passes host/child identity validation, starts readiness, and completes graceful stop/reap.
+- The failed-readiness restart reached the expected stopped state but Start-Service did not always throw synchronously; Windows can accept the start request and report the subsequent host startup failure asynchronously. Updated the harness to assert the authoritative SCM Stopped state and absence of the child process rather than requiring a particular PowerShell exception behavior.
+- No host runtime code changed. Exact-head Windows CI must now verify the entire smoke flow.
+
 ## 0.1.77 — Avoid regex parsing of Windows service account name
 
 - The hosted Windows runner now creates the service and enables SERVICE_SID_TYPE_UNRESTRICTED successfully. The smoke script then failed because PowerShell interpreted the backslash in the NT AUTHORITY\LocalService account string as a regular-expression escape.

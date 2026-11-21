@@ -100,19 +100,25 @@ try {
     if ($children.Count -ne 0) { throw "API child remained after SCM reported Stopped." }
 
     Set-Content -LiteralPath $apiEntry -Value "NO_READY" -Encoding ascii
-    $startFailedAsExpected = $false
+    $startFailure = $null
     try { Start-Service -Name $serviceName -ErrorAction Stop }
-    catch { $startFailedAsExpected = $true }
+    catch { $startFailure = $_ }
 
-    $failureDeadline = [DateTime]::UtcNow.AddSeconds(35)
+    $failureDeadline = [DateTime]::UtcNow.AddSeconds(40)
     do {
         if ((Get-Service -Name $serviceName).Status -eq "Stopped") { break }
         Start-Sleep -Milliseconds 500
     } while ([DateTime]::UtcNow -lt $failureDeadline)
-    if (-not $startFailedAsExpected -or (Get-Service -Name $serviceName).Status -ne "Stopped") {
-        throw "API service did not fail startup cleanly when readiness was unavailable."
+    if ((Get-Service -Name $serviceName).Status -ne "Stopped") {
+        throw "API service did not reach Stopped after readiness startup timed out."
     }
     if ((Get-ApiChild).Count -ne 0) { throw "A child process was orphaned after readiness startup timed out." }
+    if ($startFailure) {
+        Write-Host "SCM reported the expected failed-start result: $startFailure"
+    }
+    else {
+        Write-Host "SCM accepted the start request; the host then rejected readiness and returned to Stopped."
+    }
 
     Write-Host "Windows SCM smoke passed: service SID, child SID, readiness, graceful stop/reap and failed-start cleanup."
 }

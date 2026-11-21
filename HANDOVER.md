@@ -1,3 +1,10 @@
+## 2026-11-21 — Assert SCM state for failed startup (v0.1.78)
+
+- The v0.1.77 Windows run got past CreateService, service-SID provisioning, parent/child token validation, readiness success, graceful service stop and child reaping.
+- The second start deliberately disabled readiness. The host returned to Stopped, but Start-Service did not necessarily throw synchronously because SCM may accept the start request and surface the service's later startup failure asynchronously.
+- Changed the harness to assert the final SCM Stopped state and zero remaining API child processes, independent of whether Start-Service itself throws. Extended the bounded observation window to 40 seconds.
+- This is a harness assertion correction; service-host runtime is unchanged.
+
 ## 2026-11-21 — Literal service-account assertion (v0.1.77)
 
 - The v0.1.76 Windows run reached CreateService SUCCESS and ChangeServiceConfig2 SUCCESS. It failed immediately afterward because the PowerShell -match operator treated the backslash in NT AUTHORITY\LocalService as a regex escape.
