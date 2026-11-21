@@ -1,7 +1,7 @@
 {
   "name": "enterprise-it-infrastructure-management-platform",
   "private": true,
-  "version": "0.1.71",
+  "version": "0.1.72",
   "description": "Centralized enterprise IT infrastructure management platform",
   "workspaces": [
     "apps/*",

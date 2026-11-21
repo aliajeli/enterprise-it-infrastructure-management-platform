@@ -1,3 +1,8 @@
+## 0.1.72 — Quote Windows virtual service-account name for SCM
+
+- Corrected the SCM smoke harness to explicitly quote the virtual account name and empty password value when passing them to sc.exe config. The v0.1.71 run confirmed service SID provisioning succeeds, but SCM still returned error 1057 while parsing the account string containing a space.
+- No host runtime changes. Exact-head Windows SCM acceptance remains pending.
+
 ## 0.1.71 — Provision service SID before virtual account assignment
 
 - Reordered the Windows SCM smoke harness to configure SERVICE_SID_TYPE_UNRESTRICTED before assigning NT SERVICE\EnterpriseITApi as the service logon identity. The previous attempt created the service but SCM/LSA returned error 1057 while resolving the virtual account before its service SID had been provisioned.

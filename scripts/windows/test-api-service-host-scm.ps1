@@ -44,7 +44,7 @@ try {
     $serviceCreated = $true
     # Create/enable the service SID first so the virtual account can be resolved by LSA.
     Invoke-Sc @("sidtype", $serviceName, "unrestricted")
-    Invoke-Sc @("config", $serviceName, "obj=", "NT SERVICE\EnterpriseITApi", "password=", "")
+    Invoke-Sc @("config", $serviceName, "obj=", '"NT SERVICE\EnterpriseITApi"', "password=", '""')
 
     & icacls.exe $root /grant "NT SERVICE\EnterpriseITApi:(OI)(CI)(RX)" /T /C | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Could not grant temporary service read/execute access to the smoke payload." }

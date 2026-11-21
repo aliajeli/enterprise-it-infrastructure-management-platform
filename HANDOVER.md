@@ -1,3 +1,9 @@
+## 2026-11-21 — Quote virtual service-account argument (v0.1.72)
+
+- The v0.1.71 Windows runner successfully created the temporary service and configured its service SID (SC ChangeServiceConfig2 SUCCESS), then returned error 1057 on the virtual service-account assignment.
+- Updated the sc.exe config arguments to include explicit quotes around NT SERVICE\EnterpriseITApi and the empty password token so the native SCM parser treats the account as one value.
+- No runtime host code changed. Continue only after exact-head Windows SCM test proves the virtual account can start and the child inherits the enabled SID.
+
 ## 2026-11-21 — Service SID provisioning order (v0.1.71)
 
 - The v0.1.70 Windows runner created the temporary SCM service successfully, but assigning the virtual service account before creating the service SID returned Win32 error 1057 (invalid account/password).

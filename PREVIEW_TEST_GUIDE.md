@@ -238,3 +238,8 @@ Version 0.1.70 also separates the sc.exe config obj= and password= option tokens
 ## 19. Service SID and virtual-account provisioning order
 
 Version 0.1.71 changes the temporary SCM smoke sequence: configure SERVICE_SID_TYPE_UNRESTRICTED first, then assign the NT SERVICE\EnterpriseITApi virtual account. The preceding run created the service but received Windows error 1057 while resolving the account. Exact-head Windows CI is required to validate the new order.
+
+
+## 20. Quote virtual service account in SCM configuration
+
+Version 0.1.72 quotes the NT SERVICE\EnterpriseITApi account value and empty password value in the native sc.exe config call. The previous runner verified SERVICE_SID_TYPE_UNRESTRICTED was applied, then failed with Win32 1057 parsing the account. Exact-head Windows CI remains the acceptance gate.
