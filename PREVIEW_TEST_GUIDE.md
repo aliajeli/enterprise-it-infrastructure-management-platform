@@ -233,3 +233,8 @@ Version 0.1.69 corrects the PowerShell invocation of sc.exe so each option name 
 ## 18. Virtual service-account SCM argument correction
 
 Version 0.1.70 also separates the sc.exe config obj= and password= option tokens from their values. SCM acceptance remains pending until the new exact-head Windows run completes.
+
+
+## 19. Service SID and virtual-account provisioning order
+
+Version 0.1.71 changes the temporary SCM smoke sequence: configure SERVICE_SID_TYPE_UNRESTRICTED first, then assign the NT SERVICE\EnterpriseITApi virtual account. The preceding run created the service but received Windows error 1057 while resolving the account. Exact-head Windows CI is required to validate the new order.

@@ -1,3 +1,8 @@
+## 0.1.71 — Provision service SID before virtual account assignment
+
+- Reordered the Windows SCM smoke harness to configure SERVICE_SID_TYPE_UNRESTRICTED before assigning NT SERVICE\EnterpriseITApi as the service logon identity. The previous attempt created the service but SCM/LSA returned error 1057 while resolving the virtual account before its service SID had been provisioned.
+- The current attempt will verify whether this ordering resolves the account on the hosted Windows runner. No service-host runtime code changed; exact-head SCM acceptance remains pending.
+
 ## 0.1.70 — Correct virtual service-account SCM argument tokenization
 
 - Corrected the remaining sc.exe config invocation so obj= and password= option names are passed separately from their values, matching the native Service Controller command-line contract.

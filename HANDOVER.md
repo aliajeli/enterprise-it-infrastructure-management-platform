@@ -1,3 +1,9 @@
+## 2026-11-21 — Service SID provisioning order (v0.1.71)
+
+- The v0.1.70 Windows runner created the temporary SCM service successfully, but assigning the virtual service account before creating the service SID returned Win32 error 1057 (invalid account/password).
+- The harness now configures the service SID type as UNRESTRICTED first, then assigns NT SERVICE\EnterpriseITApi as the service account. This tests the expected SCM/LSA provisioning order.
+- The service had not been started in the failed attempt; the harness finally block removed the temporary service and payload. Do not claim the SCM smoke passed until this exact revision completes.
+
 ## 2026-11-21 — Virtual service-account SCM argument correction (v0.1.70)
 
 - Follow-up static review found the sc.exe config call still passed obj= plus its account value and password= plus its empty value as single arguments. Split both pairs into separate native arguments, consistent with the documented sc.exe syntax.
