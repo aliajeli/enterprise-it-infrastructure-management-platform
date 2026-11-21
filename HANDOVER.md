@@ -1,3 +1,14 @@
+## 2026-11-21 — Implement Windows Worker service foundation (v0.1.87)
+
+- Added the dedicated .NET 10 `EnterpriseITWorker` host, fixed Node entry point, loopback readiness probe at 127.0.0.1:13002/health/ready, parent/child enabled service-SID checks and bounded process lifecycle.
+- Added a host-owned stdin `SHUTDOWN` command to the Worker process. The Worker stops polling, wakes an in-flight poll delay, closes its health listener and disconnects Prisma before process exit.
+- Added `NT SERVICE\\EnterpriseITWorker` provisioning policy with unrestricted service SID, bounded SCM recovery, immutable versioned Program Files ACLs, mismatched-existing-service refusal and side-effect-free `-WhatIf`; it never starts the service.
+- Added Windows CI build and lifecycle/provisioning policy tests. Exact-head CI must be checked after commit.
+- Worker alone receives `DATABASE_URL` through an explicit child-process environment allow-list. Secure per-service ProgramData configuration/ACL provisioning is not yet implemented and remains a release gate; Web does not receive this variable.
+- Discovery handlers remain absent and the source allow-list remains empty. The Worker can recover expired leases but cannot claim discovery runs or send requests to equipment.
+- API, Web and Worker host/provisioning slices are implemented (3/5); Edge and PostgreSQL Windows packaging remain. Clean-VM virtual-account acceptance remains open.
+- Installer path remains 3/9 milestones (33%); milestone 4 is active, with 6 milestones remaining. No installer or Release exists. PR #9 remains Draft/unmerged; PR #8 and PR #7 remain unmerged.
+
 ## 2026-11-21 — Record successful Web service CI acceptance (v0.1.86)
 
 - Verified the exact v0.1.85 implementation commit `a387f64b3f7f07ef40cabd1daf840db56fe13c67` in both GitHub Actions runs: Push `44925272158` and PR `44925278555`; both completed successfully.

@@ -1,3 +1,11 @@
+## 0.1.87 — Implement the Windows Worker service foundation
+
+- Added a dedicated .NET 10 SCM host for `EnterpriseITWorker`, fixed Node 26/Worker entry point, loopback-only readiness at 127.0.0.1:13002 and parent/child enabled service-SID validation.
+- Added bounded startup/readiness/shutdown, graceful stdin `SHUTDOWN` control, process-tree termination/reaping and lifecycle policy tests.
+- Added guarded versioned Program Files provisioning for `NT SERVICE\\EnterpriseITWorker`, unrestricted service SID, bounded SCM recovery, immutable payload ACL, mismatch refusal and side-effect-free WhatIf. Provisioning does not start the service.
+- Added Windows CI build, lifecycle and provisioning-policy gates.
+- Worker discovery source allow-list remains empty; no discovery jobs are claimed or device requests sent. Protected per-service database configuration and clean-VM virtual-account acceptance remain release gates.
+
 ## 0.1.86 — Record Web service hosted CI acceptance
 
 - Updated the Windows service deployment decision table to mark Web host, launcher, standalone staging and provisioning policy as implemented while retaining clean-VM virtual-account acceptance as an open release gate.

@@ -163,6 +163,16 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-web-service-provisioning.ps1
 
+      - name: Build Windows Worker service host
+        run: dotnet build apps/worker/windows/service-host/EnterpriseIT.WorkerServiceHost.csproj --configuration Release
+
+      - name: Test Windows Worker service-host lifecycle
+        run: dotnet test apps/worker/windows/service-host-tests/EnterpriseIT.WorkerServiceHost.Tests.csproj --configuration Release
+
+      - name: Test Worker service provisioning policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-worker-service-provisioning.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
