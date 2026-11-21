@@ -1,3 +1,8 @@
+## 0.1.65 — Correct wait-cancellation policy test
+
+- Corrected the cancellation test to inject an OperationCanceledException from the wait operation while the helper's own reap deadline remains unexpired. This accurately verifies that an independent wait cancellation is propagated rather than translated into a reap TimeoutException.
+- No runtime behavior changed; the remaining v0.1.64 policy tests are retained.
+
 ## 0.1.64 — Expand API child-process termination policy tests
 
 - Added deterministic coverage that external cancellation during the reap wait remains an OperationCanceledException and is not misreported as the helper's own timeout.

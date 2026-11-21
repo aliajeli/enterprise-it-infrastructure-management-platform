@@ -97,16 +97,18 @@ public sealed class ChildProcessTerminationTests
                 TimeSpan.FromMilliseconds(50)));
     }
     [Fact]
-    public async Task ExternalCancellation_IsPropagatedWithoutBecomingReapTimeout()
+    public async Task WaitCancellation_IsPropagatedWhenReapDeadlineHasNotExpired()
     {
-        var actual = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+        var cancellation = new OperationCanceledException("Wait operation was cancelled.");
+
+        var actual = await Assert.ThrowsAsync<OperationCanceledException>(
             () => ChildProcessTermination.TerminateAndReapAsync(
                 () => false,
                 () => { },
-                token => Task.Delay(Timeout.InfiniteTimeSpan, token),
+                _ => Task.FromException(cancellation),
                 TimeSpan.FromSeconds(5)));
 
-        Assert.IsNotType<TimeoutException>(actual);
+        Assert.Same(cancellation, actual);
     }
 
     [Fact]

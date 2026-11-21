@@ -1,3 +1,8 @@
+## 2026-11-21 — Correct wait-cancellation policy test (v0.1.65)
+
+- Corrected the cancellation test fixture: the termination helper owns its bounded reap token, so the test now injects an independent wait cancellation and verifies that exact exception propagates while the helper deadline remains unexpired.
+- Runtime code is unchanged. The v0.1.64 test addition is retained with this fixture correction. Exact-head Push/PR CI required; PR #8 remains Draft/open/unmerged.
+
 ## 2026-11-21 — Expand API child-process termination policy tests (v0.1.64)
 
 - Added tests for external cancellation propagation, unexpected kill-state failures and rejection of a non-positive reap deadline before process actions.
