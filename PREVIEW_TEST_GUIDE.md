@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.63`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.64`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -206,4 +206,4 @@ The Windows CI workflow runs:
 dotnet test apps/api/windows/service-host-tests/EnterpriseIT.ApiServiceHost.Tests.csproj --configuration Release
 ```
 
-The test project covers an already-exited child, successful termination/reap, an exit race during the kill request, kill failure propagation, and bounded reap timeout. These deterministic tests do not install a Windows service and do not replace the clean-VM SCM/service-SID/process-tree acceptance checks in the provisioning design.
+The test project covers an already-exited child, successful termination/reap, an exit race during the kill request, kill failure propagation, bounded reap timeout, external cancellation propagation, unexpected kill-state failure propagation and rejection of a non-positive reap deadline. These deterministic tests do not install a Windows service and do not replace the clean-VM SCM/service-SID/process-tree acceptance checks in the provisioning design.

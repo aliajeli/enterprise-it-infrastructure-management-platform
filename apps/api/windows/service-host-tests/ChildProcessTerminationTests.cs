@@ -96,4 +96,46 @@ public sealed class ChildProcessTerminationTests
                 token => Task.Delay(Timeout.InfiniteTimeSpan, token),
                 TimeSpan.FromMilliseconds(50)));
     }
+    [Fact]
+    public async Task ExternalCancellation_IsPropagatedWithoutBecomingReapTimeout()
+    {
+        var actual = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => ChildProcessTermination.TerminateAndReapAsync(
+                () => false,
+                () => { },
+                token => Task.Delay(Timeout.InfiniteTimeSpan, token),
+                TimeSpan.FromSeconds(5)));
+
+        Assert.IsNotType<TimeoutException>(actual);
+    }
+
+    [Fact]
+    public async Task UnexpectedInvalidOperationDuringKill_IsPropagated()
+    {
+        var exception = new InvalidOperationException("Unexpected process state.");
+
+        var actual = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ChildProcessTermination.TerminateAndReapAsync(
+                () => false,
+                () => throw exception,
+                _ => Task.CompletedTask,
+                TimeSpan.FromSeconds(1)));
+
+        Assert.Same(exception, actual);
+    }
+
+    [Fact]
+    public async Task NonPositiveReapTimeout_IsRejectedBeforeProcessActions()
+    {
+        var killCount = 0;
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => ChildProcessTermination.TerminateAndReapAsync(
+                () => false,
+                () => killCount++,
+                _ => Task.CompletedTask,
+                TimeSpan.Zero));
+
+        Assert.Equal(0, killCount);
+    }
 }

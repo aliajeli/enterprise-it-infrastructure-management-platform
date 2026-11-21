@@ -1,3 +1,9 @@
+## 2026-11-21 — Expand API child-process termination policy tests (v0.1.64)
+
+- Added tests for external cancellation propagation, unexpected kill-state failures and rejection of a non-positive reap deadline before process actions.
+- Runtime code is unchanged. The tests distinguish caller cancellation from the helper's own reap timeout and ensure only the explicit already-exited race is suppressed.
+- Exact-head Push and PR CI required. Real Windows SCM, service SID inheritance, ACL and process-tree acceptance remain outstanding. PR #8 remains Draft/open/unmerged; no installer or Release exists.
+
 ## 2026-11-21 — Correct API child reap test fixture (v0.1.63)
 
 - Corrected the successful terminate-and-reap test so the fake process remains active after the kill callback and exits only during the wait callback. The test now asserts one kill, one wait and final exited state.

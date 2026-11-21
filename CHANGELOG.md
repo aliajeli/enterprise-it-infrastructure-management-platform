@@ -1,3 +1,10 @@
+## 0.1.64 — Expand API child-process termination policy tests
+
+- Added deterministic coverage that external cancellation during the reap wait remains an OperationCanceledException and is not misreported as the helper's own timeout.
+- Added coverage proving unexpected InvalidOperationException failures from process-tree termination are propagated; only the verified already-exited race is treated as benign.
+- Added validation coverage proving a non-positive reap deadline is rejected before any process action.
+- Runtime service-host behavior is unchanged. These tests strengthen the policy contract but do not replace real Windows SCM/process-tree acceptance testing.
+
 ## 0.1.63 — Verify the API child reap wait path
 
 - Corrected the successful-termination unit fixture so the fake child remains running after the kill request and transitions to exited only when the reap wait delegate runs. The test now proves that the wait path is actually invoked, rather than returning early as already exited.
