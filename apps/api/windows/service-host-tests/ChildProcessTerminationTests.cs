@@ -34,20 +34,18 @@ public sealed class ChildProcessTerminationTests
 
         await ChildProcessTermination.TerminateAndReapAsync(
             () => exited,
-            () =>
-            {
-                killCount++;
-                exited = true;
-            },
+            () => killCount++,
             _ =>
             {
                 waitCount++;
+                exited = true;
                 return Task.CompletedTask;
             },
             TimeSpan.FromSeconds(1));
 
         Assert.Equal(1, killCount);
-        Assert.Equal(0, waitCount);
+        Assert.Equal(1, waitCount);
+        Assert.True(exited);
     }
 
     [Fact]

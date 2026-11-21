@@ -1,3 +1,8 @@
+## 0.1.63 — Verify the API child reap wait path
+
+- Corrected the successful-termination unit fixture so the fake child remains running after the kill request and transitions to exited only when the reap wait delegate runs. The test now proves that the wait path is actually invoked, rather than returning early as already exited.
+- This is a test-assertion correction; runtime termination behavior is unchanged.
+
 ## 0.1.62 — Test bounded Windows API child-process cleanup
 
 - Extracted the API child terminate-and-reap policy into a small internal component shared by startup-failure and normal shutdown paths. Both paths now use the same bounded wait and process-exit race handling.

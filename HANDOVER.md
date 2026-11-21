@@ -1,3 +1,9 @@
+## 2026-11-21 — Correct API child reap test fixture (v0.1.63)
+
+- Corrected the successful terminate-and-reap test so the fake process remains active after the kill callback and exits only during the wait callback. The test now asserts one kill, one wait and final exited state.
+- Runtime code is unchanged from v0.1.62. This correction prevents a false-positive test that could previously return before exercising the reap wait.
+- Exact-head Push and PR CI required. PR #8 remains Draft/open/unmerged; no installer or Release exists.
+
 ## 2026-11-21 — Add API child-process lifecycle policy tests (v0.1.62)
 
 - Consolidated startup and stop cleanup onto the same bounded child-process terminate-and-reap policy. The policy handles already-exited processes and the race where the process exits while Kill is being requested; kill and reap failures remain surfaced.
