@@ -187,9 +187,21 @@ internal sealed class NodeApiProcessService : BackgroundService
                     {
                         // The child exited while the stop request was being delivered.
                     }
+                    catch (IOException exception)
+                    {
+                        _logger.LogWarning(
+                            exception,
+                            "The API shutdown command could not be delivered; terminating the child process tree.");
+                    }
+                    catch (InvalidOperationException exception)
+                    {
+                        _logger.LogWarning(
+                            exception,
+                            "The API shutdown channel was unavailable; terminating the child process tree.");
+                    }
                 }
 
-                // Cancellation of the host stop token must not bypass child cleanup.
+                // Cancellation or a broken stdin pipe must not bypass child cleanup.
                 if (!process.HasExited)
                 {
                     try

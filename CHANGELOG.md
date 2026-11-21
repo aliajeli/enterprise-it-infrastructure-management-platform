@@ -1,3 +1,8 @@
+## 0.1.60 — Fall back to process termination when shutdown IPC fails
+
+- Hardened Windows API service shutdown when the child process stdin pipe is broken, closed or otherwise unavailable. I/O and invalid-operation failures while sending the graceful shutdown command are logged and fall through to the existing bounded process-tree termination/reap path instead of skipping termination.
+- This does not claim that Windows can always terminate a protected or unresponsive process; failure to terminate/reap remains a critical shutdown error.
+
 ## 0.1.59 — Bound Windows API service startup and shutdown
 
 - Bound the synchronous Windows service startup readiness wait to 20 seconds. If the API is not ready within that startup budget, the host cancels its background startup and waits for the child-process cleanup path instead of keeping SCM startup pending for the full 60-second readiness window.

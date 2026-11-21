@@ -1,3 +1,9 @@
+## 2026-11-21 — Handle failed API shutdown command delivery (v0.1.60)
+
+- NodeApiProcessService.StopAsync now treats a broken/closed stdin pipe or an invalid shutdown channel as a failed graceful-shutdown attempt, logs the condition and continues into the existing process-tree termination/reap path.
+- This closes a path where an IOException during SHUTDOWN delivery could skip the explicit child termination attempt. Termination/reap failures remain surfaced as critical errors.
+- Version and all root package-lock version entries updated to 0.1.60. Exact-head CI required. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-21 — Bound Windows API service startup and shutdown (v0.1.59)
 
 - `NodeApiProcessService.StartAsync` now limits the synchronous readiness wait to 20 seconds. If readiness is not reached, it cancels the background service and awaits the normal child cleanup path; the 60-second background readiness loop no longer holds the SCM start phase open.
