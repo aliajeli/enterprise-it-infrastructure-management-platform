@@ -10,7 +10,7 @@ internal sealed class NodeWorkerProcessService : BackgroundService
     private static readonly Uri ReadyUri=new("http://127.0.0.1:13002/health/ready");
     private readonly ILogger<NodeWorkerProcessService> logger; private readonly TaskCompletionSource ready=new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Process? child; private Task? stdout,stderr;
-    internal NodeWorkerProcessService(ILogger<NodeWorkerProcessService> logger)=>this.logger=logger;
+    public NodeWorkerProcessService(ILogger<NodeWorkerProcessService> logger)=>this.logger=logger;
     public override async Task StartAsync(CancellationToken token)
     {
         await base.StartAsync(token);

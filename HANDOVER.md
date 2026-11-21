@@ -1,3 +1,12 @@
+## 2026-11-22 — Fix Worker SCM dependency-injection activation (v0.1.106)
+
+- Inspected the exact failing Windows Actions event log from run 44951401240. The service process did not fail because of Node DLL staging or child discovery: .NET Runtime event 1026 reported `InvalidOperationException: A suitable constructor for type 'EnterpriseIT.WorkerServiceHost.NodeWorkerProcessService' could not be located`.
+- Root cause: `NodeWorkerProcessService` was registered through `AddHostedService<T>()`, but its only `ILogger<T>` constructor was `internal`. The default Microsoft DI activator requires a public constructor for this registration.
+- Changed the constructor to public. The class remains internal, so this does not expand the application API surface; it makes the registered hosted service constructible by DI.
+- The Windows SCM smoke exercises service start, enabled service SID, DPAPI configuration, child startup, loopback readiness, graceful stop and child reaping. Exact-head Push and PR CI must pass before this regression is considered fixed.
+- Root package/lock version advanced to 0.1.106. No Release or installer is created: complete offline payload, repair/uninstall, clean-VM virtual-account, TLS certificate/private-key, PostgreSQL lifecycle and backup/restore acceptance gates remain open.
+- PR #9 remains Draft/open/unmerged. PR #7/#8 remain unmerged.
+
 ## 2026-11-22 — Investigate Worker SCM startup regression (v0.1.105)
 
 - Current branch head before this diagnostic commit: `f167b1a7755678c8bd46abeae705bd9dbb14c1c8` (v0.1.104).

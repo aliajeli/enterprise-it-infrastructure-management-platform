@@ -1,3 +1,9 @@
+## 0.1.106 — Fix Worker Windows SCM host activation
+
+- Fixed the Worker hosted-service constructor visibility required by the default .NET dependency-injection activator. The previous internal constructor caused the Windows SCM process to terminate before starting its Node child.
+- Root cause was confirmed from the hosted Windows Application/.NET Runtime event logs; this is a code fix, not a test-only workaround.
+- Exact-head Windows SCM integration and full CI validation are pending. No installer or GitHub Release is produced.
+
 ## 0.1.105 — Diagnose Worker SCM startup failures
 
 - Extended the Worker SCM smoke to stage Node adjacent runtime DLL dependencies alongside node.exe.
