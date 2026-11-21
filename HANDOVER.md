@@ -1,3 +1,9 @@
+## 2026-11-21 — Harden Web launcher validation (v0.1.85)
+
+- Replaced require-based imports in the standalone Web launcher with dynamic imports to comply with the strict repository lint policy.
+- Shutdown now waits for active HTTP connections within a bounded window, forcibly closes remaining connections at the deadline, then closes the Next application.
+- The previous v0.1.84 CI run exposed the lint violation; it is corrected here. CI for this commit must be checked independently.
+
 ## 2026-11-21 — Implement Windows Web service foundation (v0.1.84)
 
 - Added a dedicated .NET 10 Windows SCM host under apps/web/windows/service-host. It supervises bundled Node 26 and the staged Next.js standalone launcher as EnterpriseITWeb.

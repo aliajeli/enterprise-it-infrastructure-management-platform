@@ -1,3 +1,8 @@
+## 0.1.85 — Fix Web launcher lint compatibility
+
+- Replaced CommonJS require calls in the Web standalone launcher with runtime dynamic imports so the repository ESLint policy passes without weakening lint rules.
+- Made graceful drain close active connections after the bounded drain window, then close the Next.js application.
+
 ## 0.1.84 — Implement the Windows Web service foundation
 
 - Added a dedicated .NET 10 Windows SCM host for Next.js, using the independent EnterpriseITWeb virtual account and validating the enabled service SID in parent and child tokens.
