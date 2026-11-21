@@ -13,9 +13,7 @@ $configPath=Join-Path $configRoot "database.config.dpapi"
 $serviceCreated=$false;$configCreated=$false
 function Invoke-WorkerSmokeSc([string[]]$Arguments){& sc.exe @Arguments|Out-Null;if($LASTEXITCODE-ne 0){throw "sc.exe operation failed: $($Arguments -join ' '): $LASTEXITCODE"}}
 function Get-WorkerSmokeChild {
- $svc=Get-CimInstance Win32_Service -Filter "Name='EnterpriseITWorker'"
- if($null -eq $svc -or $svc.ProcessId -eq 0){return @()}
- @(Get-CimInstance Win32_Process | Where-Object { $_.ParentProcessId -eq $svc.ProcessId })
+ @(Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path -ieq (Join-Path $runtime "node.exe") })
 }
 try{
  if(Test-Path $root){Remove-Item $root -Recurse -Force}
@@ -51,7 +49,7 @@ try{
  if((Get-Service -Name $serviceName).Status-ne "Running"){throw "Worker service did not reach Running."}
  $childDeadline=[DateTime]::UtcNow.AddSeconds(10)
  do{$children=Get-WorkerSmokeChild;if($children.Count-eq 1){break};Start-Sleep -Milliseconds 250}while([DateTime]::UtcNow-lt $childDeadline)
- if($children.Count-ne 1){throw "Expected one Worker child after SCM startup; found $($children.Count)."}
+ if($children.Count-ne 1){$allNode=@(Get-Process -Name "node" -ErrorAction SilentlyContinue|Select-Object Id,Path);Write-Host ("Worker service state: "+(Get-Service -Name $serviceName).Status);Write-Host ("Node processes: "+($allNode|ConvertTo-Json -Compress));throw "Expected one Worker child after SCM startup; found $($children.Count)."}
  $childPid=[uint32]$children[0].ProcessId
  $ready=$false
  for($i=0;$i-lt 20;$i++){try{$response=Invoke-WebRequest -Uri "http://127.0.0.1:13002/health/ready" -UseBasicParsing -TimeoutSec 2;if($response.StatusCode-eq 200){$ready=$true;break}}catch{};Start-Sleep -Milliseconds 500}

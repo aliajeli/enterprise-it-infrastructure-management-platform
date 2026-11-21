@@ -1,3 +1,8 @@
+## 0.1.103 — Correct Worker SCM child executable detection
+
+- Updated the Worker SCM smoke to locate the child by its exact staged node.exe image path instead of relying on CIM parent PID metadata.
+- Added sanitized process diagnostics when the expected child is not found; the test still captures the PID and verifies it exits after graceful stop.
+
 ## 0.1.102 — Verify Worker child PID is actually reaped
 
 - Strengthened the Worker SCM smoke to capture the child PID after readiness and verify that exact process no longer exists after SCM stop.

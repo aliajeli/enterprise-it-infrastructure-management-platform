@@ -1,3 +1,9 @@
+## 2026-11-21 — Worker SCM child executable detection (v0.1.103)
+
+- Worker SCM smoke's ParentProcessId-based filter did not match the hosted runner's service process metadata even though the Worker service reached Running.
+- Replaced the filter with an exact executable-path comparison against the test's staged runtime\\node.exe and added non-secret process diagnostics for failures.
+- The smoke captures the child's PID and checks that exact PID is gone after SCM stop.
+
 ## 2026-11-21 — Worker SCM smoke reap assertion (v0.1.102)
 
 - Worker SCM smoke now captures the actual child process PID by comparing its ParentProcessId to the service host PID.
