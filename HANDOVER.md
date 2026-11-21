@@ -1,3 +1,10 @@
+## 2026-11-22 — Offline deployment archive packaging groundwork (v0.1.117)
+
+- v0.1.116 is validated: exact-head Push run 44963745825 and PR run 44963750352 both passed. Push passed all three jobs; PR passed Platform validation and Windows API runtime smoke, with lockfile bootstrap skipped as expected.
+- Added a packager that accepts an already staged deployment tree, checks for Node.js, API/Worker/Database, Web standalone, four Windows service hosts and PostgreSQL 18 binaries, then produces a ZIP with a verified SHA-256 inventory manifest and a separate archive checksum.
+- The packager is deliberately non-overwriting and uses temporary output plus promotion. It does not sign the payload, create an installer, configure Windows services or perform installation.
+- v0.1.117 is pending exact-head CI. PR #9 remains open/unmerged; PR #7/#8 remain unmerged. No MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-22 — Relocatable API/Worker workspace promotion correction (v0.1.116)
 
 - Exact-head v0.1.115 Push run 44962893785 and PR run 44962897297 both failed in the Windows API runtime smoke at `Test API and Worker production runtime staging`. All earlier Windows service-host builds, SCM lifecycle tests, service provisioning policy tests, five-service orchestration policy, Node runtime policy, Web staging policy, offline manifest policy, DPAPI/keyring helper builds and installer preflight passed. Linux/PostgreSQL validation also passed.

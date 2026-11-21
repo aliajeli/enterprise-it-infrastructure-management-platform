@@ -1,3 +1,10 @@
+## 0.1.117 — Assemble immutable offline deployment archives
+
+- Added a packaging step for a previously staged deployment tree. It requires the versioned Node.js runtime, API/Worker/Database outputs, Web standalone runtime, four Windows service hosts and pinned PostgreSQL binaries before packaging.
+- The packager copies the staged tree into a temporary sibling directory, creates and verifies the SHA-256 payload manifest, creates a ZIP archive, and writes a separate SHA-256 checksum sidecar. Existing output files are never overwritten.
+- Added Windows policy tests for dry-run behavior, required-component validation, archive checksum verification, post-extraction manifest verification and overwrite rejection.
+- This produces an integrity-checked offline payload archive only. It does not create an installer, digitally sign the archive/manifest, provision services, or prove clean-machine installation. Exact-head Push and PR CI are required.
+
 ## 0.1.116 — Make production workspace packages relocatable
 
 - Replaced npm's temporary-root workspace links with physical copies under the staged `node_modules/@platform` namespace before promotion. This prevents package resolution from depending on the disposable staging directory after promotion.

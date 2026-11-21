@@ -237,6 +237,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-offline-payload-manifest.ps1
 
+      - name: Test offline deployment archive packaging
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-offline-payload-package.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
