@@ -1,3 +1,13 @@
+## 2026-11-21 — Worker service exact-head CI acceptance (v0.1.88)
+
+- Verified commit `0562704e691e4898b319e38d11f413817dd6e884` in both exact-head GitHub Actions runs: Push `44933005081` and PR `44933009547`; both completed successfully.
+- Linux platform validation passed dependency audit, lint, typecheck, unit tests, PostgreSQL backup/restore and production build.
+- Windows runtime validation passed API and Web host tests, Worker host build, Worker lifecycle tests, Worker provisioning policy tests, Credential Vault helper checks, Windows preflight, Windows API typecheck/tests/build.
+- Worker SCM host/provisioning implementation is CI-verified. Actual `NT SERVICE\\EnterpriseITWorker` acceptance on a clean supported Windows Server VM and protected per-service ProgramData database configuration/ACL remain release gates.
+- Worker source allow-list remains empty; no discovery jobs are claimed and no device/network requests are emitted. The host fails closed if its required `DATABASE_URL` service configuration is absent.
+- API, Web and Worker host/provisioning slices are implemented (3/5); Edge and PostgreSQL Windows packaging remain. Installer milestone 4 remains active; installer path remains 3/9 (33%), with 6 milestones remaining. No installer or Release exists.
+- PR #9 remains Draft/open/unmerged; PR #8 and PR #7 remain Draft/open/unmerged.
+
 ## 2026-11-21 — Implement Windows Worker service foundation (v0.1.87)
 
 - Added the dedicated .NET 10 `EnterpriseITWorker` host, fixed Node entry point, loopback readiness probe at 127.0.0.1:13002/health/ready, parent/child enabled service-SID checks and bounded process lifecycle.

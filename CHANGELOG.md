@@ -1,3 +1,10 @@
+## 0.1.88 — Record Worker service hosted CI acceptance
+
+- Recorded successful exact-head validation for Worker service foundation commit 0562704e691e4898b319e38d11f413817dd6e884.
+- Push run 44933005081 and PR run 44933009547 both completed successfully across Linux platform validation and Windows runtime validation.
+- Windows CI passed Worker host compilation, Worker lifecycle tests and Worker provisioning policy tests, in addition to the existing API/Web/Credential Vault/installer-preflight gates.
+- Hosted CI success does not prove clean-VM acceptance of the NT SERVICE virtual account or protected per-service database configuration; both remain release gates.
+
 ## 0.1.87 — Implement the Windows Worker service foundation
 
 - Added a dedicated .NET 10 SCM host for `EnterpriseITWorker`, fixed Node 26/Worker entry point, loopback-only readiness at 127.0.0.1:13002 and parent/child enabled service-SID validation.

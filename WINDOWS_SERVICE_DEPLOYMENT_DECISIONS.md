@@ -55,7 +55,7 @@ Each service has bounded startup, graceful shutdown and child-process reaping. A
 ## Release gates still required
 
 - Pin exact PostgreSQL 18 patch/build and verify redistribution/licensing, service registration, data ownership and clean-VM install/upgrade behavior.
-- Complete protected Worker database configuration, then run clean-VM virtual-account acceptance. Worker SCM host, parent/child SID validation, bounded lifecycle tests and provisioning policy are implemented and included in hosted Windows CI. The Web host, parent/child service SID validation, bounded lifecycle tests and provisioning policy are implemented and pass hosted Windows CI; clean-VM virtual-account acceptance remains pending.
+- Complete protected Worker database configuration, then run clean-VM virtual-account acceptance. Worker SCM host, parent/child SID validation, bounded lifecycle tests and provisioning policy are implemented and included in hosted Windows CI and the exact-head Push/PR runs completed successfully. The Web host, parent/child service SID validation, bounded lifecycle tests and provisioning policy are implemented and pass hosted Windows CI; clean-VM virtual-account acceptance remains pending.
 - Implement Edge host and validate TLS certificate import, private-key ACLs, SNI/hostname validation, WSS proxying and failure behavior.
 - Implement provisioning scripts and policy tests for all services; verify idempotency and refuse unexpected pre-existing services.
 - Run a clean supported Windows Server VM acceptance using the actual virtual service accounts. Hosted CI's LocalService SCM smoke is not proof of production virtual-account provisioning.
