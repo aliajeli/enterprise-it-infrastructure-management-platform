@@ -1,3 +1,11 @@
+## 2026-11-21 — Testable bounded API child shutdown (v0.1.67)
+
+- Extracted graceful shutdown orchestration from NodeApiProcessService.StopAsync into ApiChildShutdown, called by the production service host and parameterized with narrow process/pipe delegates for deterministic testing.
+- The coordinator validates its timeout, handles an already-exited child, requests the fixed SHUTDOWN command, waits within a linked bounded deadline, and falls back to the existing process-tree terminate/reap policy after timeout, I/O failure, unavailable control channel or premature wait completion.
+- Host cancellation triggers child cleanup before cancellation is rethrown. If cleanup also fails, both exceptions are preserved in an AggregateException.
+- Added focused Windows-targeted tests for graceful success, broken pipe, graceful timeout, cancellation cleanup, invalid control state, premature wait completion and timeout validation.
+- This does not provision or register SCM services, prove actual process-tree termination, or establish clean-VM service-SID/ACL acceptance. PR #8 remains Draft/open/unmerged; no installer or Release exists.
+
 ## 2026-11-21 — Verify child exit after reap wait (v0.1.66)
 
 - The shared child terminate-and-reap policy now checks the process-exited postcondition after its wait operation completes. A premature wait completion is reported as InvalidOperationException and is not silently accepted as a successful reap.

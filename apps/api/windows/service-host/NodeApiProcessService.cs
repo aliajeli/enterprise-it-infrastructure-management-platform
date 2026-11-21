@@ -191,46 +191,27 @@ internal sealed class NodeApiProcessService : BackgroundService
         {
             try
             {
-                if (!process.HasExited)
-                {
-                    try
+                await ApiChildShutdown.StopAsync(
+                    () => process.HasExited,
+                    async token =>
                     {
                         await process.StandardInput.WriteLineAsync("SHUTDOWN");
-                        await process.StandardInput.FlushAsync(cancellationToken);
+                        await process.StandardInput.FlushAsync(token);
                         process.StandardInput.Close();
-
-                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
-                            cancellationToken);
-                        timeout.CancelAfter(GracefulShutdownTimeout);
-                        await process.WaitForExitAsync(timeout.Token);
-                    }
-                    catch (OperationCanceledException)
+                    },
+                    process.WaitForExitAsync,
+                    () => TerminateAndReapAsync(
+                        process,
+                        "Service shutdown requires API child process-tree termination."),
+                    GracefulShutdownTimeout,
+                    cancellationToken,
+                    exception =>
                     {
-                        _logger.LogWarning(
-                            "API child process did not complete graceful shutdown before the stop deadline; terminating its process tree.");
-                    }
-                    catch (InvalidOperationException) when (process.HasExited)
-                    {
-                        // The child exited while the stop request was being delivered.
-                    }
-                    catch (IOException exception)
-                    {
-                        _logger.LogWarning(
-                            exception,
-                            "The API shutdown command could not be delivered; terminating the child process tree.");
-                    }
-                    catch (InvalidOperationException exception)
-                    {
-                        _logger.LogWarning(
-                            exception,
-                            "The API shutdown channel was unavailable; terminating the child process tree.");
-                    }
-                }
-
-                // Cancellation or a broken stdin pipe must not bypass child cleanup.
-                await TerminateAndReapAsync(
-                    process,
-                    "Service shutdown requires API child process-tree termination.");
+                        if (exception is null)
+                            _logger.LogWarning("API child process did not complete graceful shutdown; terminating its process tree.");
+                        else
+                            _logger.LogWarning(exception, "The API graceful-shutdown channel did not complete; terminating the child process tree.");
+                    });
             }
             finally
             {

@@ -207,3 +207,10 @@ dotnet test apps/api/windows/service-host-tests/EnterpriseIT.ApiServiceHost.Test
 ```
 
 The test project covers an already-exited child, successful termination/reap, an exit race during the kill request, kill failure propagation, bounded reap timeout, external cancellation propagation, unexpected kill-state failure propagation and rejection of a non-positive reap deadline and rejection of a wait that completes without confirming process exit. These deterministic tests do not install a Windows service and do not replace the clean-VM SCM/service-SID/process-tree acceptance checks in the provisioning design.
+
+
+## 15. Windows API graceful-shutdown orchestration unit tests
+
+The Windows-targeted service-host test project exercises the production shutdown coordinator used by NodeApiProcessService.StopAsync. Tests cover an already-exited child, successful graceful command/wait, a broken control pipe, graceful deadline expiry, host cancellation followed by child cleanup, unexpected control-channel state, a wait that completes without child exit, and invalid timeout configuration.
+
+These tests use injected delegates and do not launch a real Node process or install a Windows SCM service. They complement, but do not replace, clean-VM tests for the dedicated service identity, inherited child token, actual process-tree termination and service stop behavior.

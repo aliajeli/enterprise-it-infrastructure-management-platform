@@ -1,3 +1,10 @@
+## 0.1.67 — Testable bounded API child shutdown orchestration
+
+- Extracted the API host's graceful-stop and forced-reap decision path into a deterministic internal coordinator used by the production StopAsync implementation.
+- Added Windows-targeted tests for already-exited children, successful graceful shutdown, broken stdin/control pipe, graceful timeout, host cancellation with cleanup, unexpected control-channel state, premature wait completion and invalid timeout configuration.
+- Host cancellation remains observable after the child cleanup attempt; if cleanup also fails, both failures are retained. No SCM configuration or process identity behavior is changed.
+- Real Windows SCM, service-SID inheritance, ACL and process-tree acceptance tests remain required. No installer or Release is produced.
+
 ## 0.1.66 — Verify child exit after reap wait
 
 - Hardened the shared terminate-and-reap policy to verify the child process is actually exited after the wait delegate completes. A wait implementation that returns prematurely now fails closed instead of being treated as successful cleanup.
