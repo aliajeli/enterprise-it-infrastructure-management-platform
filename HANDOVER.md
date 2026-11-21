@@ -1138,3 +1138,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - `Invoke-ApiServiceProvisioning -WhatIf` now returns a dry-run plan before checking payload files or invoking SCM/SID/ACL tools; this avoids a false failure when a dry run skips service creation but later attempts `sc.exe showsid`.
 - Removed `icacls /C` so recursive ACL errors are not intentionally ignored while reporting success.
 - Added a test for the explicit dry-run result. Exact-head CI remains required; the provisioning script has not yet passed clean Windows Server acceptance under `NT SERVICE\EnterpriseITApi`.
+
+
+## 2026-11-22 — Lockfile root-version consistency gate (v0.1.111)
+- Corrected the root `packages[""]` version in `package-lock.json` from the stale `0.1.107` value to `0.1.111`, matching the root manifest and lockfile header.
+- Added a Windows-independent Node.js validation step in the platform workflow checking npm lockfile v3, root version parity, and package name/version parity for the API, Worker and Database workspaces.
+- No third-party dependency versions, workspace versions, dependency ranges, service configuration or network settings were changed.
+- Runtime packaging was inspected but not claimed complete: the current Node staging script only stages an immutable Node.js runtime and does not package API/Worker workspace outputs or production dependencies. No installer or GitHub Release is available from this change.

@@ -892,3 +892,8 @@
 - Exact-head CI for `0.1.12` failed at `npm ls --all`: the root version bump had inadvertently changed the locked `node_modules/@prisma/streams-local` package version to `0.1.12` while its resolved tarball and `@prisma/dev` dependency remained at `0.1.11`.
 - Restored the third-party package lock entry to `0.1.11`; only the root package and root lock metadata use `0.1.13`.
 - Windows API runtime smoke passed on the failed commit; Linux dependency-tree verification is rerun on this correction. No application dependency versions were intentionally changed.
+
+## 0.1.111 — Lockfile root-version consistency gate
+- Corrected the npm lockfile root package metadata to match the root package version; no third-party dependency versions or workspace dependency ranges were changed.
+- Added a CI assertion for lockfile v3, root version parity, and API/Worker/Database workspace name and version parity.
+- Runtime packaging remains a separate acceptance item; this change does not create an installer or release.

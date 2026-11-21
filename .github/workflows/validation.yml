@@ -59,6 +59,25 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
+      - name: Verify root and workspace package-lock versions
+        run: |
+          node --input-type=commonjs -e '
+            const fs = require("node:fs");
+            const root = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+            const assert = require("node:assert/strict");
+            assert.equal(lock.lockfileVersion, 3, "Expected npm lockfile v3");
+            assert.equal(lock.version, root.version, "Lockfile header version differs from package.json");
+            assert.equal(lock.packages[""]?.version, root.version, "Lockfile root package version differs from package.json");
+            for (const dir of ["apps/api", "apps/worker", "packages/database"]) {
+              const manifest = JSON.parse(fs.readFileSync(dir + "/package.json", "utf8"));
+              const entry = lock.packages[dir];
+              assert.ok(entry, "Missing workspace lock entry: " + dir);
+              assert.equal(entry.name, manifest.name, "Workspace name mismatch: " + dir);
+              assert.equal(entry.version, manifest.version, "Workspace version mismatch: " + dir);
+            }
+          '
+
       - name: Verify patched Effect resolution
         run: |
           node -e 'const lock = require("./package-lock.json"); const actual = lock.packages?.["node_modules/effect"]?.version; if (actual !== "3.22.1") { console.error("Expected effect@3.22.1, found " + String(actual)); process.exit(1); }'
