@@ -1158,3 +1158,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Requires the versioned Node.js 26 runtime to be staged first, refuses existing destinations, verifies production module resolution before promotion, and removes promoted directories if a later promotion fails.
 - Added a Windows integration test that builds/stages the runtime and resolves Database, Fastify and Argon2 modules from the staged production tree. Exact-head CI is required before acceptance.
 - Worker discovery handlers remain unregistered; packaging does not enable discovery. Installer, PostgreSQL provisioning, credential provisioning, Edge TLS acceptance, repair/uninstall and clean-VM acceptance remain open.
+
+
+## 2026-11-22 — Relocatable workspace runtime correction (v0.1.114)
+- Exact-head CI for v0.1.113 exposed a post-promotion `ERR_MODULE_NOT_FOUND` for `@platform/database`. The failure occurred after the temporary staging root was removed; npm's workspace link did not remain valid in the installed layout.
+- Replaced the three selected workspace links under `node_modules/@platform` with physical copies before final module resolution and promotion. Extended the integration test to resolve dependencies from the staged API and Worker directories after promotion.
+- This is a targeted correction to the runtime layout. It remains unaccepted until the exact-head Windows CI passes; no Installer or Release is claimed.

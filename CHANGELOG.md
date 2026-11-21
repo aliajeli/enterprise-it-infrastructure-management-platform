@@ -912,3 +912,10 @@
 - Refuses existing destinations and rolls back directories already promoted if a later promotion fails.
 - Added Windows integration coverage and CI build/staging gate for API and Worker.
 - This is runtime payload staging, not a complete installer; PostgreSQL provisioning, credentials, Windows service identities, Edge certificates, repair/uninstall and clean-VM acceptance remain outstanding.
+
+
+## 0.1.114 — Relocatable workspace runtime links
+- Fixed production payload promotion: npm workspace links may resolve to the temporary staging directory and become invalid after promotion.
+- Replaced API, Worker and Database workspace links under node_modules/@platform with physical copies before module-resolution checks and promotion.
+- Extended Windows integration smoke tests to resolve Database dependencies from both API and Worker application directories after promotion.
+- No installer or release is created by this correction.

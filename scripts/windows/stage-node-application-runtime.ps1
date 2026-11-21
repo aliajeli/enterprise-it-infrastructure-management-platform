@@ -41,6 +41,25 @@ if($MyInvocation.InvocationName -ne "."){
   try{
    & (Join-Path $plan.InstallRoot "runtime\npm.cmd") "ci" "--omit=dev" "--no-audit" "--no-fund" "--workspace" "@platform/api" "--workspace" "@platform/worker" "--workspace" "@platform/database" "--include-workspace-root=false"
    if($LASTEXITCODE -ne 0){throw "Production dependency installation failed with exit code $LASTEXITCODE."}
+   # npm workspace links can be absolute; replace them with physical package copies
+   # so the promoted payload remains valid after the temporary staging root is removed.
+   $workspaceLinks=@(
+    @{Name="@platform/api";Source=(Join-Path $temp "apps\api")},
+    @{Name="@platform/worker";Source=(Join-Path $temp "apps\worker")},
+    @{Name="@platform/database";Source=(Join-Path $temp "packages\database")}
+   )
+   $scope=Join-Path $temp "node_modules\@platform"
+   New-Item -ItemType Directory -Path $scope -Force|Out-Null
+   foreach($workspaceLink in $workspaceLinks){
+    $linkPath=Join-Path $scope ($workspaceLink.Name -replace '^@platform/','')
+    if(Test-Path -LiteralPath $linkPath){
+     $entry=Get-Item -LiteralPath $linkPath -Force
+     if(($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){throw "Expected npm workspace link at $linkPath; refusing to replace an unexpected physical directory."}
+     Remove-Item -LiteralPath $linkPath -Force
+    }
+    New-Item -ItemType Directory -Path $linkPath -Force|Out-Null
+    Get-ChildItem -LiteralPath $workspaceLink.Source -Force|Copy-Item -Destination $linkPath -Recurse -Force
+   }
    $env:DATABASE_URL="postgresql://runtime-check:runtime-check@127.0.0.1:5432/runtime_check"
    & (Join-Path $plan.InstallRoot "runtime\node.exe") "--input-type=module" "-e" "await import('@platform/database'); await import('fastify'); await import('@node-rs/argon2'); console.log('API/Worker production dependency resolution passed.');"
    if($LASTEXITCODE -ne 0){throw "Production runtime module-resolution smoke test failed."}
