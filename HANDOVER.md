@@ -1,3 +1,10 @@
+## 2026-11-21 — Self-contained Windows service host staging (v0.1.99)
+
+- Added scripts/windows/stage-windows-service-hosts.ps1 to publish API, Web, Worker and Edge .NET hosts as self-contained win-x64 single-file executables directly under the versioned Program Files payload root expected by their service provisioners.
+- The staging script validates the immutable versioned destination, refuses to overwrite any existing host executable, uses a unique temporary publish directory and cleans it in finally.
+- This stages only the four .NET host executables. Node 26 runtime, API/Worker production dependencies and dist payloads, Next.js standalone tree and PostgreSQL 18.7-1 binaries remain separate payload staging tasks; no complete offline application bundle is claimed.
+- Added Windows CI plan tests for host order, RID, self-contained and single-file policy.
+
 ## 2026-11-21 — API SCM smoke and rollback correction (v0.1.98)
 
 - API SCM smoke now provisions the expected machine-DPAPI config envelope after creating the test service and enabling its service SID, grants only SYSTEM/Administrators/service SID access, and then starts the host. The test URL is synthetic and loopback-only.

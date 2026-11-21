@@ -1,0 +1,43 @@
+[CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="High")]
+param([Parameter(Mandatory=$true)][string]$InstallRoot)
+Set-StrictMode -Version Latest
+$ErrorActionPreference="Stop"
+function Get-WindowsServiceHostStagePlan([string]$InstallRoot){
+ $root=[IO.Path]::GetFullPath($InstallRoot).TrimEnd([IO.Path]::DirectorySeparatorChar)
+ $pf=[IO.Path]::GetFullPath([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)).TrimEnd([IO.Path]::DirectorySeparatorChar)
+ if(-not $root.StartsWith(($pf+[IO.Path]::DirectorySeparatorChar),[StringComparison]::OrdinalIgnoreCase)){throw "Install root must be beneath Program Files."}
+ $parts=$root.Substring($pf.Length+1).Split([IO.Path]::DirectorySeparatorChar)
+ if($parts.Length -ne 2 -or $parts[0] -ne "EnterpriseIT" -or $parts[1] -notmatch '^\d+\.\d+\.\d+$'){throw "Install root must be Program Files\EnterpriseIT\<major.minor.patch>."}
+ $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
+ $items=@(
+  [pscustomobject]@{Service="EnterpriseITApi";Project=(Join-Path $repoRoot "apps\api\windows\service-host\EnterpriseIT.ApiServiceHost.csproj");Executable="EnterpriseIT.ApiServiceHost.exe"},
+  [pscustomobject]@{Service="EnterpriseITWeb";Project=(Join-Path $repoRoot "apps\web\windows\service-host\EnterpriseIT.WebServiceHost.csproj");Executable="EnterpriseIT.WebServiceHost.exe"},
+  [pscustomobject]@{Service="EnterpriseITWorker";Project=(Join-Path $repoRoot "apps\worker\windows\service-host\EnterpriseIT.WorkerServiceHost.csproj");Executable="EnterpriseIT.WorkerServiceHost.exe"},
+  [pscustomobject]@{Service="EnterpriseITEdge";Project=(Join-Path $repoRoot "apps\edge\windows\service-host\EnterpriseIT.EdgeServiceHost.csproj");Executable="EnterpriseIT.EdgeServiceHost.exe"}
+ )
+ [pscustomobject]@{InstallRoot=$root;RuntimeIdentifier="win-x64";SelfContained=$true;PublishSingleFile=$true;Services=$items;Immutable=$true}
+}
+if($MyInvocation.InvocationName -ne "."){
+ $plan=Get-WindowsServiceHostStagePlan -InstallRoot $InstallRoot
+ if($WhatIfPreference){[pscustomobject]@{installRoot=$plan.InstallRoot;services=@($plan.Services|ForEach-Object{$_.Service});runtimeIdentifier=$plan.RuntimeIdentifier;selfContained=$true;dryRun=$true}|ConvertTo-Json -Depth 4;return}
+ if(-not $PSCmdlet.ShouldProcess($plan.InstallRoot,"Publish and stage four self-contained Windows service hosts")){return}
+ foreach($item in $plan.Services){
+  if(-not(Test-Path -LiteralPath $item.Project -PathType Leaf)){throw "Service host project is missing: $($item.Project)"}
+  $destination=Join-Path $plan.InstallRoot $item.Executable
+  if(Test-Path -LiteralPath $destination){throw "Immutable service host payload already exists: $destination"}
+ }
+ New-Item -ItemType Directory -Path $plan.InstallRoot -Force|Out-Null
+ $tempRoot=Join-Path $env:TEMP ("enterpriseit-hosts-"+[guid]::NewGuid().ToString("N"))
+ New-Item -ItemType Directory -Path $tempRoot -Force|Out-Null
+ try{
+  foreach($item in $plan.Services){
+   $output=Join-Path $tempRoot $item.Service
+   dotnet publish $item.Project --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false --output $output
+   if($LASTEXITCODE -ne 0){throw "Self-contained publish failed for $($item.Service)."}
+   $source=Join-Path $output $item.Executable
+   if(-not(Test-Path -LiteralPath $source -PathType Leaf)){throw "Expected single-file executable was not produced for $($item.Service)."}
+   Copy-Item -LiteralPath $source -Destination (Join-Path $plan.InstallRoot $item.Executable)
+  }
+  [pscustomobject]@{installRoot=$plan.InstallRoot;services=@($plan.Services|ForEach-Object{$_.Service});runtimeIdentifier="win-x64";selfContained=$true;singleFile=$true;installerCreated=$false}|ConvertTo-Json -Depth 4
+ }finally{if(Test-Path $tempRoot){Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue}}
+}

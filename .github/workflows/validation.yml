@@ -198,6 +198,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-windows-service-orchestration.ps1
 
+      - name: Test Windows service host staging plan
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-windows-service-host-staging.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 

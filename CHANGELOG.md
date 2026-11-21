@@ -1,3 +1,9 @@
+## 0.1.99 — Add self-contained Windows service host staging
+
+- Added a versioned Program Files staging script that publishes API, Web, Worker and Edge .NET hosts as self-contained win-x64 single-file executables.
+- Staging refuses to overwrite immutable service-host executables and removes temporary publish output.
+- Added a plan-only policy test and Windows CI coverage. Node runtime, application payloads, Web standalone tree and PostgreSQL binaries remain separate staged inputs.
+
 ## 0.1.98 — Extend API SCM smoke for protected DB config
 
 - Updated the Windows SCM smoke test to create a service-SID ACLed ProgramData directory and provision the API's machine-DPAPI database config through the one-shot stdin command before service startup.
