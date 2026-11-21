@@ -10,7 +10,14 @@ $hostExe=Join-Path $root "EnterpriseIT.WorkerServiceHost.exe"
 $entry=Join-Path $workerDirectory "main.js"
 $configRoot=Join-Path $env:ProgramData "EnterpriseIT\Worker"
 $configPath=Join-Path $configRoot "database.config.dpapi"
-$serviceCreated=$false;$configCreated=$false
+$serviceCreated=$false;$configCreated=$false;$smokeStartedAt=Get-Date
+function Write-WorkerSmokeDiagnostics([datetime]$Since){
+ Write-Host "=== Worker SCM diagnostics ==="
+ foreach($scArgs in @(@("queryex",$serviceName),@("qc",$serviceName),@("qsidtype",$serviceName))){$output=(& sc.exe @scArgs 2>&1|Out-String);Write-Host $output}
+ foreach($logName in @("Application","System")){
+  try{$events=@(Get-WinEvent -FilterHashtable @{LogName=$logName;StartTime=$Since} -MaxEvents 20 -ErrorAction Stop);foreach($event in $events){$message=($event.Message -replace "[\r\n]+"," ").Trim();if($message.Length -gt 1600){$message=$message.Substring(0,1600)};Write-Host ("EVENT {0} ID={1} LEVEL={2} SOURCE={3} MESSAGE={4}" -f $logName,$event.Id,$event.LevelDisplayName,$event.ProviderName,$message)}}catch{Write-Host "No readable event entries in $logName for this smoke window."}
+ }
+}
 function Invoke-WorkerSmokeSc([string[]]$Arguments){& sc.exe @Arguments|Out-Null;if($LASTEXITCODE-ne 0){throw "sc.exe operation failed: $($Arguments -join ' '): $LASTEXITCODE"}}
 function Get-WorkerSmokeChild {
  @(Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path -ieq (Join-Path $runtime "node.exe") })
@@ -26,6 +33,8 @@ try{
  $nodeSource=$nodeCommand.Source
  if(-not(Test-Path -LiteralPath $nodeSource -PathType Leaf)){throw "Node.js 26 executable from the CI toolchain is missing."}
  Copy-Item -LiteralPath $nodeSource -Destination (Join-Path $runtime "node.exe") -Force
+ $nodeDirectory=Split-Path -Parent $nodeSource
+ Get-ChildItem -LiteralPath $nodeDirectory -Filter "*.dll" -File | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $runtime -Force }
  $nodeSmoke=@'
 const http = require("node:http");
 const server = http.createServer((request, response) => {
@@ -64,11 +73,11 @@ process.stdin.resume();
  if($out.Trim()-ne "OK"-or $err.Length-ne 0-or -not(Test-Path $configPath)){throw "Worker DPAPI smoke configuration failed."}
  Start-Service -Name $serviceName
  $deadline=[DateTime]::UtcNow.AddSeconds(35)
- do{$state=(Get-Service -Name $serviceName).Status;if($state-eq "Running"){break};if($state-eq "Stopped"){throw "Worker service stopped before reaching Running."};Start-Sleep -Milliseconds 500}while([DateTime]::UtcNow-lt $deadline)
+ do{$state=(Get-Service -Name $serviceName).Status;if($state-eq "Running"){break};if($state-eq "Stopped"){Write-WorkerSmokeDiagnostics -Since $smokeStartedAt;throw "Worker service stopped before reaching Running."};Start-Sleep -Milliseconds 500}while([DateTime]::UtcNow-lt $deadline)
  if((Get-Service -Name $serviceName).Status-ne "Running"){throw "Worker service did not reach Running."}
  $childDeadline=[DateTime]::UtcNow.AddSeconds(10)
  do{$children=Get-WorkerSmokeChild;if($children.Count-eq 1){break};Start-Sleep -Milliseconds 250}while([DateTime]::UtcNow-lt $childDeadline)
- if($children.Count-ne 1){$allNode=@(Get-Process -Name "node" -ErrorAction SilentlyContinue|Select-Object Id,Path);Write-Host ("Worker service state: "+(Get-Service -Name $serviceName).Status);Write-Host ("Node processes: "+($allNode|ConvertTo-Json -Compress));throw "Expected one Worker child after SCM startup; found $($children.Count)."}
+ if($children.Count-ne 1){$allNode=@(Get-Process -Name "node" -ErrorAction SilentlyContinue|Select-Object Id,Path);Write-Host ("Worker service state: "+(Get-Service -Name $serviceName).Status);Write-Host ("Node processes: "+($allNode|ConvertTo-Json -Compress));Write-WorkerSmokeDiagnostics -Since $smokeStartedAt;throw "Expected one Worker child after SCM startup; found $($children.Count)."}
  $childPid=[uint32]$children[0].ProcessId
  $ready=$false
  for($i=0;$i-lt 20;$i++){try{$response=Invoke-WebRequest -Uri "http://127.0.0.1:13002/health/ready" -UseBasicParsing -TimeoutSec 2;if($response.StatusCode-eq 200){$ready=$true;break}}catch{};Start-Sleep -Milliseconds 500}

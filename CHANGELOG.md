@@ -1,3 +1,9 @@
+## 0.1.105 — Diagnose Worker SCM startup failures
+
+- Extended the Worker SCM smoke to stage Node adjacent runtime DLL dependencies alongside node.exe.
+- On SCM startup failure, the smoke now emits bounded service configuration, service SID state and recent Application/System event diagnostics so the actual host failure is visible in CI.
+- This is diagnostic hardening; it does not claim the Worker SCM integration passes. Exact-head Windows CI must confirm the cause and verify the fix.
+
 ## 0.1.104 — Use the actual Node runtime in Worker SCM smoke
 
 - Replaced the .NET stub copied as node.exe with the Node 26 executable from the Windows CI toolchain.

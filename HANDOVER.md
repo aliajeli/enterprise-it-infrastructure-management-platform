@@ -1,3 +1,12 @@
+## 2026-11-22 — Investigate Worker SCM startup regression (v0.1.105)
+
+- Current branch head before this diagnostic commit: `f167b1a7755678c8bd46abeae705bd9dbb14c1c8` (v0.1.104).
+- Linux platform validation passes. Windows runtime job fails only at `Verify Worker service host under Windows SCM`; Worker host build, 10 lifecycle tests, Worker provisioning policy tests, Edge/PostgreSQL policy tests and other Windows checks pass.
+- Failure evidence: SCM service transitions to Stopped before the smoke finds a Node child. Prior smoke copied only node.exe; v0.1.105 stages adjacent Node runtime DLLs and emits bounded Application/System event-log diagnostics plus service configuration/SID state on failure.
+- Do not claim the Worker SCM smoke is fixed until exact-head CI passes. Worker config uses LocalMachine DPAPI with service-SID-derived entropy and protected ProgramData ACL; clean-VM NT SERVICE virtual-account acceptance remains separate.
+- Five service host/provisioning foundations (API, Web, Worker, Edge, PostgreSQL) and the orchestration script exist. Integrated offline app/runtime payload, installer, repair/uninstall, backup/restore/rollback, and clean-VM validation remain open. Installer path remains 3/9 (33%); no installer or Release exists.
+- PR #9 remains Draft/open/unmerged. PR #7/#8 remain unmerged.
+
 ## 2026-11-21 — Worker SCM smoke uses Node 26 (v0.1.104)
 
 - Replaced the synthetic .NET apphost masquerading as node.exe with the actual Node 26 executable provided by setup-node.
