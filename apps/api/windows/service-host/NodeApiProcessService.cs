@@ -56,26 +56,28 @@ internal sealed class NodeApiProcessService : BackgroundService
         var process = _process;
         var cleanupFailures = new List<Exception>();
 
-        if (process is not null)
-        {
-            try
-            {
-                await TerminateAndReapAsync(process,
-                    "API service startup did not complete; aborting the child process.");
-            }
-            catch (Exception exception)
-            {
-                cleanupFailures.Add(exception);
-            }
-        }
-
         try
         {
+            // Cancel readiness first. ExecuteAsync owns the in-flight readiness exception
+            // path and performs its own bounded child cleanup before completing.
             await base.StopAsync(CancellationToken.None);
         }
         catch (Exception exception)
         {
             cleanupFailures.Add(exception);
+        }
+
+        if (process is not null && !process.HasExited)
+        {
+            try
+            {
+                await TerminateAndReapAsync(process,
+                    "API service startup did not complete; enforcing child-process cleanup.");
+            }
+            catch (Exception exception)
+            {
+                cleanupFailures.Add(exception);
+            }
         }
 
         if (process is not null && process.HasExited)

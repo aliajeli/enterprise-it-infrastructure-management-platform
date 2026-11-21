@@ -23,11 +23,11 @@ function Get-ApiChild {
 
 try {
     if (Test-Path $root) { Remove-Item -LiteralPath $root -Recurse -Force }
-    New-Item -ItemType Directory -Path $runtime -Force | Out-Null
-    New-Item -ItemType Directory -Path $apiDirectory -Force | Out-Null
-
     dotnet publish $hostProject --configuration Release --output $root
     if ($LASTEXITCODE -ne 0) { throw "Publishing the Windows API service host failed." }
+
+    New-Item -ItemType Directory -Path $runtime -Force | Out-Null
+    New-Item -ItemType Directory -Path $apiDirectory -Force | Out-Null
     dotnet build $stubProject --configuration Release --output $runtime
     if ($LASTEXITCODE -ne 0) { throw "Building the SCM smoke child process failed." }
 
