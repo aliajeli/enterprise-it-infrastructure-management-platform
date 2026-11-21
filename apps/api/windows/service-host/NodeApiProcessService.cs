@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Net;
+using System.Net;\nusing System.Security.Principal;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -139,7 +139,7 @@ internal sealed class NodeApiProcessService : BackgroundService
                 RedirectStandardError = true,
             };
             startInfo.ArgumentList.Add(apiEntryPoint);
-            ConfigureChildEnvironment(startInfo, root);
+            ConfigureChildEnvironment(startInfo, root, serviceSid);
 
             var process = new Process
             {
@@ -382,7 +382,7 @@ internal sealed class NodeApiProcessService : BackgroundService
         }
     }
 
-    private static void ConfigureChildEnvironment(ProcessStartInfo startInfo, string root)
+    private static void ConfigureChildEnvironment(ProcessStartInfo startInfo, string root, SecurityIdentifier serviceSid)
     {
         startInfo.Environment.Clear();
 
@@ -413,6 +413,6 @@ internal sealed class NodeApiProcessService : BackgroundService
         startInfo.Environment["NODE_ENV"] = "production";
         startInfo.Environment["API_HOST"] = "127.0.0.1";
         startInfo.Environment["API_PORT"] = "13001";
-        startInfo.Environment["COOKIE_SECURE"] = "true";
+        startInfo.Environment["COOKIE_SECURE"] = "true";\n        var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "EnterpriseIT", "Api", "database.config.dpapi");\n        startInfo.Environment["DATABASE_URL"] = ApiDatabaseConfiguration.Load(configPath, serviceSid);
     }
 }

@@ -1,3 +1,10 @@
+## 0.1.94 — Protect API database configuration with DPAPI
+
+- Removed any dependency on inherited machine DATABASE_URL for the API child process.
+- Added machine-scope DPAPI encryption bound to the EnterpriseITApi service SID and per-installation GUID; the encrypted envelope is stored under ProgramData with a service-SID-only read ACL.
+- Added a one-shot API host provisioning command that accepts the URL only through redirected stdin, validates PostgreSQL loopback 127.0.0.1:5432 and does not place the secret in command-line arguments or logs.
+- Added API database URL validation tests and extended API provisioning policy. Clean-VM DPAPI/virtual-account acceptance remains pending.
+
 ## 0.1.93 — Fix Edge host compiler errors and Worker policy path
 
 - Fixed nullable Windows token user handling in Edge service SID validation.

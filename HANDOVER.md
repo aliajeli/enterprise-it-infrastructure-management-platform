@@ -1,3 +1,11 @@
+## 2026-11-21 — Protect API database configuration (v0.1.94)
+
+- API no longer depends on inherited machine DATABASE_URL. It loads ProgramData\\EnterpriseIT\\Api\\database.config.dpapi after validating the enabled EnterpriseITApi service SID.
+- DPAPI LocalMachine encryption binds the file to the API service SID and a per-installation GUID; ProgramData ACL grants SYSTEM/Administrators full access and API service SID read/execute only.
+- Provisioning accepts the URL as SecureString, passes it to a one-shot host command via redirected stdin, and validates PostgreSQL endpoint 127.0.0.1:5432. The secret is absent from command-line arguments and logs.
+- Added API URL policy tests and provisioning WhatIf/config-path checks. Hosted CI and clean-VM DPAPI/virtual-account acceptance remain required.
+- API, Web, Worker, Edge and PostgreSQL service foundations exist (5/5). Integrated service orchestration and clean-VM acceptance remain. Installer path 3/9 (33%), six milestones remaining; no installer or Release.
+
 ## 2026-11-21 — Edge and Worker CI compiler/policy corrections (v0.1.93)
 
 - Fixed Edge service SID validation to handle nullable WindowsIdentity.User without warnings-as-errors.
