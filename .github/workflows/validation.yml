@@ -206,7 +206,11 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-windows-service-host-staging.ps1
 
-      - name: Test Node.js runtime staging policy\n        shell: pwsh\n        run: pwsh -NoProfile -File scripts/windows/test-node-runtime-staging.ps1\n\n      - name: Test offline payload manifest integrity
+      - name: Test Node.js runtime staging policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-node-runtime-staging.ps1
+
+      - name: Test offline payload manifest integrity
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-offline-payload-manifest.ps1
 

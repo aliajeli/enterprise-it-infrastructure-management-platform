@@ -1,3 +1,9 @@
+## 0.1.110 — Repair Windows validation workflow formatting
+
+- Corrected the Windows validation workflow step introduced in v0.1.108: escaped backslash-n text was stored literally in the YAML instead of actual line breaks. The Node runtime policy test is now a normal standalone step, and the offline payload manifest integrity test follows it.
+- Repaired the same literal escaped-newline formatting in the deployment decision record. This corrects workflow syntax; it does not establish that GitHub runners are available or that tests have passed.
+- Root package and lockfile versions advanced to 0.1.110. No installer or Release is produced.
+
 ## 0.1.109 — Add offline payload integrity manifest
 
 - Added a SHA-256 inventory manifest for versioned offline payloads, recording relative paths, byte sizes and hashes. Verification rejects modified, missing, unexpected and path-traversal entries.

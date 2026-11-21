@@ -1,3 +1,10 @@
+## 2026-11-22 — Repair Windows validation workflow formatting (v0.1.110)
+
+- Identified that v0.1.108 had inserted literal backslash-n characters into the Windows workflow step instead of actual YAML line breaks. This malformed the Node staging test step and prevented the intended Windows job definition from being valid.
+- Replaced the escaped sequences with actual newlines, kept the Node runtime policy test as a distinct step, and added the offline payload manifest test as a separate step. Corrected the matching deployment decision record formatting as well.
+- The v0.1.109 push still produced a completed run with zero jobs. This correction must trigger a fresh exact-head run; only that run can confirm YAML parsing and runner assignment.
+- Root package/lock version advanced to 0.1.110. No installer or GitHub Release is created; PR #9 remains Draft/open/unmerged.
+
 ## 2026-11-22 — Add offline payload integrity manifest (v0.1.109)
 
 - Added scripts/windows/new-offline-payload-manifest.ps1 with Create and Verify operations. It records schema/version, relative paths, byte lengths and SHA-256 hashes.
