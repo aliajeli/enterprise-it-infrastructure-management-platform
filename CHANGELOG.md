@@ -1,3 +1,11 @@
+## 0.1.83 — Add loopback Worker readiness endpoint
+
+- Added the Worker readiness listener on fixed loopback address 127.0.0.1:13002/health/ready. It returns 200 only while the database probe succeeds and fails closed with 503 without leaking dependency errors.
+- Added automated tests for healthy/unavailable dependency states, thrown probes, route/method rejection, loopback binding and invalid port configuration.
+- Corrected Worker shutdown so an in-flight poll delay is released immediately instead of leaving the event loop waiting for the full poll interval.
+- Discovery handlers remain intentionally unregistered and the supported-source allow-list remains empty; no discovery run can be claimed or reported as processed.
+- This is a Worker process-readiness slice, not the Windows SCM host/provisioner. Worker service identity, parent/child SID enforcement, bounded process lifecycle, provisioning and clean-VM SCM acceptance remain open.
+
 ## 0.1.82 — Define the five-service Windows deployment contract
 
 - Added a concrete five-service deployment contract covering Edge, Next.js, API, Worker and PostgreSQL, including service names, fixed entry points, loopback listeners, identity boundaries and startup order.

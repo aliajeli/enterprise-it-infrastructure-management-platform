@@ -1,3 +1,12 @@
+## 2026-11-21 — Add Worker loopback readiness (v0.1.83)
+
+- Added the Worker health endpoint at the fixed contract address 127.0.0.1:13002/health/ready. It checks PostgreSQL on each request, returns 200 only when the dependency probe succeeds, and returns a sanitized 503 on unavailable/throwing probes.
+- Added tests for loopback-only binding, healthy and unhealthy dependency responses, sanitized failures, route/method rejection and invalid port values.
+- Fixed shutdown during the poll delay: the loop wakes immediately on SIGINT/SIGTERM, then closes the health listener and disconnects Prisma.
+- Worker discovery handlers remain deliberately absent. Its source allow-list remains empty, so it cannot claim work; lease recovery remains the only queue maintenance operation.
+- This does not yet make Worker an SCM service. A dedicated .NET Worker host, service-SID validation, bounded child lifecycle, installer provisioning and clean-VM SCM acceptance remain outstanding.
+- Installer-path progress remains 3/9 milestones complete (33%); milestone 4 remains active. No installer or Release exists. PR #9 remains Draft/open/unmerged; PR #8 and PR #7 remain untouched and unmerged.
+
 ## 2026-11-21 — Define five-service Windows deployment contract (v0.1.82)
 
 - Created `WINDOWS_SERVICE_DEPLOYMENT_DECISIONS.md` as the implementation contract for the five independent SCM services: Edge, Web, API, Worker and PostgreSQL.

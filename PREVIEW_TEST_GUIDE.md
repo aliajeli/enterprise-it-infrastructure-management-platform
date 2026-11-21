@@ -6,7 +6,7 @@ This guide validates the currently implemented browser workflows on an isolated 
 
 - Windows 10/11 with Docker Desktop using Linux containers.
 - Node.js 26.x and npm 11.x.
-- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.82`.
+- Repository branch `phase3/m2-inventory-ui`, currently version `0.1.83`.
 - Follow the README section **Quick local preview (Windows)** to start PostgreSQL, install dependencies, apply migrations, build, bootstrap the first administrator and start API/web in separate terminals.
 - Open `http://127.0.0.1:3000`.
 
@@ -297,3 +297,18 @@ Invoke the provisioning script with `-WhatIf` on a disposable Windows test host 
 ## Windows service deployment boundary (v0.1.82)
 
 The five-service Windows deployment is not yet available as an installable preview. The current API service-host/provisioning slice is not a complete installer. Do not register Worker, Web, Edge or PostgreSQL services manually using guessed executable paths or service identities. See `WINDOWS_SERVICE_DEPLOYMENT_DECISIONS.md` for the current service contract and remaining acceptance gates. The local Docker-based preview remains the supported way to exercise the application UI; it does not validate Windows SCM deployment.
+
+## 18. Worker loopback readiness endpoint (development validation)
+
+Build and start the Worker against the disposable local PostgreSQL database:
+
+    npm run build --workspace @platform/worker
+    npm run start --workspace @platform/worker
+
+From another terminal, check its fixed loopback readiness endpoint:
+
+    Invoke-RestMethod http://127.0.0.1:13002/health/ready
+
+Expected: HTTP 200 with {"status":"ready"} while PostgreSQL accepts the health query. If PostgreSQL becomes unavailable, the endpoint returns HTTP 503 with {"status":"not_ready"} and does not expose database error details. The listener binds only to 127.0.0.1.
+
+Stop the Worker with Ctrl+C and confirm it exits without waiting for the full polling interval. No discovery source handler is registered in this milestone; no queued discovery run should be claimed or processed. This is a Node process readiness check, not Windows SCM installation or service-identity acceptance.
