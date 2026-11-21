@@ -1,3 +1,11 @@
+## 0.1.97 — Add five-service dependency orchestration
+
+- Added a five-service provisioning/start orchestrator with dependency order PostgreSQL -> API/Worker -> Web -> Edge.
+- Added SCM dependency graph for automatic startup on reboot and explicit readiness waits for pg_isready, API, Worker, Web and HTTPS Edge.
+- On startup failure, the orchestrator stops only services started during that invocation; it never removes services/data or modifies firewall, NAT, router or port mapping.
+- PostgreSQL and Edge service start modes are now automatic; provisioning still never starts services.
+- Added plan-only orchestration tests and Windows CI coverage.
+
 ## 0.1.96 — Fix Edge test imports and PostgreSQL staging CI invocation
 
 - Added the missing xUnit namespace import to Edge configuration tests.

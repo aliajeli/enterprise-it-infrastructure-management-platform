@@ -1,3 +1,13 @@
+## 2026-11-21 — Five-service orchestration foundation (v0.1.97)
+
+- Added scripts/windows/orchestrate-windows-services.ps1. It provisions PostgreSQL, API, Worker, Web and Edge in dependency order, configures SCM dependency links, starts services and waits for real readiness endpoints.
+- Startup dependencies: PostgreSQL -> API and Worker -> Web -> Edge. API/Worker use separate machine-DPAPI service-specific database configs; Web receives no database credentials.
+- Health gates: pg_isready on 127.0.0.1:5432; API 127.0.0.1:13001/health/ready; Worker 127.0.0.1:13002/health/ready; Web 127.0.0.1:13000/health/ready; Edge HTTPS hostname/port /health/ready with normal Windows certificate validation.
+- Rollback stops only services started by the failed orchestration invocation. It never deletes the PostgreSQL data directory, removes registered services, modifies Windows Firewall/NAT/MikroTik or creates port mappings.
+- PostgreSQL and Edge services are set to Automatic start; all five SCM dependencies enforce boot ordering. Provisioning scripts still do not start services on their own.
+- Added plan-only policy tests for exact service order, dependency count and no-firewall/no-router/no-port-mapping invariants.
+- Exact-head CI and clean Windows Server acceptance remain required. Installer path is still 3/9 (33%); no installer or Release exists.
+
 ## 2026-11-21 — Edge and PostgreSQL CI policy corrections (v0.1.96)
 
 - Added the missing Xunit import required by Edge configuration unit tests.

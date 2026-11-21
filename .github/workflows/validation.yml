@@ -194,6 +194,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-postgresql-provisioning.ps1
 
+      - name: Test five-service orchestration policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-windows-service-orchestration.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
