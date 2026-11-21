@@ -33,6 +33,9 @@ internal static class ChildProcessTermination
         try
         {
             await waitForExit(timeout.Token);
+            if (!hasExited())
+                throw new InvalidOperationException(
+                    "The API child-process wait completed without confirming process exit.");
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
         {

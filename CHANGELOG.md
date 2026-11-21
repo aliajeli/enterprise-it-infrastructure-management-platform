@@ -1,3 +1,9 @@
+## 0.1.66 — Verify child exit after reap wait
+
+- Hardened the shared terminate-and-reap policy to verify the child process is actually exited after the wait delegate completes. A wait implementation that returns prematurely now fails closed instead of being treated as successful cleanup.
+- Added a regression test for a completed wait that does not establish process exit. Existing cancellation, timeout, kill-race and failure tests remain in place.
+- This is a runtime lifecycle hardening change; real Windows process-tree and SCM integration tests remain required.
+
 ## 0.1.65 — Correct wait-cancellation policy test
 
 - Corrected the cancellation test to inject an OperationCanceledException from the wait operation while the helper's own reap deadline remains unexpired. This accurately verifies that an independent wait cancellation is propagated rather than translated into a reap TimeoutException.

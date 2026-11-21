@@ -87,6 +87,19 @@ public sealed class ChildProcessTerminationTests
     }
 
     [Fact]
+    public async Task WaitCompletesWithoutExit_IsRejected()
+    {
+        var actual = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => ChildProcessTermination.TerminateAndReapAsync(
+                () => false,
+                () => { },
+                _ => Task.CompletedTask,
+                TimeSpan.FromSeconds(1)));
+
+        Assert.Contains("without confirming process exit", actual.Message);
+    }
+
+    [Fact]
     public async Task ReapTimeout_IsReported()
     {
         await Assert.ThrowsAsync<TimeoutException>(

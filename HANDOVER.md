@@ -1,3 +1,8 @@
+## 2026-11-21 — Verify child exit after reap wait (v0.1.66)
+
+- The shared child terminate-and-reap policy now checks the process-exited postcondition after its wait operation completes. A premature wait completion is reported as InvalidOperationException and is not silently accepted as a successful reap.
+- Added a regression test for the premature-wait case. Exact-head Push/PR CI required; clean-VM Windows SCM, process-tree and service-SID acceptance remain outstanding. PR #8 remains Draft/open/unmerged; no installer or Release exists.
+
 ## 2026-11-21 — Correct wait-cancellation policy test (v0.1.65)
 
 - Corrected the cancellation test fixture: the termination helper owns its bounded reap token, so the test now injects an independent wait cancellation and verifies that exact exception propagates while the helper deadline remains unexpired.
