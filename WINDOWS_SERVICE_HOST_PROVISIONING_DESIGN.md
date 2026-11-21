@@ -88,3 +88,16 @@ Implementation must explicitly analyze Windows sharing modes, existing-handle ra
 ## 8. Release gates
 
 No production storage adapter registration, real credential persistence, discovery handler, installer, or Release until the service host, service SID provisioning, immutable executable ACLs, complete path-component hardening, actual Windows integration tests, independent recovery drill, and install/upgrade/uninstall/rollback tests pass on a clean supported Windows Server image.
+
+
+## API service recovery policy proposal — installer-owned, not yet applied
+
+The installer/service-registration phase must apply and verify a finite SCM failure policy for `EnterpriseITApi`; the running service host must not reconfigure its own recovery actions.
+
+- First unexpected service failure: restart after 60 seconds.
+- Second failure in the same failure-count window: restart after 300 seconds.
+- Third and subsequent failures: take no automatic action and leave the service visibly failed for operator intervention.
+- Reset the SCM failure count after 24 hours without a failure.
+- Do not configure an unlimited rapid-restart loop. Recovery actions apply to service-process failures; they do not replace application readiness checks or classify a database outage as a crash.
+- Installer acceptance must query the effective configuration (for example, `sc.exe qfailure EnterpriseITApi`) and compare it with the declared policy. A clean-VM test must exercise the first, second and exhausted failure actions, reset behavior, and manual recovery.
+- **Status:** design proposal only. No SCM recovery configuration has been installed or verified by this commit.

@@ -1,3 +1,10 @@
+## 2026-11-21 — Bound API child cleanup after startup failure (v0.1.61)
+
+- The service-SID validation and API readiness failure paths no longer call unbounded WaitForExitAsync(CancellationToken.None) after killing the Node child.
+- Both paths now use a shared terminate-and-reap helper with a five-second deadline, matching the existing shutdown reap budget. Process-exit races are handled, while kill/reap failures remain critical.
+- If startup and cleanup both fail, both exceptions are preserved in an AggregateException. No service registration, SCM recovery action, ACL, firewall or network setting was changed.
+- Exact-head Push and PR CI are required. PR #8 remains Draft/open/unmerged; no installer or Release exists.
+
 ## 2026-11-21 — Handle failed API shutdown command delivery (v0.1.60)
 
 - NodeApiProcessService.StopAsync now treats a broken/closed stdin pipe or an invalid shutdown channel as a failed graceful-shutdown attempt, logs the condition and continues into the existing process-tree termination/reap path.

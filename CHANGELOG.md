@@ -1,3 +1,10 @@
+## 0.1.61 — Bound API child startup-failure cleanup
+
+- Replaced unbounded process waits in the API host's service-SID validation and readiness-failure paths with a shared bounded terminate-and-reap routine.
+- Startup cleanup now uses the same five-second process-reap budget as normal shutdown, treats a process-exit race as benign, and reports kill/reap failures as critical errors.
+- If both startup and cleanup fail, both exceptions are retained in an AggregateException rather than silently losing the original failure.
+- This does not prove Windows SCM recovery behavior or clean-VM service lifecycle acceptance; no service registration, identity provisioning, ACL, firewall, or network changes are made.
+
 ## 0.1.60 — Fall back to process termination when shutdown IPC fails
 
 - Hardened Windows API service shutdown when the child process stdin pipe is broken, closed or otherwise unavailable. I/O and invalid-operation failures while sending the graceful shutdown command are logged and fall through to the existing bounded process-tree termination/reap path instead of skipping termination.

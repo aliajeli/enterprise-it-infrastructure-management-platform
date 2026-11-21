@@ -101,14 +101,29 @@ internal sealed class NodeApiProcessService : BackgroundService
                     throw new UnauthorizedAccessException(
                         "The API child process does not have the expected enabled service SID.");
             }
-            catch
+            catch (Exception startupException)
             {
-                if (!process.HasExited)
+                try
                 {
-                    process.Kill(entireProcessTree: true);
-                    await process.WaitForExitAsync(CancellationToken.None);
+                    await TerminateAndReapAsync(
+                        process,
+                        "The API child failed service-SID validation.");
                 }
-                process.Dispose();
+                catch (Exception cleanupException)
+                {
+                    _logger.LogCritical(
+                        cleanupException,
+                        "API child cleanup failed after service-SID validation failed.");
+                    throw new AggregateException(
+                        "API child identity validation and cleanup both failed.",
+                        startupException,
+                        cleanupException);
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+
                 throw;
             }
 
@@ -121,12 +136,23 @@ internal sealed class NodeApiProcessService : BackgroundService
             {
                 await WaitForReadinessAsync(process, stoppingToken);
             }
-            catch
+            catch (Exception readinessException)
             {
-                if (!process.HasExited)
+                try
                 {
-                    process.Kill(entireProcessTree: true);
-                    await process.WaitForExitAsync(CancellationToken.None);
+                    await TerminateAndReapAsync(
+                        process,
+                        "The API child failed readiness startup.");
+                }
+                catch (Exception cleanupException)
+                {
+                    _logger.LogCritical(
+                        cleanupException,
+                        "API child cleanup failed after readiness startup failed.");
+                    throw new AggregateException(
+                        "API readiness and child cleanup both failed.",
+                        readinessException,
+                        cleanupException);
                 }
 
                 throw;
@@ -266,6 +292,46 @@ internal sealed class NodeApiProcessService : BackgroundService
         }
 
         await base.StopAsync(cancellationToken);
+    }
+
+    private async Task TerminateAndReapAsync(Process process, string reason)
+    {
+        if (process.HasExited)
+            return;
+
+        _logger.LogWarning("{CleanupReason} Terminating the API child process tree.", reason);
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException) when (process.HasExited)
+        {
+            // The child exited between the state check and termination request.
+        }
+        catch (Exception exception)
+        {
+            _logger.LogCritical(
+                exception,
+                "Failed to terminate the API child process tree during startup cleanup.");
+            throw;
+        }
+
+        if (process.HasExited)
+            return;
+
+        using var reapTimeout = new CancellationTokenSource(ProcessReapTimeout);
+        try
+        {
+            await process.WaitForExitAsync(reapTimeout.Token);
+        }
+        catch (OperationCanceledException) when (reapTimeout.IsCancellationRequested)
+        {
+            _logger.LogCritical(
+                "API child process did not exit within {ReapTimeout} during startup cleanup.",
+                ProcessReapTimeout);
+            throw new TimeoutException(
+                "The API child process could not be reaped within the startup cleanup deadline.");
+        }
     }
 
     private static async Task WaitForReadinessAsync(
