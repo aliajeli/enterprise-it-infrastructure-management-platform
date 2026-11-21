@@ -1,3 +1,9 @@
+## 2026-11-21 — Edge and PostgreSQL CI policy corrections (v0.1.96)
+
+- Added the missing Xunit import required by Edge configuration unit tests.
+- Fixed the Windows CI staging-plan test to dot-source the PostgreSQL staging script with its required InstallRoot and CacheDirectory arguments; the test remains plan-only and does not download the large vendor archive.
+- Exact-head CI must now verify Edge build/tests/provisioning, PostgreSQL staging/provisioning policy, API/Worker DPAPI tests and existing service gates.
+
 ## 2026-11-21 — API DPAPI source formatting correction (v0.1.95)
 
 - Corrected escaped newline text in API service-host source so the SecurityIdentifier import and DPAPI DATABASE_URL injection are valid C# source.

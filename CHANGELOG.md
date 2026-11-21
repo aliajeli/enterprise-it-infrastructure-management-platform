@@ -1,3 +1,8 @@
+## 0.1.96 — Fix Edge test imports and PostgreSQL staging CI invocation
+
+- Added the missing xUnit namespace import to Edge configuration tests.
+- Fixed the PostgreSQL staging-plan CI step to dot-source the script with its mandatory parameters supplied, without downloading the external database archive.
+
 ## 0.1.95 — Correct API DPAPI source formatting
 
 - Replaced literal escaped newline sequences in API service host imports and child environment configuration with valid source line breaks.

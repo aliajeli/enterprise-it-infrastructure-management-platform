@@ -1,4 +1,5 @@
 using EnterpriseIT.EdgeServiceHost;
+using Xunit;
 namespace EnterpriseIT.EdgeServiceHost.Tests;
 public sealed class EdgeConfigurationTests
 {
