@@ -1,3 +1,8 @@
+## 2026-11-21 — API DPAPI source formatting correction (v0.1.95)
+
+- Corrected escaped newline text in API service-host source so the SecurityIdentifier import and DPAPI DATABASE_URL injection are valid C# source.
+- Corrected the API provisioning policy path assertion to use standard Windows path separators. Exact-head CI will validate build and tests.
+
 ## 2026-11-21 — Protect API database configuration (v0.1.94)
 
 - API no longer depends on inherited machine DATABASE_URL. It loads ProgramData\\EnterpriseIT\\Api\\database.config.dpapi after validating the enabled EnterpriseITApi service SID.

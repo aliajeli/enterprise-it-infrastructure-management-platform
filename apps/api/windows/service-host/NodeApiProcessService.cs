@@ -1,5 +1,6 @@
 using System.Diagnostics;
-using System.Net;\nusing System.Security.Principal;
+using System.Net;
+using System.Security.Principal;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -413,6 +414,8 @@ internal sealed class NodeApiProcessService : BackgroundService
         startInfo.Environment["NODE_ENV"] = "production";
         startInfo.Environment["API_HOST"] = "127.0.0.1";
         startInfo.Environment["API_PORT"] = "13001";
-        startInfo.Environment["COOKIE_SECURE"] = "true";\n        var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "EnterpriseIT", "Api", "database.config.dpapi");\n        startInfo.Environment["DATABASE_URL"] = ApiDatabaseConfiguration.Load(configPath, serviceSid);
+        startInfo.Environment["COOKIE_SECURE"] = "true";
+        var configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "EnterpriseIT", "Api", "database.config.dpapi");
+        startInfo.Environment["DATABASE_URL"] = ApiDatabaseConfiguration.Load(configPath, serviceSid);
     }
 }

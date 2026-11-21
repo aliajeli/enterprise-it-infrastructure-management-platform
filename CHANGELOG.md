@@ -1,3 +1,8 @@
+## 0.1.95 — Correct API DPAPI source formatting
+
+- Replaced literal escaped newline sequences in API service host imports and child environment configuration with valid source line breaks.
+- Corrected the API ProgramData config path policy assertion to use canonical Windows separators.
+
 ## 0.1.94 — Protect API database configuration with DPAPI
 
 - Removed any dependency on inherited machine DATABASE_URL for the API child process.
