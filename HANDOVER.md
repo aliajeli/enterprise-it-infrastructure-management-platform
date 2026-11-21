@@ -1,3 +1,9 @@
+## 2026-11-21 — Canonical LocalService account name (v0.1.75)
+
+- The v0.1.74 runner still returned Win32 1057 during CreateService because the short LocalService alias was not accepted as the service start account in this invocation.
+- Updated the harness to use the canonical NT AUTHORITY\LocalService name. This is a CI-only low-privilege identity for exercising SCM, the enabled service SID, parent/child token validation and lifecycle; it is not the production service identity.
+- Production provisioning remains NT SERVICE\EnterpriseITApi and must be validated on a supported clean Windows Server VM.
+
 ## 2026-11-21 — Hosted SCM smoke identity constraint (v0.1.74)
 
 - The v0.1.73 Windows runner returned error 1057 directly from CreateService when assigning NT SERVICE\EnterpriseITApi. Earlier config-based attempts returned the same error. The test runner therefore cannot currently prove virtual-account logon provisioning.

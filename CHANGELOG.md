@@ -1,3 +1,8 @@
+## 0.1.75 — Use canonical LocalService account name in SCM smoke
+
+- Corrected the CI-only SCM test service logon name from the short alias LocalService to the canonical NT AUTHORITY\LocalService account name. The prior Windows runner returned error 1057 during CreateService before the service SID or host lifecycle could be tested.
+- Production identity remains NT SERVICE\EnterpriseITApi; LocalService is only a hosted-runner lifecycle test principal and does not change installer policy.
+
 ## 0.1.74 — Run SCM lifecycle smoke under LocalService on hosted runners
 
 - The hosted Windows runner returned Win32 1057 when asked to provision NT SERVICE\EnterpriseITApi, both through sc.exe config and CreateService, despite successfully creating the service SID type. Updated the CI-only SCM smoke to use built-in LocalService as its logon principal while still enabling SERVICE_SID_TYPE_UNRESTRICTED and validating the exact EnterpriseITApi service SID in both parent and child process tokens.

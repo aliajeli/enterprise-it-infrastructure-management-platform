@@ -43,7 +43,7 @@ try {
     # Hosted Windows runners reject NT SERVICE virtual-account assignment (1057).
     # Use the built-in low-privilege LocalService identity for this SCM lifecycle smoke;
     # production provisioning must still assign NT SERVICE\EnterpriseITApi.
-    Invoke-Sc @("create", $serviceName, "obj=", "LocalService", "binPath=", $hostExe, "start=", "demand")
+    Invoke-Sc @("create", $serviceName, "obj=", "NT AUTHORITY\\LocalService", "binPath=", $hostExe, "start=", "demand")
     $serviceCreated = $true
     Invoke-Sc @("sidtype", $serviceName, "unrestricted")
 

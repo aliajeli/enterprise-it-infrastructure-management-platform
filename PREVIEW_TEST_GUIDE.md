@@ -255,3 +255,8 @@ Version 0.1.73 creates the temporary SCM service with obj= "NT SERVICE\Enterpris
 Version 0.1.74 uses LocalService only for the hosted Windows CI smoke because the runner returned Win32 1057 when assigning NT SERVICE\EnterpriseITApi during both service creation and reconfiguration. The test still enables SERVICE_SID_TYPE_UNRESTRICTED, validates the EnterpriseITApi SID in the host and child tokens, and grants the temporary payload access by the exact service SID.
 
 This is not the production account choice. The installer remains required to configure NT SERVICE\EnterpriseITApi and verify it on a clean supported Windows Server VM.
+
+
+## 23. Canonical LocalService name for SCM smoke
+
+Version 0.1.75 passes NT AUTHORITY\LocalService as the temporary SCM test account instead of the short alias. The previous Windows run failed with 1057 during CreateService. The production virtual service account requirement remains unchanged.
