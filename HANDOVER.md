@@ -1145,3 +1145,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Added a Windows-independent Node.js validation step in the platform workflow checking npm lockfile v3, root version parity, and package name/version parity for the API, Worker and Database workspaces.
 - No third-party dependency versions, workspace versions, dependency ranges, service configuration or network settings were changed.
 - Runtime packaging was inspected but not claimed complete: the current Node staging script only stages an immutable Node.js runtime and does not package API/Worker workspace outputs or production dependencies. No installer or GitHub Release is available from this change.
+
+
+## 2026-11-22 — Web standalone staging hardening (v0.1.112)
+- Replaced direct overlay-copy behavior with a no-overwrite staging transaction: preflight, sibling temporary directory, payload completeness checks, and same-volume directory promotion.
+- Added `-WhatIf`/ShouldProcess support and a Windows policy test covering dry-run, runtime/static/public content, and rejection of an existing destination.
+- CI execution for this exact commit is required before treating the new staging policy as validated. This does not complete API/Worker runtime bundling, installer, rollback, or real Windows Server acceptance.

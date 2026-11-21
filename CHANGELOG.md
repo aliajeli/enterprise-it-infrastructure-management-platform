@@ -897,3 +897,10 @@
 - Corrected the npm lockfile root package metadata to match the root package version; no third-party dependency versions or workspace dependency ranges were changed.
 - Added a CI assertion for lockfile v3, root version parity, and API/Worker/Database workspace name and version parity.
 - Runtime packaging remains a separate acceptance item; this change does not create an installer or release.
+
+
+## 0.1.112 — Immutable Web standalone staging
+- Hardened Next.js standalone staging to reject an existing destination rather than silently overlaying a previous payload.
+- Added a read-only `-WhatIf` plan, `ShouldProcess` confirmation, isolated sibling staging directory, post-copy completeness checks and same-volume atomic promotion.
+- Added Windows PowerShell coverage for dry-run behavior, required runtime/static/public files and overwrite rejection; wired it into Windows CI.
+- This packages only the Web standalone output. API/Worker production dependency bundling, installer, rollback and clean Windows Server acceptance remain outstanding.

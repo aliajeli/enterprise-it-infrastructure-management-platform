@@ -229,6 +229,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-node-runtime-staging.ps1
 
+      - name: Test Web standalone staging policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-web-standalone-staging.ps1
+
       - name: Test offline payload manifest integrity
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-offline-payload-manifest.ps1
