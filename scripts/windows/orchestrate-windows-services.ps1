@@ -105,7 +105,7 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
   Wait-HttpReady ("https://"+$Plan.EdgeTlsHostname+":"+$Plan.EdgeHttpsPort+"/health/ready") "EnterpriseITEdge"
   [pscustomobject]@{status="ready";services=$Plan.StartOrder;startedByThisRun=@($started);dependenciesConfigured=$true;firewallChanged=$false;routerChanged=$false;portMapping=$false}
  }catch{
-  foreach($name in @($started.ToArray())[-1..0]){try{Stop-Service -Name $name -Force -ErrorAction Stop}catch{Write-Warning "Rollback could not stop $name; service remains registered and data is preserved."}}
+  for($i=$started.Count-1;$i -ge 0;$i--){$name=$started[$i];try{Stop-Service -Name $name -Force -ErrorAction Stop}catch{Write-Warning "Rollback could not stop $name; service remains registered and data is preserved."}}
   throw
  }
 }

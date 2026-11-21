@@ -9,6 +9,9 @@ $stubProject = Join-Path $repoRoot "apps\api\windows\service-host-smoke\WindowsA
 $hostExe = Join-Path $root "EnterpriseIT.ApiServiceHost.exe"
 $apiEntry = Join-Path $apiDirectory "server.js"
 $serviceCreated = $false
+$databaseConfigRoot = Join-Path $env:ProgramData "EnterpriseIT\Api"
+$databaseConfigPath = Join-Path $databaseConfigRoot "database.config.dpapi"
+$databaseConfigCreated = $false
 
 function Invoke-Sc {
     param([string[]] $Arguments)
@@ -61,6 +64,30 @@ try {
     $sidMatch = [regex]::Match($sidOutput, "S-1-5-80-(?:\d+-){4}\d+")
     if (-not $sidMatch.Success) { throw "SCM did not return a valid service SID." }
     $serviceSid = $sidMatch.Value
+    if (Test-Path -LiteralPath $databaseConfigRoot) { throw "API DPAPI smoke config directory already exists; refusing to overwrite it." }
+    New-Item -ItemType Directory -Path $databaseConfigRoot -Force | Out-Null
+    & icacls.exe $databaseConfigRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*" + $serviceSid + ":(OI)(CI)(RX)") | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Could not protect API DPAPI smoke config directory." }
+    $databaseConfigCreated = $true
+    $provisionInfo = [Diagnostics.ProcessStartInfo]::new()
+    $provisionInfo.FileName = $hostExe
+    $provisionInfo.Arguments = '--provision-database-config "' + $databaseConfigPath + '" EnterpriseITApi'
+    $provisionInfo.UseShellExecute = $false
+    $provisionInfo.CreateNoWindow = $true
+    $provisionInfo.RedirectStandardInput = $true
+    $provisionInfo.RedirectStandardOutput = $true
+    $provisionInfo.RedirectStandardError = $true
+    $provisionProcess = [Diagnostics.Process]::Start($provisionInfo)
+    $provisionProcess.StandardInput.Write("postgresql://smoke:secret@127.0.0.1:5432/smoke")
+    $provisionProcess.StandardInput.Close()
+    $provisionOutTask = $provisionProcess.StandardOutput.ReadToEndAsync()
+    $provisionErrTask = $provisionProcess.StandardError.ReadToEndAsync()
+    $provisionProcess.WaitForExit()
+    $provisionOutput = $provisionOutTask.GetAwaiter().GetResult()
+    $provisionError = $provisionErrTask.GetAwaiter().GetResult()
+    $provisionProcess.Dispose()
+    if ($provisionOutput.Trim() -ne "OK" -or $provisionError.Length -ne 0) { throw "API DPAPI smoke configuration provisioning failed." }
+    if (-not (Test-Path -LiteralPath $databaseConfigPath -PathType Leaf)) { throw "API DPAPI smoke config file was not created." }
     $aclGrant = "*" + $serviceSid + ":(OI)(CI)(RX)"
     & icacls.exe $root /grant $aclGrant /T /C | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Could not grant the service SID read/execute access to the smoke payload." }
@@ -133,5 +160,6 @@ finally {
         } catch {}
         & sc.exe delete $serviceName | Out-Null
     }
+    if ($databaseConfigCreated -and (Test-Path -LiteralPath $databaseConfigRoot)) { Remove-Item -LiteralPath $databaseConfigRoot -Recurse -Force -ErrorAction SilentlyContinue }
     if (Test-Path $root) { Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue }
 }

@@ -1,3 +1,9 @@
+## 2026-11-21 — API SCM smoke and rollback correction (v0.1.98)
+
+- API SCM smoke now provisions the expected machine-DPAPI config envelope after creating the test service and enabling its service SID, grants only SYSTEM/Administrators/service SID access, and then starts the host. The test URL is synthetic and loopback-only.
+- This resolves the prior SCM smoke failure where the host correctly refused to start without the newly required protected config file.
+- Orchestration rollback now iterates safely when no service was started, avoiding invalid negative array indices.
+
 ## 2026-11-21 — Five-service orchestration foundation (v0.1.97)
 
 - Added scripts/windows/orchestrate-windows-services.ps1. It provisions PostgreSQL, API, Worker, Web and Edge in dependency order, configures SCM dependency links, starts services and waits for real readiness endpoints.

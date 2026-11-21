@@ -1,3 +1,9 @@
+## 0.1.98 — Extend API SCM smoke for protected DB config
+
+- Updated the Windows SCM smoke test to create a service-SID ACLed ProgramData directory and provision the API's machine-DPAPI database config through the one-shot stdin command before service startup.
+- The SCM smoke now validates the new fail-closed API startup contract rather than relying on inherited DATABASE_URL.
+- Fixed orchestration rollback iteration for the zero-started-services case.
+
 ## 0.1.97 — Add five-service dependency orchestration
 
 - Added a five-service provisioning/start orchestrator with dependency order PostgreSQL -> API/Worker -> Web -> Edge.
