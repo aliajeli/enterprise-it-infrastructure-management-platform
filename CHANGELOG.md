@@ -1,3 +1,9 @@
+## 0.1.74 — Run SCM lifecycle smoke under LocalService on hosted runners
+
+- The hosted Windows runner returned Win32 1057 when asked to provision NT SERVICE\EnterpriseITApi, both through sc.exe config and CreateService, despite successfully creating the service SID type. Updated the CI-only SCM smoke to use built-in LocalService as its logon principal while still enabling SERVICE_SID_TYPE_UNRESTRICTED and validating the exact EnterpriseITApi service SID in both parent and child process tokens.
+- The harness grants the temporary payload read/execute access by the resolved service SID, not by account-name lookup. It asserts the smoke service's configured identity is LocalService.
+- This is explicitly a CI runner limitation, not a production fallback. The installer must still configure NT SERVICE\EnterpriseITApi and that exact virtual-account configuration must be accepted on a supported clean Windows Server VM.
+
 ## 0.1.73 — Create API service directly with its virtual account
 
 - Changed the Windows SCM harness to create EnterpriseITApi with obj= "NT SERVICE\EnterpriseITApi" in the initial sc.exe create call and omit password= entirely. Windows virtual accounts do not use an administrator-supplied password; the preceding config attempts returned 1057 even after enabling the service SID.

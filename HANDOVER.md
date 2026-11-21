@@ -1,3 +1,10 @@
+## 2026-11-21 — Hosted SCM smoke identity constraint (v0.1.74)
+
+- The v0.1.73 Windows runner returned error 1057 directly from CreateService when assigning NT SERVICE\EnterpriseITApi. Earlier config-based attempts returned the same error. The test runner therefore cannot currently prove virtual-account logon provisioning.
+- Updated the CI-only lifecycle harness to run as built-in LocalService (a low-privilege Windows service identity), while still enabling SERVICE_SID_TYPE_UNRESTRICTED, verifying the EnterpriseITApi service SID, and relying on the host's parent/child token validator. The harness resolves the service SID with sc.exe showsid and grants the temporary payload RX to that SID.
+- This is not a production fallback. Permanent installer configuration remains NT SERVICE\EnterpriseITApi; acceptance of that logon identity and its inherited child SID must be tested on a clean supported Windows Server image.
+- Exact-head Windows SCM CI still must pass service startup, readiness, graceful stop/reap and failed-readiness cleanup before the host runtime milestone can be marked complete.
+
 ## 2026-11-21 — Create service with virtual account directly (v0.1.73)
 
 - The v0.1.72 Windows run showed SERVICE_SID_TYPE_UNRESTRICTED succeeded, but sc.exe config still returned 1057 for the virtual account even with explicit quotes. Microsoft documents virtual-account creation by passing obj= "NT SERVICE\ServiceName" to sc.exe create; a password is not supplied for a virtual account.

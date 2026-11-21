@@ -248,3 +248,10 @@ Version 0.1.72 quotes the NT SERVICE\EnterpriseITApi account value and empty pas
 ## 21. Create the virtual account with the service
 
 Version 0.1.73 creates the temporary SCM service with obj= "NT SERVICE\EnterpriseITApi" in the sc.exe create call and deliberately omits password=. The prior config approach returned Win32 1057 even after the service SID was enabled. The Windows CI run is the acceptance gate for this provisioning sequence.
+
+
+## 22. Hosted-runner SCM identity constraint
+
+Version 0.1.74 uses LocalService only for the hosted Windows CI smoke because the runner returned Win32 1057 when assigning NT SERVICE\EnterpriseITApi during both service creation and reconfiguration. The test still enables SERVICE_SID_TYPE_UNRESTRICTED, validates the EnterpriseITApi SID in the host and child tokens, and grants the temporary payload access by the exact service SID.
+
+This is not the production account choice. The installer remains required to configure NT SERVICE\EnterpriseITApi and verify it on a clean supported Windows Server VM.

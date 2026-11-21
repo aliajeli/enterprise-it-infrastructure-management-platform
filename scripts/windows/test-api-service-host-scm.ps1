@@ -40,18 +40,30 @@ try {
     & sc.exe query $serviceName 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) { throw "A service named $serviceName already exists; refusing to overwrite it." }
 
-    # CreateService accepts a virtual account directly; do not pass password= for it.
-    Invoke-Sc @("create", $serviceName, "obj=", '"NT SERVICE\EnterpriseITApi"', "binPath=", $hostExe, "start=", "demand")
+    # Hosted Windows runners reject NT SERVICE virtual-account assignment (1057).
+    # Use the built-in low-privilege LocalService identity for this SCM lifecycle smoke;
+    # production provisioning must still assign NT SERVICE\EnterpriseITApi.
+    Invoke-Sc @("create", $serviceName, "obj=", "LocalService", "binPath=", $hostExe, "start=", "demand")
     $serviceCreated = $true
     Invoke-Sc @("sidtype", $serviceName, "unrestricted")
 
-    & icacls.exe $root /grant "NT SERVICE\EnterpriseITApi:(OI)(CI)(RX)" /T /C | Out-Host
-    if ($LASTEXITCODE -ne 0) { throw "Could not grant temporary service read/execute access to the smoke payload." }
+    $serviceConfiguration = (& sc.exe qc $serviceName 2>&1 | Out-String)
+    if ($LASTEXITCODE -ne 0 -or $serviceConfiguration -notmatch "NT AUTHORITY\\LocalService") {
+        throw "The SCM smoke service is not running under the expected LocalService identity."
+    }
 
     $sidConfiguration = (& sc.exe qsidtype $serviceName 2>&1 | Out-String)
     if ($LASTEXITCODE -ne 0 -or $sidConfiguration -notmatch "UNRESTRICTED") {
         throw "SCM did not report the API service SID as UNRESTRICTED."
     }
+
+    $sidOutput = (& sc.exe showsid $serviceName 2>&1 | Out-String)
+    $sidMatch = [regex]::Match($sidOutput, "S-1-5-80-(?:\d+-){4}\d+")
+    if (-not $sidMatch.Success) { throw "SCM did not return a valid service SID." }
+    $serviceSid = $sidMatch.Value
+    $aclGrant = "*" + $serviceSid + ":(OI)(CI)(RX)"
+    & icacls.exe $root /grant $aclGrant /T /C | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "Could not grant the service SID read/execute access to the smoke payload." }
 
     Start-Service -Name $serviceName
     $deadline = [DateTime]::UtcNow.AddSeconds(35)
