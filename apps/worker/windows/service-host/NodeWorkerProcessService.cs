@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Net;
+using System.Net;\nusing System.Security.Principal;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 namespace EnterpriseIT.WorkerServiceHost;
@@ -24,7 +24,7 @@ internal sealed class NodeWorkerProcessService : BackgroundService
             var root=Path.GetFullPath(AppContext.BaseDirectory); var node=Path.Combine(root,"runtime","node.exe"); var entry=Path.Combine(root,"apps","worker","dist","main.js");
             if(!File.Exists(node)||!File.Exists(entry)) throw new FileNotFoundException("The immutable Worker runtime payload is incomplete.");
             var info=new ProcessStartInfo{FileName=node,WorkingDirectory=root,UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true};
-            info.ArgumentList.Add(entry); ConfigureEnvironment(info,root);
+            info.ArgumentList.Add(entry); ConfigureEnvironment(info,root,sid);
             var process=new Process{StartInfo=info,EnableRaisingEvents=true}; if(!process.Start()){process.Dispose();throw new InvalidOperationException("Worker child did not start.");}
             child=process;
             var childSid=WindowsServiceIdentity.RequireEnabledServiceSid("EnterpriseITWorker",process.Handle);
@@ -61,7 +61,7 @@ internal sealed class NodeWorkerProcessService : BackgroundService
             await Task.Delay(1000,deadline.Token);
         }
     }
-    private static void ConfigureEnvironment(ProcessStartInfo info,string root)
+    private static void ConfigureEnvironment(ProcessStartInfo info,string root,SecurityIdentifier serviceSid)
     {
         info.Environment.Clear();
         foreach(var name in new[]{"SystemRoot","WINDIR","TEMP","TMP","ProgramData","ProgramFiles","ProgramFiles(x86)"}){var value=Environment.GetEnvironmentVariable(name);if(!string.IsNullOrWhiteSpace(value))info.Environment[name]=value;}

@@ -1,3 +1,11 @@
+## 0.1.91 — Protect Worker database configuration with DPAPI
+
+- Removed Worker database configuration from the inherited machine environment.
+- Added machine-scope DPAPI encryption bound to the EnterpriseITWorker service SID and a per-installation GUID; the encrypted envelope is stored under ProgramData with a service-SID-only read ACL.
+- Added a one-shot host provisioning command that accepts the URL only through redirected stdin, validates PostgreSQL loopback 127.0.0.1:5432 and does not place the secret in command-line arguments or logs.
+- Worker decrypts configuration only after validating its enabled service SID, then passes DATABASE_URL through its explicit child environment allow-list.
+- Added database URL policy tests and extended Worker provisioning policy. Clean-VM DPAPI/virtual-account acceptance remains pending.
+
 ## 0.1.90 — Add pinned PostgreSQL Windows packaging and service lifecycle
 
 - Added PostgreSQL 18.7-1 EDB Windows x64 binary staging with vendor SHA-256 sidecar verification and immutable versioned payload checks.

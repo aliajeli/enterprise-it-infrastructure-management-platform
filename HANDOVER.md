@@ -1,3 +1,12 @@
+## 2026-11-21 — Protect Worker database configuration (v0.1.91)
+
+- Worker no longer reads DATABASE_URL from inherited machine/service environment. It loads a binary machine-DPAPI envelope from ProgramData\\EnterpriseIT\\Worker\\database.config.dpapi.
+- DPAPI entropy binds ciphertext to the EnterpriseITWorker service SID and a random installation GUID. The config directory ACL grants SYSTEM/Administrators full access and Worker service SID read/execute only.
+- Provisioning accepts the URL as SecureString and sends it to the host one-shot command through redirected stdin; the secret is not placed in command-line arguments or logs.
+- The host validates its enabled service SID before decrypting; DATABASE_URL is passed only to the Worker child through the explicit environment allow-list. URL validation restricts PostgreSQL to 127.0.0.1:5432.
+- Added URL validation tests and extended Worker provisioning WhatIf checks. Hosted CI and clean-VM virtual-account/DPAPI acceptance remain required.
+- Five service foundations exist (5/5); integrated orchestration and clean-VM acceptance remain. Installer path 3/9 (33%), six milestones remaining; no installer or Release.
+
 ## 2026-11-21 — PostgreSQL Windows package and service foundation (v0.1.90)
 
 - Pinned Windows x64 PostgreSQL to EDB archive postgresql-18.7-1-windows-x64-binaries.zip. Staging retrieves the vendor SHA-256 sidecar, hashes the archive before extraction, verifies postgres.exe reports 18.7 and preserves the complete pgsql runtime tree.
