@@ -9,7 +9,7 @@ The production management host has five independently supervised Windows service
 | Logical service | SCM service name | Immutable payload entry point | Private listener / endpoint | Current state |
 |---|---|---|---|---|
 | TLS edge | `EnterpriseITEdge` | Dedicated .NET 10 edge host (YARP proof of concept) | LAN HTTPS/WSS :443; proxies only to loopback backends | Design selected for prototype; implementation pending |
-| Next.js UI | `EnterpriseITWeb` | Bundled Node 26 + Next standalone server | `127.0.0.1:13000` | Standalone build exists; Windows host/provisioning pending |
+| Next.js UI | `EnterpriseITWeb` | Dedicated .NET 10 SCM host + bundled Node 26 + Next standalone launcher | `127.0.0.1:13000` | Host, launcher, staging and provisioning policy implemented; clean-VM virtual-account acceptance pending |
 | API/WebSocket | `EnterpriseITApi` | Existing .NET 10 host + bundled Node API | `127.0.0.1:13001` | Host runtime and initial provisioning script exist |
 | Worker | `EnterpriseITWorker` | Dedicated .NET 10 host + bundled Node worker | Health only on `127.0.0.1:13002` | Worker runtime exists; Windows host/provisioning pending |
 | PostgreSQL | `EnterpriseITPostgreSQL` | Pinned PostgreSQL 18 Windows distribution | `127.0.0.1:5432` only | CI major-version baseline is 18; Windows packaging/SCM provisioning pending |
@@ -55,11 +55,11 @@ Each service has bounded startup, graceful shutdown and child-process reaping. A
 ## Release gates still required
 
 - Pin exact PostgreSQL 18 patch/build and verify redistribution/licensing, service registration, data ownership and clean-VM install/upgrade behavior.
-- Build and test the Worker and Web Windows Service Hosts, including parent/child service SID validation and bounded lifecycle tests.
+- Implement the Worker Windows Service Host and provisioning. The Web host, parent/child service SID validation, bounded lifecycle tests and provisioning policy are implemented and pass hosted Windows CI; clean-VM virtual-account acceptance remains pending.
 - Implement Edge host and validate TLS certificate import, private-key ACLs, SNI/hostname validation, WSS proxying and failure behavior.
 - Implement provisioning scripts and policy tests for all services; verify idempotency and refuse unexpected pre-existing services.
 - Run a clean supported Windows Server VM acceptance using the actual virtual service accounts. Hosted CI's LocalService SCM smoke is not proof of production virtual-account provisioning.
 - Verify five independent SCM services, service recovery configuration, private listener bindings and end-to-end health.
 - Complete protected ProgramData provisioning, Credential Vault security review and backup/restore before any production installer claim.
 
-Until all gates pass, milestone 4 remains active. The API host/provisioning is one completed slice, not completion of the five-service deployment.
+Until all gates pass, milestone 4 remains active. The API and Web host/provisioning slices are implemented; Worker host, Edge, PostgreSQL packaging and clean-VM acceptance remain open. This is not completion of the five-service deployment.

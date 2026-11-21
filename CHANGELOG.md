@@ -1,3 +1,8 @@
+## 0.1.86 — Record Web service hosted CI acceptance
+
+- Updated the Windows service deployment decision table to mark Web host, launcher, standalone staging and provisioning policy as implemented while retaining clean-VM virtual-account acceptance as an open release gate.
+- Recorded successful Push and PR validation runs for the v0.1.85 Web service implementation commit. Hosted CI success is not represented as clean-VM production acceptance.
+
 ## 0.1.85 — Fix Web launcher lint compatibility
 
 - Replaced CommonJS require calls in the Web standalone launcher with runtime dynamic imports so the repository ESLint policy passes without weakening lint rules.

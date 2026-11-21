@@ -1,3 +1,11 @@
+## 2026-11-21 — Record successful Web service CI acceptance (v0.1.86)
+
+- Verified the exact v0.1.85 implementation commit `a387f64b3f7f07ef40cabd1daf840db56fe13c67` in both GitHub Actions runs: Push `44925272158` and PR `44925278555`; both completed successfully.
+- The Linux platform validation passed, including dependency audit, lint, typecheck, unit tests, PostgreSQL backup/restore and production build.
+- The Windows runtime job passed: existing API host/SCM tests, Web host build, Web host lifecycle tests, Web provisioning policy tests, Credential Vault helper checks, Windows preflight, Windows API typecheck/tests/build.
+- This confirms hosted CI compilation and policy tests only. Actual EnterpriseITWeb virtual-account acceptance on a clean Windows Server VM remains a release gate.
+- Updated the deployment decision table to reflect the implemented Web host/provisioning slice. Worker SCM host, Edge and PostgreSQL Windows packaging remain unimplemented.
+
 ## 2026-11-21 — Harden Web launcher validation (v0.1.85)
 
 - Replaced require-based imports in the standalone Web launcher with dynamic imports to comply with the strict repository lint policy.
