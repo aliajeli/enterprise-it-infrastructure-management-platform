@@ -1,3 +1,11 @@
+## 0.1.89 — Implement Windows TLS Edge service foundation
+
+- Added a dedicated .NET 10 YARP reverse-proxy service with API and Web loopback upstreams, explicit LAN bind address, TLS 1.2/1.3 and readiness checks.
+- Added machine-store certificate validation for private key, exact DNS hostname, Server Authentication EKU and trusted certificate chain.
+- Replaced client-supplied X-Forwarded headers, disabled RFC Forwarded passthrough, validated HTTP Host and applied bounded Kestrel request limits.
+- Added Edge virtual-account provisioning, service SID and recovery policy, protected ProgramData listener config, certificate private-key ACL and immutable Program Files payload ACL.
+- Added Edge configuration and provisioning policy tests to Windows CI. Clean-VM virtual-account and certificate acceptance remain open.
+
 ## 0.1.88 — Record Worker service hosted CI acceptance
 
 - Recorded successful exact-head validation for Worker service foundation commit 0562704e691e4898b319e38d11f413817dd6e884.

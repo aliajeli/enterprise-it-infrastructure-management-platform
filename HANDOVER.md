@@ -1,3 +1,13 @@
+## 2026-11-21 — Windows Edge service foundation (v0.1.89)
+
+- Added .NET 10 YARP Edge service with fixed API upstream 127.0.0.1:13001 and Web upstream 127.0.0.1:13000; only the configured non-loopback interface address and HTTPS port are exposed.
+- TLS requires a current LocalMachine certificate with accessible private key, exact configured DNS name, Server Authentication EKU and trusted chain. The host validates its enabled NT SERVICE\\EnterpriseITEdge SID before startup.
+- Incoming forwarded headers are replaced by YARP, the standard Forwarded header is disabled, Host is checked against the configured DNS name, and request/keepalive limits are bounded.
+- Added Edge provisioning for NT SERVICE\\EnterpriseITEdge, unrestricted service SID, bounded SCM recovery, immutable Program Files ACL, protected ProgramData config and private-key read ACL. It never starts the service or changes Windows Firewall/router rules.
+- Added Edge config tests and Windows CI build/provisioning tests. Actual certificate/key ACL and virtual-account acceptance on a clean Windows Server VM remain open.
+- Five-service stage remains active: API, Web, Worker and Edge service slices exist; PostgreSQL packaging/SCM remains. Worker protected DB config and integrated orchestration remain open. Installer path 3/9 (33%), six milestones remaining; no installer or Release.
+- PR #9 remains Draft/unmerged; PR #7 and PR #8 remain unmerged.
+
 ## 2026-11-21 — Worker service exact-head CI acceptance (v0.1.88)
 
 - Verified commit `0562704e691e4898b319e38d11f413817dd6e884` in both exact-head GitHub Actions runs: Push `44933005081` and PR `44933009547`; both completed successfully.

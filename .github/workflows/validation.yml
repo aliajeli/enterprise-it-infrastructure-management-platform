@@ -173,6 +173,16 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-worker-service-provisioning.ps1
 
+      - name: Build Windows Edge service host
+        run: dotnet build apps/edge/windows/service-host/EnterpriseIT.EdgeServiceHost.csproj --configuration Release
+
+      - name: Test Windows Edge configuration policy
+        run: dotnet test apps/edge/windows/service-host-tests/EnterpriseIT.EdgeServiceHost.Tests.csproj --configuration Release
+
+      - name: Test Edge service provisioning policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-edge-service-provisioning.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
