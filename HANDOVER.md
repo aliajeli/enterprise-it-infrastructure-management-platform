@@ -1,3 +1,10 @@
+## 2026-11-22 — Relocatable API/Worker workspace promotion correction (v0.1.116)
+
+- Exact-head v0.1.115 Push run 44962893785 and PR run 44962897297 both failed in the Windows API runtime smoke at `Test API and Worker production runtime staging`. All earlier Windows service-host builds, SCM lifecycle tests, service provisioning policy tests, five-service orchestration policy, Node runtime policy, Web staging policy, offline manifest policy, DPAPI/keyring helper builds and installer preflight passed. Linux/PostgreSQL validation also passed.
+- The failing Node process reported `ERR_MODULE_NOT_FOUND: @platform/database` after the staged payload was promoted under Program Files. The integration test also hard-coded `EnterpriseIT\0.1.113`, so it was testing a stale versioned destination while root package metadata had advanced to 0.1.115.
+- v0.1.116 replaces npm workspace links (which can still reference the temporary build root) with physical copies of API, Worker and Database packages under `node_modules\@platform` before promotion. The test now derives the install root from package.json and checks module resolution from both API and Worker directories.
+- Exact-head Push and PR CI must pass before this runtime staging gate is accepted. No installer or GitHub Release exists; PR #9 remains open/unmerged, and PR #7/#8 remain unmerged. No MikroTik, NAT or port-mapping changes are part of this work.
+
 ## 2026-11-22 — Repair Windows validation workflow formatting (v0.1.110)
 
 - Identified that v0.1.108 had inserted literal backslash-n characters into the Windows workflow step instead of actual YAML line breaks. This malformed the Node staging test step and prevented the intended Windows job definition from being valid.

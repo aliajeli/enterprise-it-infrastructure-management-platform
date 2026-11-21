@@ -1,3 +1,10 @@
+## 0.1.116 — Make production workspace packages relocatable
+
+- Replaced npm's temporary-root workspace links with physical copies under the staged `node_modules/@platform` namespace before promotion. This prevents package resolution from depending on the disposable staging directory after promotion.
+- Updated the Windows integration test to derive its immutable Program Files destination from the root package version instead of the stale hard-coded 0.1.113 path.
+- Expanded the post-promotion smoke to resolve the database package from both API and Worker working directories and assert all three physical workspace package manifests exist.
+- Exact-head Windows CI is required; this change is not accepted until both Push and PR validation pass. No installer or Release is created.
+
 ## 0.1.110 — Repair Windows validation workflow formatting
 
 - Corrected the Windows validation workflow step introduced in v0.1.108: escaped backslash-n text was stored literally in the YAML instead of actual line breaks. The Node runtime policy test is now a normal standalone step, and the offline payload manifest integrity test follows it.

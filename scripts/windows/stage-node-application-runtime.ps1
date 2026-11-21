@@ -41,6 +41,15 @@ if($MyInvocation.InvocationName -ne "."){
   try{
    & (Join-Path $plan.InstallRoot "runtime\npm.cmd") "ci" "--omit=dev" "--no-audit" "--no-fund" "--workspace" "@platform/api" "--workspace" "@platform/worker" "--workspace" "@platform/database" "--include-workspace-root=false"
    if($LASTEXITCODE -ne 0){throw "Production dependency installation failed with exit code $LASTEXITCODE."}
+   # npm workspace links target the temporary build tree. Replace them with physical,
+   # relocatable package copies before the temporary root is promoted and deleted.
+   $platformModules=Join-Path $temp "node_modules\@platform"
+   New-Item -ItemType Directory -Path $platformModules -Force|Out-Null
+   foreach($workspace in @(@{Name="api";Path="apps\api"},@{Name="worker";Path="apps\worker"},@{Name="database";Path="packages\database"})){
+    $link=Join-Path $platformModules $workspace.Name
+    if(Test-Path -LiteralPath $link){Remove-Item -LiteralPath $link -Force -Recurse}
+    Copy-Item -LiteralPath (Join-Path $temp $workspace.Path) -Destination $link -Recurse
+   }
    $env:DATABASE_URL="postgresql://runtime-check:runtime-check@127.0.0.1:5432/runtime_check"
    & (Join-Path $plan.InstallRoot "runtime\node.exe") "--input-type=module" "-e" "await import('@platform/database'); await import('fastify'); await import('@node-rs/argon2'); console.log('API/Worker production dependency resolution passed.');"
    if($LASTEXITCODE -ne 0){throw "Production runtime module-resolution smoke test failed."}
