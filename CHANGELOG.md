@@ -1,3 +1,8 @@
+## 0.1.76 — Correct LocalService account separator in SCM harness
+
+- Fixed the temporary SCM account string to use the single Windows account separator in NT AUTHORITY\LocalService. The prior attempt passed a doubled separator and SCM returned 1057 during service creation.
+- No host runtime behavior changed. Exact-head Windows SCM acceptance remains pending.
+
 ## 0.1.75 — Use canonical LocalService account name in SCM smoke
 
 - Corrected the CI-only SCM test service logon name from the short alias LocalService to the canonical NT AUTHORITY\LocalService account name. The prior Windows runner returned error 1057 during CreateService before the service SID or host lifecycle could be tested.

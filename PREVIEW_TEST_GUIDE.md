@@ -260,3 +260,8 @@ This is not the production account choice. The installer remains required to con
 ## 23. Canonical LocalService name for SCM smoke
 
 Version 0.1.75 passes NT AUTHORITY\LocalService as the temporary SCM test account instead of the short alias. The previous Windows run failed with 1057 during CreateService. The production virtual service account requirement remains unchanged.
+
+
+## 24. LocalService account-name separator
+
+Version 0.1.76 corrects the CI harness account literal to NT AUTHORITY\LocalService with one separator. The prior Windows runner failed at CreateService because the script supplied a doubled separator. Exact-head CI remains required.

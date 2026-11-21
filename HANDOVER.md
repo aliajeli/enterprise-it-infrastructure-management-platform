@@ -1,3 +1,8 @@
+## 2026-11-21 — Correct LocalService account separator (v0.1.76)
+
+- The v0.1.75 harness still failed at CreateService. Source inspection showed the PowerShell account literal contained a doubled backslash (NT AUTHORITY\\LocalService) rather than the canonical single separator (NT AUTHORITY\LocalService).
+- Corrected the account literal. The test still uses LocalService only for hosted CI and asserts the EnterpriseITApi service SID; production provisioning remains the dedicated virtual account.
+
 ## 2026-11-21 — Canonical LocalService account name (v0.1.75)
 
 - The v0.1.74 runner still returned Win32 1057 during CreateService because the short LocalService alias was not accepted as the service start account in this invocation.
