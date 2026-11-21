@@ -275,3 +275,10 @@ Version 0.1.77 changes the service-account assertion from regex matching to a li
 ## 26. Failed-start SCM state assertion
 
 Version 0.1.78 verifies the authoritative service state becomes Stopped and no child process remains after readiness is deliberately unavailable. It no longer requires Start-Service to throw synchronously, because SCM may accept the start request and report the host's later startup failure asynchronously.
+
+
+## 27. API Windows Service Host runtime acceptance — v0.1.78
+
+Exact-head Windows CI passed on both Push run 44906623563 and PR run 44906628820. The Windows job passed the real SCM smoke, all 17 service-host lifecycle tests, DPAPI/keyring helper checks, installer preflight tests, Windows API typecheck/tests and API build.
+
+The SCM smoke validates the service SID and child token under a temporary LocalService account because the hosted runner returned Win32 1057 for NT SERVICE virtual-account assignment. This does not waive production provisioning: the installer must configure NT SERVICE\EnterpriseITApi and validate the installed service on a clean supported Windows Server VM.

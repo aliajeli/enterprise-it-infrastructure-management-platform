@@ -1,3 +1,10 @@
+## 0.1.79 — Close API Windows Service Host runtime milestone
+
+- Recorded successful exact-head Windows CI acceptance for v0.1.78: Push run 44906623563 and PR run 44906628820 both completed successfully.
+- The Windows job passed the real SCM smoke (temporary service start, enabled EnterpriseITApi service SID, parent/child token validation, loopback readiness, graceful stop/reap, and failed-readiness startup cleanup), all 17 service-host lifecycle unit tests, DPAPI helper checks, keyring helper fail-closed checks, installer preflight tests, Windows API typecheck/tests and API build.
+- Marked the API Windows Service Host runtime milestone complete. The hosted SCM smoke uses LocalService because the hosted runner returned Win32 1057 for NT SERVICE virtual-account assignment; production provisioning must still configure NT SERVICE\EnterpriseITApi and validate it on a clean supported Windows Server VM.
+- This documentation/version closure does not create an installer or Release and does not complete the five-service installation, protected ProgramData/immutable ACL provisioning, SCM recovery policy, Credential Vault approval or install/upgrade/repair/uninstall acceptance.
+
 ## 0.1.78 — Assert failed-start state instead of PowerShell exception shape
 
 - The Windows SCM smoke now successfully creates the service under LocalService, enables the EnterpriseITApi service SID, passes host/child identity validation, starts readiness, and completes graceful stop/reap.

@@ -1,3 +1,20 @@
+## 2026-11-21 — API Windows Service Host runtime milestone complete (v0.1.79)
+
+- Exact-head v0.1.78 Windows Push CI run 44906623563: completed/success.
+- Exact-head v0.1.78 PR CI run 44906628820: completed/success.
+- The Windows job passed:
+  - .NET 10 API service-host build and all 17 lifecycle tests.
+  - Real SCM smoke: temporary service creation, SERVICE_SID_TYPE_UNRESTRICTED, host and child service-SID token validation, loopback readiness, graceful shutdown, SCM Stopped state and child-process reaping.
+  - Failed-readiness restart: host returned to Stopped and no child process remained.
+  - DPAPI helper build and rejection of non-service identity.
+  - Windows keyring helper build and fail-closed unprovisioned behavior.
+  - Read-only installer preflight tests.
+  - Windows API dependency install, Prisma compile, typecheck, API/Argon2id tests and API build.
+- The hosted runner could not provision NT SERVICE virtual accounts (Win32 1057); therefore the SCM smoke uses LocalService as its temporary logon identity while still validating the exact EnterpriseITApi service SID in the parent and child tokens. This is CI-only and not a production fallback. Installer provisioning remains required to assign NT SERVICE\EnterpriseITApi and prove it on a clean supported Windows Server VM.
+- The API Windows Service Host runtime milestone is complete. Installer-owned virtual account provisioning, immutable Program Files ACLs, protected ProgramData/configuration, SCM recovery actions, all five services, Credential Vault approval, offline packaging, installer, install/upgrade/repair/uninstall and backup/restore/rollback remain open.
+- Installer-path progress: 3/9 milestones complete (33%); 6 remain. This is installer-path progress, not total product completion.
+- PR #7 and PR #8 remain Draft/open/unmerged. Do not merge PR #8 without explicit user approval. No installer or Release exists.
+
 ## 2026-11-21 — Assert SCM state for failed startup (v0.1.78)
 
 - The v0.1.77 Windows run got past CreateService, service-SID provisioning, parent/child token validation, readiness success, graceful service stop and child reaping.
