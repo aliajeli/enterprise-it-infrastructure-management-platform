@@ -1,3 +1,8 @@
+## 0.1.102 — Verify Worker child PID is actually reaped
+
+- Strengthened the Worker SCM smoke to capture the child PID after readiness and verify that exact process no longer exists after SCM stop.
+- Avoids treating a stopped service with an orphaned child as a successful reap.
+
 ## 0.1.101 — Fix Worker SCM smoke child-process detection
 
 - Changed the Worker SCM smoke to identify the child by its parent service-host PID rather than matching a potentially normalized command-line path.

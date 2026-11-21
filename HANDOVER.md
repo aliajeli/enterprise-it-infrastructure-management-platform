@@ -1,3 +1,8 @@
+## 2026-11-21 — Worker SCM smoke reap assertion (v0.1.102)
+
+- Worker SCM smoke now captures the actual child process PID by comparing its ParentProcessId to the service host PID.
+- After Stop-Service completes, the test queries that exact PID until it exits or the bounded timeout expires; it no longer equates service ProcessId=0 with proof that the child was reaped.
+
 ## 2026-11-21 — Worker SCM smoke child detection correction (v0.1.101)
 
 - The hosted Worker service reached Running and passed its readiness gate, but the smoke test's CIM command-line substring filter failed to locate the child process.

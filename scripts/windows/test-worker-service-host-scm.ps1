@@ -52,6 +52,7 @@ try{
  $childDeadline=[DateTime]::UtcNow.AddSeconds(10)
  do{$children=Get-WorkerSmokeChild;if($children.Count-eq 1){break};Start-Sleep -Milliseconds 250}while([DateTime]::UtcNow-lt $childDeadline)
  if($children.Count-ne 1){throw "Expected one Worker child after SCM startup; found $($children.Count)."}
+ $childPid=[uint32]$children[0].ProcessId
  $ready=$false
  for($i=0;$i-lt 20;$i++){try{$response=Invoke-WebRequest -Uri "http://127.0.0.1:13002/health/ready" -UseBasicParsing -TimeoutSec 2;if($response.StatusCode-eq 200){$ready=$true;break}}catch{};Start-Sleep -Milliseconds 500}
  if(-not $ready){throw "Worker loopback readiness endpoint did not return HTTP 200."}
@@ -60,8 +61,8 @@ try{
  do{if((Get-Service -Name $serviceName).Status-eq "Stopped"){break};Start-Sleep -Milliseconds 500}while([DateTime]::UtcNow-lt $stopDeadline)
  if((Get-Service -Name $serviceName).Status-ne "Stopped"){throw "Worker service did not stop within 30 seconds."}
  $childDeadline=[DateTime]::UtcNow.AddSeconds(10)
- do{$children=Get-WorkerSmokeChild;if($children.Count-eq 0){break};Start-Sleep -Milliseconds 250}while([DateTime]::UtcNow-lt $childDeadline)
- if($children.Count-ne 0){throw "Worker child remained after SCM reported Stopped."}
+ do{$childStill=Get-CimInstance Win32_Process -Filter "ProcessId=$childPid" -ErrorAction SilentlyContinue;if($null-eq $childStill){break};Start-Sleep -Milliseconds 250}while([DateTime]::UtcNow-lt $childDeadline)
+ if($null-ne $childStill){throw "Worker child remained after SCM reported Stopped."}
  Write-Host "Worker SCM smoke passed: service SID, DPAPI config, readiness, graceful shutdown and child reap."
 }finally{
  if($serviceCreated){try{$state=(Get-Service -Name $serviceName -ErrorAction SilentlyContinue).Status;if($state-and $state-ne "Stopped"){Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue;Start-Sleep -Seconds 2}}catch{};& sc.exe delete $serviceName|Out-Null}
