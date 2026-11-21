@@ -904,3 +904,11 @@
 - Added a read-only `-WhatIf` plan, `ShouldProcess` confirmation, isolated sibling staging directory, post-copy completeness checks and same-volume atomic promotion.
 - Added Windows PowerShell coverage for dry-run behavior, required runtime/static/public files and overwrite rejection; wired it into Windows CI.
 - This packages only the Web standalone output. API/Worker production dependency bundling, installer, rollback and clean Windows Server acceptance remain outstanding.
+
+
+## 0.1.113 — API and Worker production runtime staging
+- Added immutable staging for compiled API, Worker and shared Database workspaces with Prisma schema and migrations.
+- Installs selected workspace production dependencies using the already-staged Node.js/npm runtime, then verifies Database, Fastify and Argon2 module resolution before promotion.
+- Refuses existing destinations and rolls back directories already promoted if a later promotion fails.
+- Added Windows integration coverage and CI build/staging gate for API and Worker.
+- This is runtime payload staging, not a complete installer; PostgreSQL provisioning, credentials, Windows service identities, Edge certificates, repair/uninstall and clean-VM acceptance remain outstanding.

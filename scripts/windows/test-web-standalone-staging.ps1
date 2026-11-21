@@ -1,4 +1,5 @@
 $ErrorActionPreference = "Stop"
+$repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 $stageScript = Join-Path $PSScriptRoot "stage-web-standalone.ps1"
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("enterpriseit-web-stage-" + [guid]::NewGuid().ToString("N"))
 $source = Join-Path $tempRoot "build\.next\standalone"
@@ -26,6 +27,10 @@ try {
     $rejected = $false
     try { & $stageScript -StandaloneDirectory $source -InstallRoot $installRoot -Confirm:$false | Out-Null } catch { $rejected = $true }
     if (-not $rejected) { throw "Existing Web standalone destination was overwritten." }
+
+    $rejected = $false
+    try { Get-WebStandaloneStagePlan -StandaloneDirectory $source -InstallRoot $installRoot | Out-Null } catch { $rejected = $true }
+    if (-not $rejected) { throw "Existing destination was accepted by the stage plan." }
     Write-Host "Web standalone staging policy tests passed."
 }
 finally {

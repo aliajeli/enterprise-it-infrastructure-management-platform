@@ -1151,3 +1151,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - Replaced direct overlay-copy behavior with a no-overwrite staging transaction: preflight, sibling temporary directory, payload completeness checks, and same-volume directory promotion.
 - Added `-WhatIf`/ShouldProcess support and a Windows policy test covering dry-run, runtime/static/public content, and rejection of an existing destination.
 - CI execution for this exact commit is required before treating the new staging policy as validated. This does not complete API/Worker runtime bundling, installer, rollback, or real Windows Server acceptance.
+
+
+## 2026-11-22 — API/Worker production runtime staging (v0.1.113)
+- Added `stage-node-application-runtime.ps1` to assemble API, Worker and Database compiled outputs, selected workspace production dependencies, and Prisma schema/migrations.
+- Requires the versioned Node.js 26 runtime to be staged first, refuses existing destinations, verifies production module resolution before promotion, and removes promoted directories if a later promotion fails.
+- Added a Windows integration test that builds/stages the runtime and resolves Database, Fastify and Argon2 modules from the staged production tree. Exact-head CI is required before acceptance.
+- Worker discovery handlers remain unregistered; packaging does not enable discovery. Installer, PostgreSQL provisioning, credential provisioning, Edge TLS acceptance, repair/uninstall and clean-VM acceptance remain open.

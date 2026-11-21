@@ -332,6 +332,13 @@ jobs:
       - name: Build API service
         run: npm run build --workspace @platform/api
 
+      - name: Build Worker service
+        run: npm run build --workspace @platform/worker
+
+      - name: Test API and Worker production runtime staging
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-node-application-runtime-staging.ps1
+
   lockfile-bootstrap:
     name: Refresh npm dependency lockfile
     if: github.event_name == 'push'
