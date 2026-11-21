@@ -1,3 +1,8 @@
+## 0.1.57 — Validate Windows token size-query failure
+
+- Hardened service-SID token inspection: the initial `GetTokenInformation(TokenGroups)` sizing call must fail specifically with `ERROR_INSUFFICIENT_BUFFER` and report a bounded required buffer size. Unexpected success or any other Win32 error now fails closed instead of allowing an untrusted/invalid size result to proceed.
+- This is defensive validation of the existing parent/child identity gate. It does not provision the service account, configure SCM, prove clean-VM service-token behavior or create an installer.
+
 ## 0.1.56 — Verify API child process service SID
 
 - After launching the fixed Node API executable, the Windows host opens the child process token with query-only access and independently verifies the exact enabled, non-deny-only `NT SERVICE\\EnterpriseITApi` SID before accepting the child or starting readiness checks.

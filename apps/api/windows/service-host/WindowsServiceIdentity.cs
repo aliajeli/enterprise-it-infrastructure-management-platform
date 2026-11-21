@@ -7,6 +7,7 @@ namespace EnterpriseIT.ApiServiceHost;
 internal static class WindowsServiceIdentity
 {
     private const int TokenGroupsInformation = 2;
+    private const int ErrorInsufficientBuffer = 122;
     private const uint GroupEnabled = 0x00000004;
     private const uint GroupUseForDenyOnly = 0x00000010;
     private const uint TokenQuery = 0x0008;
@@ -49,11 +50,14 @@ internal static class WindowsServiceIdentity
             candidates.Add(user);
 
         var token = identity.AccessToken;
-        _ = GetTokenInformation(token.DangerousGetHandle(), TokenGroupsInformation,
+        var sizeQuerySucceeded = GetTokenInformation(
+            token.DangerousGetHandle(), TokenGroupsInformation,
             IntPtr.Zero, 0, out var requiredBytes);
+        var sizeQueryError = Marshal.GetLastWin32Error();
         var firstGroupOffset = Marshal.OffsetOf<TokenGroupsLayout>(
             nameof(TokenGroupsLayout.FirstGroup)).ToInt32();
-        if (requiredBytes < firstGroupOffset || requiredBytes > MaximumTokenBufferBytes)
+        if (sizeQuerySucceeded || sizeQueryError != ErrorInsufficientBuffer ||
+            requiredBytes < firstGroupOffset || requiredBytes > MaximumTokenBufferBytes)
             throw new UnauthorizedAccessException("The Windows service token could not be validated.");
 
         var buffer = Marshal.AllocHGlobal(requiredBytes);

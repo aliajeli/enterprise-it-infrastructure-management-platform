@@ -1,3 +1,9 @@
+## 2026-11-21 — Harden Windows service-token size query (v0.1.57)
+
+- The TokenGroups sizing probe now requires the documented `ERROR_INSUFFICIENT_BUFFER` result and a bounded required size before allocating memory. Unexpected success, unexpected Win32 errors, undersized buffers and oversized buffers all fail closed.
+- The existing exact enabled/non-deny-only service-SID validation remains unchanged. No privileges, ACLs, service configuration, firewall or network settings are modified.
+- Exact-head Push and PR CI must pass. This does not replace real SCM identity inheritance tests on a clean Windows VM. PR #8 remains Draft/open/unmerged; no installer or Release.
+
 ## 2026-11-21 — Verify API child process service SID (v0.1.56)
 
 - Added a second identity gate immediately after Node process creation. The host opens the child process token using `OpenProcessToken` with `TOKEN_QUERY`, constructs a Windows identity from that token, and validates the exact expected `NT SERVICE\\EnterpriseITApi` SID as token user or enabled, non-deny-only group.
