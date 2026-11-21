@@ -5,7 +5,7 @@ $runtime=Join-Path $root "runtime"
 $workerDirectory=Join-Path $root "apps\worker\dist"
 $serviceName="EnterpriseITWorker"
 $hostProject=Join-Path $repoRoot "apps\worker\windows\service-host\EnterpriseIT.WorkerServiceHost.csproj"
-$stubProject=Join-Path $repoRoot "apps\worker\windows\service-host-smoke\WindowsWorkerStub.csproj"
+
 $hostExe=Join-Path $root "EnterpriseIT.WorkerServiceHost.exe"
 $entry=Join-Path $workerDirectory "main.js"
 $configRoot=Join-Path $env:ProgramData "EnterpriseIT\Worker"
@@ -22,12 +22,31 @@ try{
  if($LASTEXITCODE-ne 0){throw "Publishing Worker service host failed."}
  New-Item -ItemType Directory -Path $runtime -Force|Out-Null
  New-Item -ItemType Directory -Path $workerDirectory -Force|Out-Null
- dotnet build $stubProject --configuration Release --output $runtime
- if($LASTEXITCODE-ne 0){throw "Building Worker SCM stub failed."}
- $stubExe=Join-Path $runtime "WindowsWorkerStub.exe"
- if(-not(Test-Path $stubExe)){throw "Worker SCM stub executable is missing."}
- Copy-Item $stubExe (Join-Path $runtime "node.exe") -Force
- Set-Content -LiteralPath $entry -Value "READY" -Encoding ascii
+ $nodeCommand=Get-Command node.exe -ErrorAction Stop
+ $nodeSource=$nodeCommand.Source
+ if(-not(Test-Path -LiteralPath $nodeSource -PathType Leaf)){throw "Node.js 26 executable from the CI toolchain is missing."}
+ Copy-Item -LiteralPath $nodeSource -Destination (Join-Path $runtime "node.exe") -Force
+ $nodeSmoke=@'
+const http = require("node:http");
+const server = http.createServer((request, response) => {
+  if (request.url === "/health/ready") {
+    response.writeHead(200, { "content-type": "text/plain" });
+    response.end("OK");
+    return;
+  }
+  response.writeHead(404);
+  response.end();
+});
+server.listen(13002, "127.0.0.1");
+let shutdown = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", chunk => {
+  shutdown += chunk;
+  if (shutdown.includes("SHUTDOWN")) server.close(() => process.exit(0));
+});
+process.stdin.resume();
+'@
+ Set-Content -LiteralPath $entry -Value $nodeSmoke -Encoding utf8
  if(-not(Test-Path $hostExe)){throw "Worker service-host executable is missing."}
  & sc.exe query $serviceName 2>&1|Out-Null;if($LASTEXITCODE-eq 0){throw "Service $serviceName already exists; refusing overwrite."}
  Invoke-WorkerSmokeSc @("create",$serviceName,"obj=","NT AUTHORITY\LocalService","binPath=",$hostExe,"start=","demand")

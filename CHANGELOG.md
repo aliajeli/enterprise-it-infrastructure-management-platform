@@ -1,3 +1,8 @@
+## 0.1.104 — Use the actual Node runtime in Worker SCM smoke
+
+- Replaced the .NET stub copied as node.exe with the Node 26 executable from the Windows CI toolchain.
+- The smoke Worker now serves its loopback readiness endpoint using node:http and handles the host's SHUTDOWN stdin command, exercising the real Node process contract.
+
 ## 0.1.103 — Correct Worker SCM child executable detection
 
 - Updated the Worker SCM smoke to locate the child by its exact staged node.exe image path instead of relying on CIM parent PID metadata.

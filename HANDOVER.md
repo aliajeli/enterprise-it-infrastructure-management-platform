@@ -1,3 +1,9 @@
+## 2026-11-21 — Worker SCM smoke uses Node 26 (v0.1.104)
+
+- Replaced the synthetic .NET apphost masquerading as node.exe with the actual Node 26 executable provided by setup-node.
+- The smoke entry point uses node:http bound only to 127.0.0.1:13002 and listens for the SHUTDOWN stdin command, then closes the server and exits.
+- This tests the real Node child-process stdin/readiness contract used by the production Worker host. The test captures the exact child PID and verifies it exits after SCM stop.
+
 ## 2026-11-21 — Worker SCM child executable detection (v0.1.103)
 
 - Worker SCM smoke's ParentProcessId-based filter did not match the hosted runner's service process metadata even though the Worker service reached Running.
