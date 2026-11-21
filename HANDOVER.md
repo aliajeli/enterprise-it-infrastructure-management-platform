@@ -1,3 +1,13 @@
+## 2026-11-21 — PostgreSQL Windows package and service foundation (v0.1.90)
+
+- Pinned Windows x64 PostgreSQL to EDB archive postgresql-18.7-1-windows-x64-binaries.zip. Staging retrieves the vendor SHA-256 sidecar, hashes the archive before extraction, verifies postgres.exe reports 18.7 and preserves the complete pgsql runtime tree.
+- Added cluster initialization requiring a SecureString superuser password. The password is written only to a temporary file with SYSTEM/Administrators ACL, passed to initdb by file path, and removed in a finally block.
+- The initialized cluster uses SCRAM-SHA-256, listen_addresses 127.0.0.1, port 5432 and pg_hba rules that reject non-loopback IPv4/IPv6.
+- Added native pg_ctl runservice registration as NT SERVICE\\EnterpriseITPostgreSQL, enabled service SID, bounded recovery, immutable Program Files read/execute ACL and isolated ProgramData data ACL. Provisioning never starts the service and never changes firewall/router configuration.
+- Added CI policy checks for the exact EDB package version and PostgreSQL service plan/WhatIf. CI does not download the 389 MB-class database archive or claim clean-VM acceptance.
+- Five service foundations now exist (API, Web, Worker, Edge, PostgreSQL). Protected Worker DATABASE_URL configuration, Edge TLS/key ACL acceptance, PostgreSQL native service start/stop/backup/restore on a clean Windows Server VM, and five-service orchestration remain open.
+- Installer path remains 3/9 (33%), six milestones remain. No installer or Release exists. PR #9 remains Draft/unmerged; PR #7/#8 remain unmerged.
+
 ## 2026-11-21 — Windows Edge service foundation (v0.1.89)
 
 - Added .NET 10 YARP Edge service with fixed API upstream 127.0.0.1:13001 and Web upstream 127.0.0.1:13000; only the configured non-loopback interface address and HTTPS port are exposed.

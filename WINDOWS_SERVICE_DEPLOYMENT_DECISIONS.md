@@ -12,7 +12,7 @@ The production management host has five independently supervised Windows service
 | Next.js UI | `EnterpriseITWeb` | Dedicated .NET 10 SCM host + bundled Node 26 + Next standalone launcher | `127.0.0.1:13000` | Host, launcher, staging and provisioning policy implemented; clean-VM virtual-account acceptance pending |
 | API/WebSocket | `EnterpriseITApi` | Existing .NET 10 host + bundled Node API | `127.0.0.1:13001` | Host runtime and initial provisioning script exist |
 | Worker | `EnterpriseITWorker` | Dedicated .NET 10 host + bundled Node worker | Health only on `127.0.0.1:13002` | Host, parent/child service SID validation, bounded lifecycle and provisioning policy implemented; protected DB configuration and clean-VM acceptance pending |
-| PostgreSQL | `EnterpriseITPostgreSQL` | Pinned PostgreSQL 18 Windows distribution | `127.0.0.1:5432` only | CI major-version baseline is 18; Windows packaging/SCM provisioning pending |
+| PostgreSQL | `EnterpriseITPostgreSQL` | Pinned PostgreSQL 18 Windows distribution | `127.0.0.1:5432` only | EDB 18.7-1 binaries with SHA-256 staging, SCRAM initialization and native virtual-account SCM provisioning implemented; clean-VM lifecycle acceptance pending |
 
 Service names above are application-owned names. The PostgreSQL registration name is not assumed to be the upstream installer default; packaging must register and verify the selected name explicitly.
 
@@ -54,7 +54,7 @@ Each service has bounded startup, graceful shutdown and child-process reaping. A
 
 ## Release gates still required
 
-- Pin exact PostgreSQL 18 patch/build and verify redistribution/licensing, service registration, data ownership and clean-VM install/upgrade behavior.
+- PostgreSQL binaries pinned to EDB 18.7-1 with SHA-256 sidecar validation and native service provisioning; complete dependency/license inventory and validate clean-VM install/upgrade, data ownership and backup/restore.
 - Complete protected Worker database configuration, then run clean-VM virtual-account acceptance. Worker SCM host, parent/child SID validation, bounded lifecycle tests and provisioning policy are implemented and included in hosted Windows CI and the exact-head Push/PR runs completed successfully. The Web host, parent/child service SID validation, bounded lifecycle tests and provisioning policy are implemented and pass hosted Windows CI; clean-VM virtual-account acceptance remains pending.
 - Validate Edge TLS certificate import, private-key ACLs, SNI/hostname validation, WSS proxying and failure behavior on a clean supported Windows Server VM.
 - Implement provisioning scripts and policy tests for all services; verify idempotency and refuse unexpected pre-existing services.
@@ -62,4 +62,4 @@ Each service has bounded startup, graceful shutdown and child-process reaping. A
 - Verify five independent SCM services, service recovery configuration, private listener bindings and end-to-end health.
 - Complete protected ProgramData provisioning, Credential Vault security review and backup/restore before any production installer claim.
 
-Until all gates pass, milestone 4 remains active. The API and Web host/provisioning slices are implemented; Edge, PostgreSQL packaging, protected Worker database configuration and clean-VM acceptance remain open. This is not completion of the five-service deployment.
+Until all gates pass, milestone 4 remains active. API, Web, Worker, Edge and PostgreSQL service foundations are implemented (5/5); protected Worker database configuration, integrated orchestration, certificate/private-key acceptance, PostgreSQL clean-VM lifecycle and actual virtual-account acceptance remain open. This is not completion of the five-service deployment.

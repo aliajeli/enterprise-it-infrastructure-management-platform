@@ -1,3 +1,10 @@
+## 0.1.90 — Add pinned PostgreSQL Windows packaging and service lifecycle
+
+- Added PostgreSQL 18.7-1 EDB Windows x64 binary staging with vendor SHA-256 sidecar verification and immutable versioned payload checks.
+- Added explicit SCRAM cluster initialization using a short-lived ACL-restricted password file; listener binds only to 127.0.0.1:5432 and pg_hba rejects non-loopback IPv4/IPv6.
+- Added native EnterpriseITPostgreSQL SCM registration under its dedicated virtual account, service SID, bounded recovery and separate immutable binary/data ACLs. Provisioning does not start the service.
+- Added Windows CI checks for package pinning and PostgreSQL service provisioning policy. Large EDB binary download and real cluster/service lifecycle remain deployment acceptance tests.
+
 ## 0.1.89 — Implement Windows TLS Edge service foundation
 
 - Added a dedicated .NET 10 YARP reverse-proxy service with API and Web loopback upstreams, explicit LAN bind address, TLS 1.2/1.3 and readiness checks.

@@ -183,6 +183,17 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-edge-service-provisioning.ps1
 
+      - name: Test PostgreSQL staging plan
+        shell: pwsh
+        run: |
+          . scripts/windows/stage-postgresql.ps1
+          $pf=[Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)
+          $plan=Get-PostgreSqlStagePlan -InstallRoot (Join-Path $pf "EnterpriseIT\1.2.3") -CacheDirectory (Join-Path $env:TEMP "pg-cache")
+          if($plan.Version -ne "18.7" -or $plan.PackageRevision -ne "1" -or $plan.ArchiveName -ne "postgresql-18.7-1-windows-x64-binaries.zip"){throw "Unexpected pinned PostgreSQL package plan."}
+      - name: Test PostgreSQL service provisioning policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-postgresql-provisioning.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
