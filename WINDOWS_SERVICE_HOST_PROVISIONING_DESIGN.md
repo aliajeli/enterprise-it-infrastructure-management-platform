@@ -1,3 +1,11 @@
+## Implementation status — v0.1.68
+
+The .NET 10 Windows API Service Host runtime now has a real Windows SCM acceptance smoke test in the Windows CI job. The test provisions a temporary EnterpriseITApi service under the matching virtual service account, enables its service SID, launches the published host and a controlled child executable through the fixed runtime/node.exe contract, and verifies parent/child service-token validation, readiness, graceful SCM stop, child reaping, and startup-readiness failure cleanup. The temporary service and payload are removed in a finally block.
+
+The host runtime includes a fixed executable/entry-point launch (no shell or caller arguments), a restricted child environment, parent and child enabled service-SID checks, bounded readiness and graceful shutdown, bounded process-tree termination/reap, output draining, cancellation handling, and structured host logging. Startup-timeout and startup-cancellation paths now terminate/reap the child before cancelling the background readiness loop; cleanup failures retain the original startup failure.
+
+Scope boundary: this completes the API Service Host runtime component once the exact-head Windows SCM CI test passes. It does not complete the installer or permanent service provisioning. The installer must still create/configure the permanent virtual account and service SID, enforce immutable Program Files ACLs, provision protected ProgramData/configuration, apply and verify SCM recovery policy, and test the final installed layout on each supported clean Windows Server image. The host does not register itself, create ACLs, configure firewall rules, or change RouterOS/network settings. Credential Vault remains separately blocked by its path-chain and handle-relative storage review.
+
 ## Implementation status — v0.1.52
 
 The repository now contains an initial .NET 10 SCM host project at `apps/api/windows/service-host`. It launches a fixed Node runtime/API entry point, strips inherited process environment variables before adding a narrow allowlist, and requests graceful shutdown through a private stdin control message. The API handles that message by closing Fastify and disconnecting Prisma.

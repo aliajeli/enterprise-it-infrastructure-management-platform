@@ -35,20 +35,78 @@ internal sealed class NodeApiProcessService : BackgroundService
             // readiness budget remains useful only after startup has been accepted.
             await _readiness.Task.WaitAsync(StartupReadinessTimeout, cancellationToken);
         }
-        catch (TimeoutException)
+        catch (TimeoutException exception)
         {
-            _logger.LogError(
+            _logger.LogError(exception,
                 "API readiness was not reached within the service startup budget of {StartupTimeout}.",
                 StartupReadinessTimeout);
-            await base.StopAsync(CancellationToken.None);
+            await AbortStartupAsync(exception);
             throw new TimeoutException(
-                $"The API did not become ready within {StartupReadinessTimeout}.");
+                $"The API did not become ready within {StartupReadinessTimeout}.", exception);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
-            await base.StopAsync(CancellationToken.None);
+            await AbortStartupAsync(exception);
             throw;
         }
+    }
+
+    private async Task AbortStartupAsync(Exception startupFailure)
+    {
+        var process = _process;
+        var cleanupFailures = new List<Exception>();
+
+        if (process is not null)
+        {
+            try
+            {
+                await TerminateAndReapAsync(process,
+                    "API service startup did not complete; aborting the child process.");
+            }
+            catch (Exception exception)
+            {
+                cleanupFailures.Add(exception);
+            }
+        }
+
+        try
+        {
+            await base.StopAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            cleanupFailures.Add(exception);
+        }
+
+        if (process is not null && process.HasExited)
+        {
+            if (_stdoutDrain is not null && _stderrDrain is not null)
+            {
+                try
+                {
+                    await Task.WhenAll(_stdoutDrain, _stderrDrain).WaitAsync(OutputDrainTimeout);
+                }
+                catch (Exception exception)
+                {
+                    cleanupFailures.Add(exception);
+                }
+            }
+            process.Dispose();
+            _process = null;
+        }
+        else if (process is not null)
+        {
+            cleanupFailures.Add(new InvalidOperationException(
+                "The API child process remained alive after startup-abort cleanup."));
+            _logger.LogCritical(
+                "API child process PID {ProcessId} remained alive after startup-abort cleanup.",
+                process.Id);
+        }
+
+        if (cleanupFailures.Count > 0)
+            throw new AggregateException(
+                "API service startup failed and startup-abort cleanup was incomplete.",
+                new[] { startupFailure }.Concat(cleanupFailures));
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

@@ -145,6 +145,10 @@ jobs:
       - name: Test Windows API service-host process lifecycle policy
         run: dotnet test apps/api/windows/service-host-tests/EnterpriseIT.ApiServiceHost.Tests.csproj --configuration Release
 
+      - name: Verify API service host under Windows SCM
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-api-service-host-scm.ps1
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 

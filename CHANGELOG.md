@@ -1,3 +1,11 @@
+## 0.1.68 — Complete API Windows Service Host runtime acceptance
+
+- Added a real Windows SCM smoke test to Windows CI. It temporarily provisions the API service under NT SERVICE\EnterpriseITApi, enables the service SID, launches the published host and a controlled child process, and verifies parent/child service-token validation, readiness, graceful stop and child reaping.
+- The same SCM test forces readiness startup failure and verifies the service fails cleanly without leaving an orphaned child process.
+- Fixed startup timeout/cancellation cleanup: the host now terminates and reaps the child before cancelling the background readiness loop, preserves the original startup failure alongside cleanup failures, and only disposes an exited child.
+- Added a controlled Windows smoke child and an isolated PowerShell harness. The harness refuses to overwrite an existing service and removes its temporary service and payload.
+- This completes the API Service Host runtime acceptance scope only after exact-head Windows CI passes. Permanent service provisioning, immutable ACLs, ProgramData configuration, SCM recovery policy, clean Windows Server matrix testing, remaining four services, Credential Vault approval, installer and Release remain separate gates.
+
 ## 0.1.67 — Testable bounded API child shutdown orchestration
 
 - Extracted the API host's graceful-stop and forced-reap decision path into a deterministic internal coordinator used by the production StopAsync implementation.

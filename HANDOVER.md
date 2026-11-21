@@ -1,3 +1,12 @@
+## 2026-11-21 — API Windows Service Host SCM acceptance (v0.1.68)
+
+- Added a real Windows SCM CI smoke harness using a temporary service named EnterpriseITApi and the matching virtual service account. It configures SERVICE_SID_TYPE_UNRESTRICTED, grants only temporary read/execute access to the isolated test payload, and exercises the published host rather than only unit-test delegates.
+- A controlled child executable occupies the fixed runtime/node.exe path and exposes only the loopback readiness endpoint. CI verifies the host accepts the parent and child service SID, reports ready, stops gracefully through the SHUTDOWN pipe, and leaves no child process after SCM reaches Stopped.
+- The harness then disables readiness and starts the service again. It verifies startup failure is bounded and no child process is orphaned. Temporary service and files are removed in finally; the script refuses to replace a pre-existing EnterpriseITApi service.
+- Fixed a startup-abort defect: StartAsync timeout/cancellation previously called BackgroundService.StopAsync directly, which could cancel the readiness task without invoking the host's child-process cleanup. The new AbortStartupAsync kills/reaps first, then cancels the background task; it preserves startup and cleanup exceptions and does not dispose a child that is still alive.
+- Scope is API Service Host runtime only. Installer-owned permanent service provisioning, immutable ACLs, ProgramData configuration, SCM recovery actions, supported Windows Server clean-VM matrix, four other services, Credential Vault storage approval, installer packaging and Release remain incomplete. Do not mark the entire installer path complete.
+- PR #8 remains Draft/open/unmerged unless explicitly authorized by the user.
+
 ## 2026-11-21 — Testable bounded API child shutdown (v0.1.67)
 
 - Extracted graceful shutdown orchestration from NodeApiProcessService.StopAsync into ApiChildShutdown, called by the production service host and parameterized with narrow process/pipe delegates for deterministic testing.

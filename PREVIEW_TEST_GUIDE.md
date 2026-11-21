@@ -214,3 +214,12 @@ The test project covers an already-exited child, successful termination/reap, an
 The Windows-targeted service-host test project exercises the production shutdown coordinator used by NodeApiProcessService.StopAsync. Tests cover an already-exited child, successful graceful command/wait, a broken control pipe, graceful deadline expiry, host cancellation followed by child cleanup, unexpected control-channel state, a wait that completes without child exit, and invalid timeout configuration.
 
 These tests use injected delegates and do not launch a real Node process or install a Windows SCM service. They complement, but do not replace, clean-VM tests for the dedicated service identity, inherited child token, actual process-tree termination and service stop behavior.
+
+
+## 16. Windows API Service Host — real SCM smoke acceptance
+
+The Windows CI job runs scripts/windows/test-api-service-host-scm.ps1. It publishes the .NET host into an isolated temporary layout, builds a controlled child executable at the fixed runtime/node.exe path, and creates a temporary EnterpriseITApi SCM service using NT SERVICE\EnterpriseITApi with an unrestricted service SID.
+
+The smoke test checks parent and child service-SID validation, loopback readiness, graceful shutdown through the stdin control pipe, SCM transition to Stopped, and absence of the child process after stop. It then repeats startup with readiness intentionally unavailable and verifies the host fails startup without orphaning the child. The script deletes its temporary service and payload in a finally block and refuses to overwrite a pre-existing service.
+
+This is a hosted Windows runner integration smoke, not a substitute for clean Windows Server VM acceptance, installer-created immutable ACLs, SCM recovery-policy verification, or the complete five-service installation/upgrade/uninstall tests.
