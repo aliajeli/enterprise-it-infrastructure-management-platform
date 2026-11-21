@@ -1,3 +1,9 @@
+## 0.1.59 — Bound Windows API service startup and shutdown
+
+- Bound the synchronous Windows service startup readiness wait to 20 seconds. If the API is not ready within that startup budget, the host cancels its background startup and waits for the child-process cleanup path instead of keeping SCM startup pending for the full 60-second readiness window.
+- Added a bounded post-termination process-reap wait and bounded redirected-output drain. A child that cannot be terminated/reaped is logged as a critical shutdown failure; output-drain delay can no longer hold service shutdown indefinitely.
+- The 20-second budget is a conservative startup bound, not proof of SCM timing behavior on every Windows host. Real service installation, configured SCM recovery, and clean-VM acceptance remain required.
+
 ## 0.1.58 — Ensure API child process is reaped during service stop
 
 - Hardened Windows API host shutdown so cancellation of the host stop token no longer bypasses the child-process cleanup path. The host requests graceful API shutdown, then terminates and waits for the child process tree if the graceful window expires or is cancelled.

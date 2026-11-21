@@ -1,3 +1,10 @@
+## 2026-11-21 — Bound Windows API service startup and shutdown (v0.1.59)
+
+- `NodeApiProcessService.StartAsync` now limits the synchronous readiness wait to 20 seconds. If readiness is not reached, it cancels the background service and awaits the normal child cleanup path; the 60-second background readiness loop no longer holds the SCM start phase open.
+- Shutdown now applies a bounded five-second process-reap wait after termination is requested and a bounded five-second output-drain wait. Failed termination/reap is surfaced with critical logging rather than silently treated as success; stalled output pipes cannot block cleanup indefinitely.
+- These bounds need validation under an actually installed Windows service and the target SCM configuration. No service provisioning, recovery policy, ACL changes, or installer was added.
+- Exact-head Push and PR CI are required. PR #8 remains Draft/open/unmerged.
+
 ## 2026-11-21 — Harden API child cleanup on service stop (v0.1.58)
 
 - Updated `NodeApiProcessService.StopAsync` so cancellation during the graceful `SHUTDOWN` handshake or wait does not skip child cleanup. The host now ensures the Node process tree is terminated and awaited before completing the stop path.
