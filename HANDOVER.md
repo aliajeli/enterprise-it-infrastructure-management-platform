@@ -1,3 +1,9 @@
+## 2026-11-22 — Installer validation workflow syntax correction (v0.1.124)
+
+- The 0.1.123 Push workflow failed before creating jobs. Inspection of the committed YAML showed the new test step contained literal backslash-n sequences rather than actual line breaks.
+- Replaced the malformed single line with valid YAML lines. No installer behavior changed in this commit.
+- Exact-head Push and PR CI must pass before accepting the installer work. The installer remains unsigned; no Windows Server install acceptance or Release is claimed.
+
 ## 2026-11-22 — Installer archive-validation binding and capacity hardening (v0.1.123)
 
 - Corrected the installer script parameter contract: only archive path and trusted digest are required to load archive-validation functions; service credentials and Edge settings are validated at execution time before any host mutation. This prevents dot-sourcing the script in tests from prompting for installation-only inputs.

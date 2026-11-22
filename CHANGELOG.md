@@ -1,3 +1,8 @@
+## 0.1.124 — Correct installer validation workflow YAML
+
+- Corrected the offline-installer test step in the Windows validation workflow. The previous commit inserted escaped newline characters literally, causing GitHub Actions to reject the workflow before jobs could start.
+- This is a workflow-only correction; installer acceptance remains pending exact-head Push and PR CI.
+
 ## 0.1.123 — Harden installer parameter binding and capacity gate
 
 - Made installation-only credentials and Edge settings optional at script binding time so the archive-validation functions can be dot-sourced and tested without interactive prompts; actual installation still rejects missing values before host changes.
