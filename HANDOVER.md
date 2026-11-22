@@ -1,3 +1,12 @@
+## 2026-11-22 — Add isolated dual-wrapper credential envelope core (0.1.134)
+
+- Added a separate format-v2 crypto module; the existing format-v1 envelope and decrypt path remain unchanged.
+- V2 uses a fresh 32-byte DEK per secret, AES-256-GCM, canonical context AAD, a local-protector interface for DPAPI and an independent RSA-3072 OAEP-SHA-256 recovery public-key wrapper.
+- Normal service decryption accepts only the local protector and has no recovery private-key parameter. The RSA private key is used only in tests to verify the recovery wrapper.
+- Added tests for local round trip, RSA recovery unwrap, fresh DEK/nonce, context/ciphertext tampering, weak RSA keys and local-protector failure.
+- The local protector is currently an interface only; the test protector is an identity fixture and is not secure or suitable for production. No DPAPI helper integration, recovery utility, database persistence, v1-to-v2 migration, installer public-key enrollment, PostgreSQL administrator credential persistence or production credential use is implemented.
+- Exact-head CI is the next acceptance gate. No PR merged; no MikroTik, NAT, firewall or port-mapping changes.
+
 ## 2026-11-22 — Approve public-key credential recovery architecture (v0.1.133)
 
 - User approved removing USB/removable media from the recovery design.

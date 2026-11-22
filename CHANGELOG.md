@@ -1,3 +1,10 @@
+## 0.1.134 — Add versioned dual-wrapper credential envelope core
+
+- Added an isolated format-v2 AES-256-GCM envelope with a fresh per-secret DEK, local DPAPI-protector contract and independent RSA-3072 OAEP-SHA-256 recovery public-key wrapper.
+- Added strict RSA key-size, key identifier, context, base64, ciphertext and DPAPI-blob bounds validation. Normal service decryption uses only the local protector and has no recovery private-key input.
+- Added tests for local and independent RSA unwrap round trips, fresh key/nonce generation, context and ciphertext tampering, weak recovery keys and fail-closed local-protector errors. Format-v1 code remains unchanged.
+- Crypto-core increment only: no production DPAPI adapter, recovery utility, persistence migration, v1-to-v2 migration, installer enrollment or production credential use is enabled.
+
 ## 0.1.133 — Define independent Windows credential recovery envelope
 
 - Replaced the removable-media recovery proposal with the approved public-key recovery model: local service use remains DPAPI-protected, while recovery uses an independent RSA-3072 OAEP-SHA-256 key pair and AES-256-GCM authenticated encryption.
