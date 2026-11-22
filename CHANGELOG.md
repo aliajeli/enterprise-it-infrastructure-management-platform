@@ -1,3 +1,9 @@
+## 0.1.123 — Harden installer parameter binding and capacity gate
+
+- Made installation-only credentials and Edge settings optional at script binding time so the archive-validation functions can be dot-sourced and tested without interactive prompts; actual installation still rejects missing values before host changes.
+- Added a Program Files capacity check for the full expanded archive plus the configured free-space reserve and explicitly loads the ZIP assembly used by the installer.
+- Exact-head Windows CI remains required. No signed MSI/EXE or clean-server acceptance is claimed.
+
 ## 0.1.122 — Verified offline payload installation entry point
 
 - Added a guarded Windows installer entry point that requires an independently supplied SHA-256 digest, validates ZIP entry paths and rejects duplicate names and symbolic-link entries before extraction.

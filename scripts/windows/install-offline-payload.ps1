@@ -2,12 +2,12 @@
 param(
  [Parameter(Mandatory=$true)][string]$PayloadArchive,
  [Parameter(Mandatory=$true)][ValidatePattern('^[A-Fa-f0-9]{64}$')][string]$ExpectedSha256,
- [Parameter(Mandatory=$true)][Security.SecureString]$ApiDatabaseUrl,
- [Parameter(Mandatory=$true)][Security.SecureString]$WorkerDatabaseUrl,
- [Parameter(Mandatory=$true)][string]$EdgeBindAddress,
+ [Security.SecureString]$ApiDatabaseUrl,
+ [Security.SecureString]$WorkerDatabaseUrl,
+ [string]$EdgeBindAddress,
  [int]$EdgeHttpsPort=443,
- [Parameter(Mandatory=$true)][string]$EdgeTlsHostname,
- [Parameter(Mandatory=$true)][string]$EdgeCertificateThumbprint,
+ [string]$EdgeTlsHostname,
+ [string]$EdgeCertificateThumbprint,
  [ValidateRange(1,1024)][int]$MinimumFreeSpaceGB=10
 )
 Set-StrictMode -Version Latest
@@ -21,7 +21,7 @@ function Test-OfflineInstallerArchive {
  if($ExpectedSha256 -notmatch '^[A-Fa-f0-9]{64}$'){throw "An independently obtained SHA-256 digest is required."}
  $actual=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
  if(-not [string]::Equals($actual,$ExpectedSha256,[StringComparison]::OrdinalIgnoreCase)){throw "Offline payload archive digest does not match the trusted expected SHA-256 value."}
- Add-Type -AssemblyName System.IO.Compression
+ Add-Type -AssemblyName System.IO.Compression.FileSystem
  $zip=[IO.Compression.ZipFile]::OpenRead($archive)
  try{
   $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
@@ -62,10 +62,14 @@ if($MyInvocation.InvocationName -ne '.'){
  $plan=Get-OfflineInstallerPlan -PayloadArchive $PayloadArchive -ExpectedSha256 $ExpectedSha256
  if($WhatIfPreference){$plan|ConvertTo-Json -Depth 4;return}
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
+ if([string]::IsNullOrWhiteSpace($EdgeBindAddress) -or [string]::IsNullOrWhiteSpace($EdgeTlsHostname) -or [string]::IsNullOrWhiteSpace($EdgeCertificateThumbprint)){throw "Edge bind address, TLS hostname and certificate thumbprint are required."}
  . (Join-Path $PSScriptRoot 'installer-preflight.ps1') -MinimumFreeSpaceGB $MinimumFreeSpaceGB
  $facts=Get-InstallerPreflightFacts
  $preflight=Test-InstallerPreflightFacts -Facts $facts -MinimumFreeSpaceGB $MinimumFreeSpaceGB
  if(-not $preflight.ready){$preflight|ConvertTo-Json -Depth 6;throw "Windows installer host preflight failed; no files or services were changed."}
+ $programFilesLocation=@($facts.Locations|Where-Object{$_.Name -eq 'ProgramFiles'})|Select-Object -First 1
+ $requiredFreeBytes=[int64]$plan.ExpandedBytes+([int64]$MinimumFreeSpaceGB*1GB)
+ if($null -eq $programFilesLocation -or [int64]$programFilesLocation.FreeBytes -lt $requiredFreeBytes){throw "Program Files volume lacks space for the expanded payload plus the configured free-space reserve."}
  if($PSCmdlet.ShouldProcess($plan.BaseDirectory,"Verify, stage and install the offline Enterprise IT payload")){
   if(-not(Test-Path -LiteralPath $plan.BaseDirectory -PathType Container)){New-Item -ItemType Directory -Path $plan.BaseDirectory -Force|Out-Null}
   $manifestZip=[IO.Compression.ZipFile]::OpenRead($plan.Archive)

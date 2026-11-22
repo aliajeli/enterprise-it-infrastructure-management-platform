@@ -1,3 +1,9 @@
+## 2026-11-22 — Installer archive-validation binding and capacity hardening (v0.1.123)
+
+- Corrected the installer script parameter contract: only archive path and trusted digest are required to load archive-validation functions; service credentials and Edge settings are validated at execution time before any host mutation. This prevents dot-sourcing the script in tests from prompting for installation-only inputs.
+- The installer now verifies Program Files has enough free capacity for the complete expanded ZIP plus the configured free-space reserve, in addition to the baseline ProgramFiles/ProgramData preflight.
+- Explicitly loads the .NET ZIP assembly before archive inspection. Exact-head CI is required; no installer signing, Release or clean Windows Server acceptance is claimed.
+
 ## 2026-11-22 — Guarded offline installer entry point (v0.1.122)
 
 - Added `install-offline-payload.ps1`: it requires an out-of-band SHA-256 digest (the archive sidecar alone is not trusted), validates ZIP entry paths, rejects duplicate names and Unix symlink entries, verifies the extracted SHA-256 payload manifest and package version, and runs the read-only Windows host preflight before installation.
