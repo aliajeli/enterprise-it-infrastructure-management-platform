@@ -7,6 +7,7 @@ using System.Security.AccessControl;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Win32.SafeHandles;
+using CredentialVault.KeyringStorageHelper;
 
 internal static class Program
 {
@@ -23,6 +24,7 @@ internal static class Program
     private static readonly string Registry=Path.Combine(Root,"keyring.v1.json"), Lock=Path.Combine(Root,"keyring.lock");
     private static FileStream? heldLock;
     private static SecurityIdentifier? serviceSid;
+    private static WindowsDirectoryHandleChain? directoryChain;
 
     private static async Task<int> Main()
     {
@@ -85,7 +87,11 @@ internal static class Program
             }
         }
         catch { return 1; }
-        finally { heldLock?.Dispose(); heldLock=null; }
+        finally
+        {
+            heldLock?.Dispose(); heldLock=null;
+            directoryChain?.Dispose(); directoryChain=null;
+        }
     }
 
     private static void RequireLock(){if(heldLock is null || serviceSid is null) throw new InvalidOperationException();}
@@ -93,6 +99,7 @@ internal static class Program
     private static async Task BeginTransaction()
     {
         serviceSid=GetServiceSid();
+        directoryChain=WindowsDirectoryHandleChain.OpenKnownProgramData();
         VerifyDirectory();
         var timer=Stopwatch.StartNew();
         while(true)
@@ -171,9 +178,14 @@ internal static class Program
 
     private static void VerifyDirectory()
     {
-        if(!Directory.Exists(Root)) throw new DirectoryNotFoundException();
-        using var h=Open(Root,ReadControl|FileReadAttributes,ShareRead|ShareWrite|ShareDelete,OpenExisting,BackupSemantics|OpenReparse);
-        VerifyAcl(h,serviceSid!); VerifyNotReparse(h);
+        var chain=directoryChain ?? throw new UnauthorizedAccessException();
+        // The trusted ProgramData -> EnterpriseIT -> CredentialVault chain stays
+        // open for the entire helper transaction. Its handles deny delete sharing,
+        // so the path-based leaf operations below cannot be redirected by renaming
+        // or replacing a parent directory while this transaction is active.
+        var vault=chain.VaultHandle;
+        VerifyAcl(vault,serviceSid!);
+        VerifyNotReparse(vault);
     }
 
     private static SecurityIdentifier GetServiceSid()

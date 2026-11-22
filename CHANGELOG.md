@@ -1,3 +1,11 @@
+## 0.1.137 — Pin the Windows keyring storage parent directory chain
+
+- Wired the existing handle-relative ProgramData -> EnterpriseIT -> CredentialVault chain into the keyring helper transaction lifecycle.
+- The helper now opens and retains the verified directory handles from BEGIN through process termination; the chain opens each child relative to its parent, rejects reparse points and volume changes, and denies delete sharing on the retained directory handles.
+- Vault owner/DACL and reparse checks now run against the retained Vault handle rather than reopening the root directory by path. This reduces parent-directory rename/substitution risk during a helper session.
+- Leaf lock/registry/temp-file operations remain path-based. Temporary-file cleanup still has a path-based check/delete race, atomic replacement is not handle-relative, and positive provisioned-Service-SID/adversarial Windows acceptance tests remain absent. The storage adapter stays unregistered and production credential persistence remains blocked.
+- Exact-head Windows and platform CI required. No PR merged; no MikroTik, NAT, firewall or port-mapping changes.
+
 ## 0.1.136 — Connect Windows DPAPI protector to credential envelope v2
 
 - Made `WindowsDpapiProtector` implement the v2 `LocalDataKeyProtector` contract, including the full credential context on Protect and Unprotect.

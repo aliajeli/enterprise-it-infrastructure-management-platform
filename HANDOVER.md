@@ -1,3 +1,11 @@
+## 2026-11-23 — Retain trusted keyring directory chain for helper transaction (0.1.137)
+
+- Connected `WindowsDirectoryHandleChain` to `keyring-storage-helper`: BEGIN resolves the OS-known local ProgramData path, opens the volume root and each fixed child relative to the preceding handle, validates directory attributes/reparse state and volume identity, and retains all handles through the helper session.
+- The chain's directory handles are opened without FILE_SHARE_DELETE. The helper verifies the Vault owner/DACL through the retained Vault handle. Handles are disposed in Main's finally path on normal END, protocol failure, timeout or process exit.
+- This is a partial mitigation for parent path traversal/rename substitution (review F-01/F-02), not closure of the full filesystem threat model. Lock, registry, temp file, replacement and cleanup leaf operations still use path-based APIs; F-03/F-04 remain open.
+- Windows acceptance remains blocking: no positive run under installer-provisioned dedicated Service SID, no multi-process/adversarial namespace tests, no crash/power-loss drill. Do not register the keyring storage client, enable credential persistence or enter real equipment credentials.
+- Next: move all leaf operations to retained-handle-relative opens/rename/delete, verify stable volume/file IDs and exact ACLs, then add Windows adversarial integration tests. No MikroTik/NAT/port-mapping changes; PR #7/#8/#9 remain unmerged.
+
 ## 2026-11-22 — Bind DPAPI adapter to credential envelope context (0.1.136)
 
 - `WindowsDpapiProtector` now implements `LocalDataKeyProtector` from the isolated credential envelope v2 module.
