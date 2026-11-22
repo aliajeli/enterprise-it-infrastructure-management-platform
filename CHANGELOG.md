@@ -1,3 +1,10 @@
+## 0.1.131 — PostgreSQL bootstrap workspace ACL hardening
+
+- The PostgreSQL bootstrap now establishes and verifies a protected SYSTEM/Administrators DACL on the empty data directory before initdb writes cluster files.
+- The temporary initdb password file is now created only inside a unique workspace whose protected DACL is applied and checked before the file exists; cleanup removes the workspace.
+- Added Windows guard tests for read-only WhatIf, refusal to overwrite an existing cluster, preservation of non-empty data directories, and weak-password rejection.
+- This closes the temporary-file ACL race but does not implement DPAPI-backed administrator credential recovery, a bootstrap state ledger, API/Worker role creation, or orchestration/installer integration. No clean-install acceptance is claimed.
+
 ## 0.1.130 — Preflight Edge certificate and listener before provisioning
 
 - Added a read-only Edge preflight that verifies the host executable, assigned LAN address, unoccupied HTTPS port, machine certificate validity/private key, DNS name, Server Authentication EKU, trusted certificate chain, supported RSA key provider and private-key file.

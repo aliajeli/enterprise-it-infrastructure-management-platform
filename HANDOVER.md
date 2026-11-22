@@ -1,3 +1,11 @@
+## 2026-11-22 — PostgreSQL bootstrap temporary-secret ACL hardening (v0.1.131)
+
+- The prior bootstrap wrote a plaintext initdb password file and only applied its ACL after file creation. v0.1.131 creates a unique workspace, applies a protected DACL for SYSTEM and Administrators, verifies the resulting explicit identities, and only then creates the password file.
+- The PostgreSQL data directory is likewise restricted to SYSTEM and Administrators before initdb writes cluster contents. The PostgreSQL service provisioner subsequently grants the dedicated PostgreSQL service SID its required data access.
+- Added Windows CI guards for WhatIf non-mutation, existing-cluster rejection, non-empty directory preservation, and minimum password length.
+- Remaining security and integration gates: administrator credential DPAPI protection/recovery, durable bootstrap state machine, API/Worker role and database provisioning, secret-free role provisioning, orchestration/installer integration, and clean Windows Server acceptance. The existing service-bound DPAPI helper is not reused for installer administrator credentials.
+- No PR was merged; no router, NAT, firewall or port-mapping changes were made.
+
 ## 2026-11-22 — Validate Edge certificate before any service provisioning (v0.1.130)
 
 - v0.1.129 exact-head Push CI run 45016701472 passed all three jobs: Windows API runtime smoke (including all 39 steps and five-service orchestration policy), Node.js 26/PostgreSQL 18 platform validation, and lockfile refresh. PR run 45016706686 passed Windows and platform jobs; lockfile refresh was correctly skipped.

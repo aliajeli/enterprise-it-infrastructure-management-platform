@@ -216,6 +216,10 @@ jobs:
       - name: Test PostgreSQL service provisioning policy
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-postgresql-provisioning.ps1
+ 
+      - name: Test PostgreSQL cluster initialization guards
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-postgresql-cluster-initialization.ps1
 
       - name: Test five-service orchestration policy
         shell: pwsh

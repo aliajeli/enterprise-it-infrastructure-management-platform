@@ -14,17 +14,31 @@ if(-not $PSCmdlet.ShouldProcess($data,"Initialize PostgreSQL 18 with SCRAM authe
 if(Test-Path (Join-Path $data "PG_VERSION")){throw "Cluster already exists; initialization will not overwrite it."}
 if((Test-Path $data) -and @(Get-ChildItem $data -Force).Count -gt 0){throw "Data directory is not empty; refusing initialization."}
 New-Item -ItemType Directory -Path $data -Force|Out-Null
+# Restrict the empty data directory before initdb writes cluster metadata or credentials.
+& icacls.exe $data /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" /setowner "*S-1-5-18"|Out-Null
+if($LASTEXITCODE -ne 0){throw "Could not establish the PostgreSQL data-directory security descriptor."}
+$dataAcl=Get-Acl -LiteralPath $data
+$dataRules=@($dataAcl.GetAccessRules($true,$false,[Security.Principal.SecurityIdentifier]))
+$dataSids=@($dataRules|ForEach-Object{$_.IdentityReference.Value}|Sort-Object -Unique)
+if(-not $dataAcl.AreAccessRulesProtected -or $dataSids.Count -ne 2 -or @($dataSids|Where-Object{$_ -notin @("S-1-5-18","S-1-5-32-544")}).Count -gt 0){throw "PostgreSQL data-directory ACL is not restricted to SYSTEM and Administrators."}
 $tempRoot=Join-Path $env:ProgramData "EnterpriseIT\Temp"
 New-Item -ItemType Directory -Path $tempRoot -Force|Out-Null
-$pwFile=Join-Path $tempRoot ("pg-initdb-"+[guid]::NewGuid().ToString("N")+".txt")
+$tempWorkspace=Join-Path $tempRoot ("pg-initdb-"+[guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Path $tempWorkspace -ErrorAction Stop|Out-Null
+$pwFile=Join-Path $tempWorkspace "password.txt"
 $ptr=[IntPtr]::Zero
 $plain=$null
 try{
+ # The directory DACL is established and checked before the secret file is created.
+ & icacls.exe $tempWorkspace /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" /setowner "*S-1-5-18"|Out-Null
+ if($LASTEXITCODE -ne 0){throw "Could not protect the PostgreSQL bootstrap workspace."}
+ $workspaceAcl=Get-Acl -LiteralPath $tempWorkspace
+ $workspaceRules=@($workspaceAcl.GetAccessRules($true,$false,[Security.Principal.SecurityIdentifier]))
+ $workspaceSids=@($workspaceRules|ForEach-Object{$_.IdentityReference.Value}|Sort-Object -Unique)
+ if(-not $workspaceAcl.AreAccessRulesProtected -or $workspaceSids.Count -ne 2 -or @($workspaceSids|Where-Object{$_ -notin @("S-1-5-18","S-1-5-32-544")}).Count -gt 0){throw "PostgreSQL bootstrap workspace ACL is not restricted to SYSTEM and Administrators."}
  $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($SuperuserPassword)
  $plain=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
  [IO.File]::WriteAllText($pwFile,$plain+[Environment]::NewLine,[Text.UTF8Encoding]::new($false))
- & icacls.exe $pwFile /inheritance:r /grant:r "*S-1-5-18:F" "*S-1-5-32-544:F"|Out-Null
- if($LASTEXITCODE -ne 0){throw "Could not protect temporary PostgreSQL password file."}
  $initdb=Join-Path $root "postgresql\pgsql\bin\initdb.exe"
  & $initdb "--pgdata=$data" "--username=platform_admin" "--auth=scram-sha-256" "--pwfile=$pwFile" "--encoding=UTF8"
  if($LASTEXITCODE -ne 0){throw "PostgreSQL initdb failed; inspect non-secret diagnostics."}
@@ -40,5 +54,5 @@ host all all ::/0 reject`r`n"
 }finally{
  if($ptr -ne [IntPtr]::Zero){[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}
  $plain=$null
- if(Test-Path $pwFile){Remove-Item $pwFile -Force}
+ if(Test-Path $tempWorkspace){Remove-Item $tempWorkspace -Recurse -Force}
 }
