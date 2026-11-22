@@ -1,3 +1,8 @@
+## 2026-11-23 — Restore full keyring hardening review (0.1.138)
+
+- Restored the complete Windows keyring storage hardening review and documented the exact partial status of the parent-directory handle-chain mitigation.
+- This documentation-only correction does not alter runtime behavior or close the remaining leaf-operation race conditions.
+
 ## 2026-11-23 — Retain trusted keyring directory chain for helper transaction (0.1.137)
 
 - Connected `WindowsDirectoryHandleChain` to `keyring-storage-helper`: BEGIN resolves the OS-known local ProgramData path, opens the volume root and each fixed child relative to the preceding handle, validates directory attributes/reparse state and volume identity, and retains all handles through the helper session.

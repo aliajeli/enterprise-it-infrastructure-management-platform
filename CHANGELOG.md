@@ -1,3 +1,8 @@
+## 0.1.138 — Restore and clarify keyring hardening review
+
+- Restored the full Windows keyring hardening review and added an explicit implementation-status update for the partial parent-directory handle-chain mitigation in 0.1.137.
+- No runtime behavior changed in this documentation correction.
+
 ## 0.1.137 — Pin the Windows keyring storage parent directory chain
 
 - Wired the existing handle-relative ProgramData -> EnterpriseIT -> CredentialVault chain into the keyring helper transaction lifecycle.
