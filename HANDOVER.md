@@ -1,3 +1,12 @@
+## 2026-11-22 — Bind DPAPI adapter to credential envelope context (0.1.136)
+
+- `WindowsDpapiProtector` now implements `LocalDataKeyProtector` from the isolated credential envelope v2 module.
+- Protect and Unprotect require `CredentialEnvelopeV2Context`; the adapter compares `context.installationId` with its installer-configured Installation ID before payload validation or process launch.
+- Mismatched/missing context fails closed. Tests inject a process launcher and assert that neither operation spawns the helper on mismatch.
+- Existing fixed-purpose .NET helper remains machine-scope DPAPI, installation-ID + dedicated-service-SID entropy bound, and service-SID-only. No recovery private key enters the runtime path.
+- This does not register the adapter in production composition or enable credential persistence. Database model/migration, keyring-backed provider, recovery utility, v1-to-v2 migration, installer public-key enrollment, dedicated service identity/ACL provisioning and clean-host recovery drill remain open.
+- Exact-head CI is required. No PR merged; no MikroTik, NAT, firewall or port-mapping changes.
+
 ## 2026-11-22 — Authenticate both credential wrappers and fix RSA KeyObject typing (0.1.135)
 
 - Fixed CI TypeScript failure by handling Node.js public KeyObject instances directly and rejecting private KeyObjects at the public-key provider boundary.

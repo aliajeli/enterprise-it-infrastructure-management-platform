@@ -1,3 +1,11 @@
+## 0.1.136 — Connect Windows DPAPI protector to credential envelope v2
+
+- Made `WindowsDpapiProtector` implement the v2 `LocalDataKeyProtector` contract, including the full credential context on Protect and Unprotect.
+- Enforced exact Installation ID equality before any helper process can be spawned; a mismatched or missing context fails closed.
+- Added an injectable process launcher boundary for deterministic tests and regression coverage proving both Protect and Unprotect reject mismatched installations without invoking the helper.
+- Preserved the helper's dedicated-service-SID and machine-scope DPAPI enforcement. This is adapter integration only: no production composition registration, persistent credential storage, recovery utility, v1-to-v2 migration, or installer enrollment is enabled.
+- Exact-head Linux and Windows CI are required. No PR merged; no MikroTik, NAT, firewall or port-mapping changes.
+
 ## 0.1.135 — Fix recovery-key metadata authentication and public-key typing
 
 - Corrected Node.js KeyObject handling so RSA public-key objects are accepted without passing KeyObject through the incompatible createPublicKey overload; private KeyObjects are rejected.

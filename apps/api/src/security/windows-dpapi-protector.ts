@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { isAbsolute } from "node:path";
+import type { CredentialEnvelopeV2Context, LocalDataKeyProtector } from "./credential-vault-envelope-v2.js";
 
 const PROTOCOL_VERSION = 1;
 const OP_PROTECT = 1;
@@ -59,11 +60,12 @@ function decodeResponse(frame: Buffer, operation: number): Buffer {
  * temporary files or textual key encoding are used. The helper path must be
  * absolute and provisioned by the trusted installer.
  */
-export class WindowsDpapiProtector {
+export class WindowsDpapiProtector implements LocalDataKeyProtector {
   constructor(
     private readonly helperPath: string,
     private readonly installationId: string,
     private readonly platform: NodeJS.Platform = process.platform,
+    private readonly spawnProcess: typeof spawn = spawn,
   ) {
     if (!isAbsolute(helperPath)) throw new Error("DPAPI helper path must be absolute.");
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(installationId)) {
@@ -71,12 +73,23 @@ export class WindowsDpapiProtector {
     }
   }
 
-  protect(key: Buffer): Promise<Buffer> {
+  protect(key: Buffer, context: CredentialEnvelopeV2Context): Promise<Buffer> {
+    if (!this.matchesInstallation(context)) {
+      return Promise.reject(new Error("DPAPI installation context mismatch."));
+    }
     return this.invoke(OP_PROTECT, key);
   }
 
-  unprotect(protectedKey: Buffer): Promise<Buffer> {
+  unprotect(protectedKey: Buffer, context: CredentialEnvelopeV2Context): Promise<Buffer> {
+    if (!this.matchesInstallation(context)) {
+      return Promise.reject(new Error("DPAPI installation context mismatch."));
+    }
     return this.invoke(OP_UNPROTECT, protectedKey);
+  }
+
+  private matchesInstallation(context: CredentialEnvelopeV2Context): boolean {
+    return typeof context === "object" && context !== null &&
+      context.installationId === this.installationId;
   }
 
   private invoke(operation: number, payload: Buffer): Promise<Buffer> {
@@ -94,7 +107,7 @@ export class WindowsDpapiProtector {
 
     const request = encodeRequest(operation, this.installationId, payload);
     return new Promise((resolve, reject) => {
-      const child = spawn(this.helperPath, [], {
+      const child = this.spawnProcess(this.helperPath, [], {
         shell: false,
         windowsHide: true,
         stdio: ["pipe", "pipe", "ignore"],
