@@ -33,10 +33,9 @@ function Get-OfflinePayloadPackagePlan {
  foreach($relative in $required){if(-not(Test-Path -LiteralPath (Join-Path $source $relative))){throw "Required offline payload component is missing: $relative"}}
  $archive=[IO.Path]::GetFullPath($OutputArchive)
  if([IO.Path]::GetExtension($archive) -ine ".zip"){throw "Output archive must use the .zip extension."}
- $archivePrefix=$archive.TrimEnd([IO.Path]::DirectorySeparatorChar)+[IO.Path]::DirectorySeparatorChar
  if($archive.StartsWith(($source+[IO.Path]::DirectorySeparatorChar),[StringComparison]::OrdinalIgnoreCase)){throw "Output archive must not be inside the source payload."}
  $hashPath=$archive+".sha256"
- if(Test-Path -LiteralPath $archive -or Test-Path -LiteralPath $hashPath){throw "Output archive or checksum already exists; refusing to overwrite."}
+ if((Test-Path -LiteralPath $archive) -or (Test-Path -LiteralPath $hashPath)){throw "Output archive or checksum already exists; refusing to overwrite."}
  [pscustomobject]@{SourceRoot=$source;OutputArchive=$archive;ChecksumPath=$hashPath;ApplicationVersion=$version;RequiredFiles=$required}
 }
 if($MyInvocation.InvocationName -ne "."){
@@ -59,7 +58,7 @@ if($MyInvocation.InvocationName -ne "."){
   [IO.Compression.ZipFile]::CreateFromDirectory($work,$archiveTemp,[IO.Compression.CompressionLevel]::Optimal,$false)
   $archiveHash=(Get-FileHash -LiteralPath $archiveTemp -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText($checksumTemp,($archiveHash+"  "+[IO.Path]::GetFileName($plan.OutputArchive)+[Environment]::NewLine),[Text.UTF8Encoding]::new($false))
-  if(Test-Path -LiteralPath $plan.OutputArchive -or Test-Path -LiteralPath $plan.ChecksumPath){throw "Output destination appeared during packaging; refusing overwrite."}
+  if((Test-Path -LiteralPath $plan.OutputArchive) -or (Test-Path -LiteralPath $plan.ChecksumPath)){throw "Output destination appeared during packaging; refusing overwrite."}
   [IO.File]::Move($archiveTemp,$plan.OutputArchive);$promotedArchive=$true
   [IO.File]::Move($checksumTemp,$plan.ChecksumPath)
   [pscustomobject]@{status="created";applicationVersion=$plan.ApplicationVersion;archive=$plan.OutputArchive;sha256=$archiveHash;checksumFile=$plan.ChecksumPath;payloadFileCount=$verified.fileCount;payloadBytes=$verified.totalBytes;manifestVerified=$true;signatureIncluded=$false;installerIncluded=$false}|ConvertTo-Json -Depth 4

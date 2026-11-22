@@ -28,9 +28,7 @@ if($MyInvocation.InvocationName -ne "."){
  }
  New-Item -ItemType Directory -Path $plan.InstallRoot -Force|Out-Null
  $tempRoot=Join-Path ([IO.Path]::GetTempPath()) ("enterpriseit-hosts-"+[guid]::NewGuid().ToString("N"))
- # Keep promotion on the Program Files volume; system TEMP may be on another drive.
- $promotionRoot=Join-Path $plan.InstallRoot (".hosts-promotion-"+[guid]::NewGuid().ToString("N"))
- $publishRoot=Join-Path $tempRoot "publish"
+ $publishRoot=Join-Path $tempRoot "publish";$promotionRoot=Join-Path $tempRoot "promotion"
  $promoted=[System.Collections.Generic.List[string]]::new()
  New-Item -ItemType Directory -Path $publishRoot,$promotionRoot -Force|Out-Null
  try{
@@ -60,8 +58,5 @@ if($MyInvocation.InvocationName -ne "."){
    if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue}
   }
   throw
- }finally{
-  if(Test-Path -LiteralPath $promotionRoot){Remove-Item -LiteralPath $promotionRoot -Recurse -Force -ErrorAction SilentlyContinue}
-  if(Test-Path -LiteralPath $tempRoot){Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue}
- }
+ }finally{if(Test-Path $tempRoot){Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue}}
 }

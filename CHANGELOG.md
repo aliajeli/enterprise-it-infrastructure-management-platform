@@ -1,3 +1,9 @@
+## 0.1.119 — Correct PowerShell archive path preflight conditions
+
+- Windows CI exposed PowerShell parameter binding in the offline archive packager: multiple Test-Path calls combined without grouping caused a duplicate LiteralPath binding.
+- Grouped each Test-Path invocation explicitly and removed an unused archive-prefix variable. No packaging behavior or output format changed.
+- Exact-head Push and PR Windows CI are required to validate the correction.
+
 ## 0.1.118 — Keep service-host promotion on the install volume
 
 - Corrected Windows service-host staging so the promotion directory is created beneath the versioned Program Files install root, while publish output remains in the temporary build directory. This ensures final `File.Move` operations are same-volume even when the system temp directory is on another drive.

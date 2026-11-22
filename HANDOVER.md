@@ -1,3 +1,10 @@
+## 2026-11-22 — Offline archive PowerShell condition fix (v0.1.119)
+
+- Exact-head Windows CI on v0.1.118 failed in Test-OfflinePayloadPackage at Get-OfflinePayloadPackagePlan. The failure was a PowerShell parameter binding issue: Test-Path commands in if conditions joined with -or were not parenthesized, leading to duplicate LiteralPath parameter binding.
+- Grouped the Test-Path calls explicitly in both preflight and final destination recheck. Removed an unused archive-prefix variable.
+- Other Windows API/Worker/Edge Service Host tests and the offline manifest test completed successfully before the failing package test.
+- v0.1.119 requires exact-head Push and PR CI. No Installer, digital signature, or Release is claimed. PRs #7/#8/#9 remain unmerged; no NAT/port mapping changes.
+
 ## 2026-11-22 — Same-volume Windows service-host promotion (v0.1.118)
 
 - Review of the service-host staging implementation found that executable files were copied into a promotion directory under `[IO.Path]::GetTempPath()` and then moved into Program Files with `[IO.File]::Move`. On Windows systems where TEMP and Program Files are on different volumes, those moves fail because File.Move cannot perform a cross-volume rename.
