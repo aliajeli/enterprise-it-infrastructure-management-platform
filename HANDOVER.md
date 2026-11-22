@@ -1,3 +1,10 @@
+## 2026-11-22 — Same-volume Windows service-host promotion (v0.1.118)
+
+- Review of the service-host staging implementation found that executable files were copied into a promotion directory under `[IO.Path]::GetTempPath()` and then moved into Program Files with `[IO.File]::Move`. On Windows systems where TEMP and Program Files are on different volumes, those moves fail because File.Move cannot perform a cross-volume rename.
+- Promotion staging now resides under the versioned install root, guaranteeing that promotion and final destinations share a volume. Publish artifacts remain isolated in the system temp directory. The install-volume promotion directory is removed in finally, and rollback still removes only destinations promoted by the current invocation.
+- Added a source-policy assertion for same-volume promotion. Exact-head CI is required; no claim of power-loss atomicity or completed installer is made.
+- PR #9 remains open/unmerged; PR #7/#8 remain unmerged. No router, NAT or port-mapping changes.
+
 ## 2026-11-22 — Offline deployment archive packaging groundwork (v0.1.117)
 
 - v0.1.116 is validated: exact-head Push run 44963745825 and PR run 44963750352 both passed. Push passed all three jobs; PR passed Platform validation and Windows API runtime smoke, with lockfile bootstrap skipped as expected.

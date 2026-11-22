@@ -1,3 +1,9 @@
+## 0.1.118 — Keep service-host promotion on the install volume
+
+- Corrected Windows service-host staging so the promotion directory is created beneath the versioned Program Files install root, while publish output remains in the temporary build directory. This ensures final `File.Move` operations are same-volume even when the system temp directory is on another drive.
+- Added a policy assertion that prevents reverting promotion staging to the system temp volume.
+- Exact-head Windows CI is required; this does not claim a full transactional filesystem guarantee across power loss, nor create an installer or Release.
+
 ## 0.1.117 — Assemble immutable offline deployment archives
 
 - Added a packaging step for a previously staged deployment tree. It requires the versioned Node.js runtime, API/Worker/Database outputs, Web standalone runtime, four Windows service hosts and pinned PostgreSQL binaries before packaging.

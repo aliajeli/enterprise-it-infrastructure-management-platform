@@ -12,3 +12,6 @@ foreach($item in $p.Services){
  if([string]::IsNullOrWhiteSpace($item.Executable) -or -not $item.Executable.EndsWith(".exe",[StringComparison]::OrdinalIgnoreCase)){throw "Service host executable name is invalid."}
 }
 if(-not $p.Immutable){throw "Service host payload must be immutable."}
+
+$stageSource=Get-Content -LiteralPath (Join-Path $PSScriptRoot "stage-windows-service-hosts.ps1") -Raw
+if($stageSource -notmatch '\$promotionRoot\s*=\s*Join-Path\s+\$plan\.InstallRoot'){throw "Host promotion must use an install-volume staging directory to avoid cross-volume move failures."}
