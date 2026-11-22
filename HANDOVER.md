@@ -1,3 +1,9 @@
+## 2026-11-22 — Offline archive fixture inventory assertion (v0.1.120)
+
+- Review of the new archive fixture found that the expected inventory count treated the required Prisma migrations directory as a file. The manifest inventories files only, so the expected count must exclude that directory and include the root package.json.
+- Updated the post-extraction test to assert the exact expected number of files. No production packager behavior changed.
+- v0.1.120 awaits exact-head Push and PR CI; Installer, signature and Release remain outstanding.
+
 ## 2026-11-22 — Offline archive PowerShell condition fix (v0.1.119)
 
 - Exact-head Windows CI on v0.1.118 failed in Test-OfflinePayloadPackage at Get-OfflinePayloadPackagePlan. The failure was a PowerShell parameter binding issue: Test-Path commands in if conditions joined with -or were not parenthesized, leading to duplicate LiteralPath parameter binding.

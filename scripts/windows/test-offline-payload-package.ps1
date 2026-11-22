@@ -34,7 +34,8 @@ try{
  [IO.Compression.ZipFile]::ExtractToDirectory($archive,$extract)
  . $manifestScript -PayloadRoot $extract
  $verified=Test-OfflinePayloadManifest -PayloadRoot $extract -ExpectedApplicationVersion "0.1.1"
- if(-not $verified.valid -or $verified.fileCount -lt $required.Count+1){throw "Packaged payload manifest did not verify after extraction."}
+ $expectedPayloadFiles=@($required|Where-Object{$_ -ne "packages\database\prisma\migrations"}).Count+1
+ if(-not $verified.valid -or $verified.fileCount -ne $expectedPayloadFiles){throw "Packaged payload manifest file count did not match the staged fixture."}
  $rejected=$false;try{Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive $archive|Out-Null}catch{$rejected=$true}
  if(-not $rejected){throw "Existing archive overwrite was not rejected."}
  $incomplete=Join-Path $root "incomplete";New-Item -ItemType Directory -Path $incomplete -Force|Out-Null

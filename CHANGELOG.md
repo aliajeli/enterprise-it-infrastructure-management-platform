@@ -1,3 +1,8 @@
+## 0.1.120 — Correct offline archive fixture inventory expectation
+
+- The archive integration fixture includes an empty Prisma migrations directory, which is intentionally not a file in the SHA-256 inventory. Corrected the post-extraction assertion to count required files plus the root package manifest, excluding that directory.
+- The assertion now requires an exact file count instead of an imprecise lower bound. Exact-head Windows CI remains the acceptance gate.
+
 ## 0.1.119 — Correct PowerShell archive path preflight conditions
 
 - Windows CI exposed PowerShell parameter binding in the offline archive packager: multiple Test-Path calls combined without grouping caused a duplicate LiteralPath binding.
