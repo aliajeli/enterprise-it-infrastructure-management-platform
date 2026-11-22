@@ -1,3 +1,10 @@
+## 2026-11-22 — Repair duplicated offline installer source tail (v0.1.127)
+
+- Exact-head v0.1.126 Push and PR runs both failed at the Windows offline-installer validation step. The PowerShell parser reported an unexpected closing parenthesis at line 110.
+- Inspection of the committed file found the complete installer script followed by a duplicated fragment of the ZIP validator, beginning with an unmatched closing parenthesis and repeating the remainder of the script. Removed only that trailing duplicate; retained the intended validation logic, including reserved DOS device-name checks.
+- Updated the test archive fixture package and manifest versions to 0.1.127. Exact-head Push and PR CI must pass before this installer validation gate is accepted.
+- No installer signature, Release, clean Windows Server install, repair/uninstall or rollback acceptance is claimed. No MikroTik, NAT, firewall or port-mapping changes. PRs #7/#8/#9 remain unmerged.
+
 ## 2026-11-22 — Installer validation workflow syntax correction (v0.1.124)
 
 - The 0.1.123 Push workflow failed before creating jobs. Inspection of the committed YAML showed the new test step contained literal backslash-n sequences rather than actual line breaks.

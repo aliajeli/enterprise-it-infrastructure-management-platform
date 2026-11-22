@@ -1,3 +1,9 @@
+## 0.1.127 — Remove duplicated installer validator tail
+
+- Fixed the Windows installer PowerShell parser failure by removing a duplicated trailing fragment that had been appended after the installer entry point. The ZIP validation block itself remains intact, including reserved DOS device-name checks.
+- Updated the offline installer test fixture package and manifest versions to 0.1.127.
+- Exact-head Windows CI is required to validate parsing and all archive-validation cases. This does not create a signed installer or establish clean Windows Server installation acceptance.
+
 ## 0.1.124 — Correct installer validation workflow YAML
 
 - Corrected the offline-installer test step in the Windows validation workflow. The previous commit inserted escaped newline characters literally, causing GitHub Actions to reject the workflow before jobs could start.
