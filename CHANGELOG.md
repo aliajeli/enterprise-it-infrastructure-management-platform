@@ -1,3 +1,9 @@
+## 0.1.139 — Correct keyring directory-chain implementation contract
+
+- Corrected the XML summary on `WindowsDirectoryHandleChain`: the chain is now retained by the keyring helper for the full transaction, rather than being described as not wired into storage.
+- The comment explicitly preserves the remaining limitation: lock, registry, temporary-file, replacement and cleanup leaf operations are still path-based pending Windows acceptance.
+- No runtime behavior or security boundary changed in this documentation-only correction.
+
 ## 0.1.138 — Restore and clarify keyring hardening review
 
 - Restored the full Windows keyring hardening review and added an explicit implementation-status update for the partial parent-directory handle-chain mitigation in 0.1.137.

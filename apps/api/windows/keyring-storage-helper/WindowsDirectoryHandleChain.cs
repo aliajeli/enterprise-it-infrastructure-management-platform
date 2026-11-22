@@ -6,8 +6,8 @@ namespace CredentialVault.KeyringStorageHelper;
 
 /// <summary>
 /// Acquires the fixed ProgramData -> EnterpriseIT -> CredentialVault directory
-/// chain using retained handles. Not wired into storage until Windows acceptance
-/// tests cover the native interop and adversarial namespace behavior.
+/// chain using retained handles. The keyring helper retains this chain for the
+/// complete transaction; leaf-file operations remain path-based pending acceptance.
 /// </summary>
 internal sealed class WindowsDirectoryHandleChain : IDisposable
 {

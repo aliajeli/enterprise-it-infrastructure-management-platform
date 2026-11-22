@@ -1,3 +1,9 @@
+## 2026-11-23 — Correct keyring directory-chain source documentation (0.1.139)
+
+- Corrected the `WindowsDirectoryHandleChain` XML summary to match its current integration in the helper transaction lifecycle.
+- Explicitly retained the limitation that leaf-file operations remain path-based and Windows adversarial acceptance is still blocking.
+- No runtime behavior changed. No production keyring registration or credential persistence is enabled.
+
 ## 2026-11-23 — Restore full keyring hardening review (0.1.138)
 
 - Restored the complete Windows keyring storage hardening review and documented the exact partial status of the parent-directory handle-chain mitigation.
