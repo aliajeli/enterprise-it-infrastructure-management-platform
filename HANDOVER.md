@@ -1,3 +1,10 @@
+## 2026-11-22 — Isolate PostgreSQL bootstrap CI fixtures (v0.1.132)
+
+- Review of v0.1.131 found its new test used the shared Program Files\EnterpriseIT\1.2.3 path and its cleanup deleted that entire install root. This could interfere with other Windows CI steps.
+- v0.1.132 uses a unique numeric version directory for the fixture, fails on collision, and removes only paths it created. The test no longer touches the shared 1.2.3 tree.
+- No production behavior is claimed as added. Bootstrap DPAPI recovery, state ledger, API/Worker roles, installer integration and clean Windows Server acceptance remain incomplete.
+- No PR merged; no router/NAT/firewall/port mapping changes.
+
 ## 2026-11-22 — PostgreSQL bootstrap temporary-secret ACL hardening (v0.1.131)
 
 - The prior bootstrap wrote a plaintext initdb password file and only applied its ACL after file creation. v0.1.131 creates a unique workspace, applies a protected DACL for SYSTEM and Administrators, verifies the resulting explicit identities, and only then creates the password file.

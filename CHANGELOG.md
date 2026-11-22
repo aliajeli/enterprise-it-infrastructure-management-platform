@@ -1,3 +1,9 @@
+## 0.1.132 — Isolate PostgreSQL bootstrap guard fixtures
+
+- Corrected the Windows bootstrap guard test to use a unique, test-owned versioned Program Files directory instead of the shared EnterpriseIT\1.2.3 path.
+- The test now refuses an unexpected path collision and only removes directories it created, preventing it from overwriting or deleting PostgreSQL/runtime fixtures used by other Windows CI steps.
+- No production bootstrap behavior changed. DPAPI administrator credential recovery, durable state transitions, role/database provisioning and installer/orchestrator integration remain open gates.
+
 ## 0.1.131 — PostgreSQL bootstrap workspace ACL hardening
 
 - The PostgreSQL bootstrap now establishes and verifies a protected SYSTEM/Administrators DACL on the empty data directory before initdb writes cluster files.
