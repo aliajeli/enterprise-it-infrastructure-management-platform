@@ -7,4 +7,20 @@ if(($p.StartOrder -join ",") -ne ($expected -join ",")){throw "Five-service star
 if($p.Dependencies.Count -ne 4 -or $p.ChangesFirewall -or $p.ChangesRouter -or $p.PortMapping){throw "Unsafe service orchestration policy."}
 $bad=$false;try{Get-WindowsServiceOrchestrationPlan -InstallRoot (Join-Path $pf "EnterpriseIT\1.2.3") -EdgeBindAddress "127.0.0.1" -EdgeHttpsPort 443 -EdgeTlsHostname "it.example.internal" -EdgeCertificateThumbprint ("A"*40) -DataRoot (Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18\data")|Out-Null}catch{$bad=$true}
 if(-not $bad){throw "Loopback Edge bind must be rejected."}
-Write-Host "Five-service orchestration policy tests passed."
+
+# Rollback must stop only services started by this invocation, in reverse order.
+$script:rollbackStops=[System.Collections.Generic.List[string]]::new()
+function Stop-Service {
+ param([string]$Name,[switch]$Force,[string]$ErrorAction)
+ $script:rollbackStops.Add($Name)
+ if($Name -eq "EnterpriseITWorker"){throw "synthetic stop failure"}
+}
+$startedByTest=[System.Collections.Generic.List[string]]::new()
+foreach($name in @("EnterpriseITPostgreSQL","EnterpriseITApi","EnterpriseITWorker")){$startedByTest.Add($name)}
+Stop-OrchestrationStartedServices -Started $startedByTest
+$expectedRollback=@("EnterpriseITWorker","EnterpriseITApi","EnterpriseITPostgreSQL")
+if(($script:rollbackStops -join ",") -ne ($expectedRollback -join ",")){throw "Rollback must attempt only newly started services in reverse order, even if one stop fails."}
+if($script:rollbackStops -contains "EnterpriseITWeb" -or $script:rollbackStops -contains "EnterpriseITEdge"){throw "Rollback attempted to stop a service that was not started by this invocation."}
+Remove-Item Function:\Stop-Service -ErrorAction SilentlyContinue
+
+Write-Host "Five-service orchestration and rollback policy tests passed."

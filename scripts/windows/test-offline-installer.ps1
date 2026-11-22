@@ -9,7 +9,7 @@ try{
  try{
   $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
   try{
-   foreach($item in @(@('package.json','{"version":"0.1.127"}'),@('payload.manifest.json','{"applicationVersion":"0.1.127"}'))){
+   foreach($item in @(@('package.json','{"version":"0.1.128"}'),@('payload.manifest.json','{"applicationVersion":"0.1.128"}'))){
     $entry=$zip.CreateEntry($item[0]);$writer=[IO.StreamWriter]::new($entry.Open())
     try{$writer.Write($item[1])}finally{$writer.Dispose()}
    }

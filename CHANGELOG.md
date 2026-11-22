@@ -1,3 +1,9 @@
+## 0.1.128 — Test rollback scope for Windows service orchestration
+
+- Extracted the orchestration failure cleanup into a dedicated helper that stops only services started by the current invocation, in reverse startup order.
+- Added a Windows policy regression test with a simulated stop failure to prove rollback continues, does not target pre-existing/unstarted services, and never removes service registrations or application data.
+- Advanced root package and lockfile versions together. Exact-head CI is required; service provisioning and clean Windows Server acceptance remain separate gates.
+
 ## 0.1.127 — Remove duplicated installer validator tail
 
 - Fixed the Windows installer PowerShell parser failure by removing a duplicated trailing fragment that had been appended after the installer entry point. The ZIP validation block itself remains intact, including reserved DOS device-name checks.

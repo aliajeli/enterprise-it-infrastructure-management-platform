@@ -66,6 +66,13 @@ function Start-ManagedService([string]$Name,[System.Collections.Generic.List[str
  $service=Get-Service -Name $Name -ErrorAction Stop
  if($service.Status -ne "Running"){Start-Service -Name $Name -ErrorAction Stop;$Started.Add($Name)}
 }
+function Stop-OrchestrationStartedServices([System.Collections.Generic.List[string]]$Started){
+ for($i=$Started.Count-1;$i -ge 0;$i--){
+  $name=$Started[$i]
+  try{Stop-Service -Name $name -Force -ErrorAction Stop}
+  catch{Write-Warning "Rollback could not stop $name; service remains registered and data is preserved."}
+ }
+}
 function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl){
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
  $resolved=@([Net.Dns]::GetHostAddresses($Plan.EdgeTlsHostname)|ForEach-Object{$_.IPAddressToString})
@@ -105,7 +112,7 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
   Wait-HttpReady ("https://"+$Plan.EdgeTlsHostname+":"+$Plan.EdgeHttpsPort+"/health/ready") "EnterpriseITEdge"
   [pscustomobject]@{status="ready";services=$Plan.StartOrder;startedByThisRun=@($started);dependenciesConfigured=$true;firewallChanged=$false;routerChanged=$false;portMapping=$false}
  }catch{
-  for($i=$started.Count-1;$i -ge 0;$i--){$name=$started[$i];try{Stop-Service -Name $name -Force -ErrorAction Stop}catch{Write-Warning "Rollback could not stop $name; service remains registered and data is preserved."}}
+  Stop-OrchestrationStartedServices -Started $started
   throw
  }
 }

@@ -1,3 +1,10 @@
+## 2026-11-22 — Verify bounded Windows service startup rollback (v0.1.128)
+
+- The v0.1.127 Windows API runtime smoke completed all 39 steps successfully, including Windows service-host builds/lifecycle checks, five-service orchestration policy, runtime staging, offline archive packaging, offline installer archive validation, DPAPI/keyring policy and API/Argon2 tests.
+- Linux platform validation stopped at the root lockfile-version assertion: package.json was 0.1.127 while package-lock root metadata still reflected 0.1.126 in that run. The workflow's lockfile bootstrap created a follow-up branch commit (`f98f3663ed37e2a9cdf571d2774053fa154e0ede`) synchronizing the lockfile to 0.1.127. The PR workflow for that bot commit is action_required and needs repository-owner approval; it is not a passing run.
+- v0.1.128 extracts startup rollback into a helper and tests reverse-order stopping of only services started by the current invocation, including continuation after a simulated stop failure. It deliberately does not unregister services or delete data/secrets.
+- No signed installer, Release, repair/uninstall, transactional rollback of service provisioning, or clean Windows Server virtual-account acceptance is claimed. PR #7/#8/#9 remain unmerged. No MikroTik, NAT, firewall or port-mapping changes.
+
 ## 2026-11-22 — Repair duplicated offline installer source tail (v0.1.127)
 
 - Exact-head v0.1.126 Push and PR runs both failed at the Windows offline-installer validation step. The PowerShell parser reported an unexpected closing parenthesis at line 110.
