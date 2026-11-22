@@ -42,5 +42,12 @@ try{
  Copy-Item -LiteralPath (Join-Path $source "package.json") -Destination $incomplete
  $rejected=$false;try{Get-OfflinePayloadPackagePlan -SourceRoot $incomplete -OutputArchive (Join-Path $out "bad.zip")|Out-Null}catch{$rejected=$true}
  if(-not $rejected){throw "Incomplete staged payload was accepted."}
+ $outside=Join-Path $root "outside";$junction=Join-Path $source "external-link"
+ New-Item -ItemType Directory -Path $outside -Force|Out-Null
+ [IO.File]::WriteAllText((Join-Path $outside "outside.txt"),"must not be packaged")
+ New-Item -ItemType Junction -Path $junction -Target $outside -ErrorAction Stop|Out-Null
+ $rejected=$false;try{Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive (Join-Path $out "junction.zip")|Out-Null}catch{$rejected=$true}
+ if(-not $rejected){throw "Source tree containing a junction/reparse point was accepted."}
+ Remove-Item -LiteralPath $junction -Force -ErrorAction Stop
  Write-Host "Offline payload package tests passed."
 }finally{if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue}}

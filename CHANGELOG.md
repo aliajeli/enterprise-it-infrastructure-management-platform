@@ -1,3 +1,10 @@
+## 0.1.121 — Reject reparse points before offline payload copy
+
+- Hardened offline archive preflight to inventory the source tree and reject junctions/symbolic links before recursive Copy-Item begins. This prevents packaging from following a reparse point outside the staged payload during the copy phase.
+- Added a Windows junction regression test that verifies a source tree containing an external directory junction is rejected before archive creation.
+- Root package.json and package-lock.json metadata are advanced together to 0.1.121, avoiding the prior parallel lockfile-bootstrap race where validation saw a stale root lock version.
+- Exact-head Push and PR CI are required. This remains an integrity-checked archive, not a signed installer or Release.
+
 ## 0.1.120 — Correct offline archive fixture inventory expectation
 
 - The archive integration fixture includes an empty Prisma migrations directory, which is intentionally not a file in the SHA-256 inventory. Corrected the post-extraction assertion to count required files plus the root package manifest, excluding that directory.

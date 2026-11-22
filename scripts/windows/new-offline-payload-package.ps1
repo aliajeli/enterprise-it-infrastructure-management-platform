@@ -14,6 +14,8 @@ function Get-OfflinePayloadPackagePlan {
  if(-not(Test-Path -LiteralPath $source -PathType Container)){throw "Offline payload source root does not exist."}
  $sourceItem=Get-Item -LiteralPath $source -Force
  if(($sourceItem.Attributes -band [IO.FileAttributes]::ReparsePoint)-ne 0){throw "Offline payload source root must not be a reparse point."}
+ # Inspect the complete source tree before Copy-Item can traverse a junction or symbolic link.
+ Get-OfflinePayloadInventory -PayloadRoot $source|Out-Null
  $manifestPath=Join-Path $source "package.json"
  if(-not(Test-Path -LiteralPath $manifestPath -PathType Leaf)){throw "Root package.json is missing from the staged payload."}
  $package=Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json -ErrorAction Stop

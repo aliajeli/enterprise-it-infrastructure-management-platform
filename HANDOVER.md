@@ -1,3 +1,10 @@
+## 2026-11-22 — Offline payload source reparse-point preflight (v0.1.121)
+
+- CI logs for v0.1.120 identified a deterministic race: Push validation checked commit 36a8306 while its parallel lockfile-bootstrap job later created 6147656. The validation checkout still contained package-lock root version 0.1.119 while package.json was 0.1.120. The later branch HEAD is 6147656, where both root lockfile versions are synchronized to 0.1.120.
+- Windows runtime smoke on 36a8306 passed all recorded steps, including five-service orchestration policy, Node/Web/API/Worker staging, offline manifest and archive packaging, DPAPI/keyring helper checks, and Prisma/API tests. Linux platform validation stopped only at the stale root lockfile assertion before running subsequent checks.
+- v0.1.121 advances package.json and package-lock root metadata together in the same commit and hardens the archive packager: source inventory now rejects reparse points before recursive copy, with a Windows directory-junction regression test.
+- Exact-head Push/PR CI is pending. No installer, digital signature, Release or clean Windows Server acceptance is claimed. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-22 — Offline archive fixture inventory assertion (v0.1.120)
 
 - Review of the new archive fixture found that the expected inventory count treated the required Prisma migrations directory as a file. The manifest inventories files only, so the expected count must exclude that directory and include the root package.json.
