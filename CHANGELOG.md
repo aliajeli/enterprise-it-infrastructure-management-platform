@@ -1,3 +1,9 @@
+## 0.1.122 — Verified offline payload installation entry point
+
+- Added a guarded Windows installer entry point that requires an independently supplied SHA-256 digest, validates ZIP entry paths and rejects duplicate names and symbolic-link entries before extraction.
+- The installer verifies the extracted payload manifest and version, runs the read-only host preflight, promotes the payload into an immutable versioned Program Files directory, then invokes the existing five-service orchestration with separate SecureString database URLs and explicit Edge TLS settings.
+- Added Windows tests for trusted-digest mismatch and ZIP path traversal rejection. CI is the acceptance gate; this is an unsigned PowerShell installer entry point, not a signed MSI/EXE or production release.
+
 ## 0.1.121 — Reject reparse points before offline payload copy
 
 - Hardened offline archive preflight to inventory the source tree and reject junctions/symbolic links before recursive Copy-Item begins. This prevents packaging from following a reparse point outside the staged payload during the copy phase.

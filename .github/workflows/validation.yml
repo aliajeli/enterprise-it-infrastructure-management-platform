@@ -241,7 +241,7 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-offline-payload-package.ps1
 
-      - name: Build Windows DPAPI helper
+      - name: Test offline installer archive validation\n        shell: pwsh\n        run: pwsh -NoProfile -File scripts/windows/test-offline-installer.ps1\n\n      - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
       - name: Verify DPAPI helper rejects non-service identity

@@ -1,3 +1,10 @@
+## 2026-11-22 — Guarded offline installer entry point (v0.1.122)
+
+- Added `install-offline-payload.ps1`: it requires an out-of-band SHA-256 digest (the archive sidecar alone is not trusted), validates ZIP entry paths, rejects duplicate names and Unix symlink entries, verifies the extracted SHA-256 payload manifest and package version, and runs the read-only Windows host preflight before installation.
+- Payload promotion uses a same-volume temporary directory beneath Program Files and refuses an existing version directory. It then calls the existing five-service orchestration with distinct SecureString API/Worker database URLs and explicit Edge bind/hostname/certificate inputs.
+- If service orchestration fails after promotion, the versioned payload is deliberately retained for diagnosis; no automatic deletion of registered services or application data is attempted. No firewall, router, NAT or port mapping changes are performed.
+- Added Windows CI tests for trusted-digest mismatch and ZIP path traversal. Exact-head CI is required. This is an unsigned PowerShell installer entry point, not a signed MSI/EXE, and no clean Windows Server acceptance or Release is claimed.
+
 ## 2026-11-22 — Offline payload source reparse-point preflight (v0.1.121)
 
 - CI logs for v0.1.120 identified a deterministic race: Push validation checked commit 36a8306 while its parallel lockfile-bootstrap job later created 6147656. The validation checkout still contained package-lock root version 0.1.119 while package.json was 0.1.120. The later branch HEAD is 6147656, where both root lockfile versions are synchronized to 0.1.120.
