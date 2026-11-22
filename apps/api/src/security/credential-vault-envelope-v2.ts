@@ -2,10 +2,12 @@ import {
   constants,
   createCipheriv,
   createDecipheriv,
+  createHash,
   createPublicKey,
+  KeyObject,
   publicEncrypt,
   randomBytes,
-  type KeyObject,
+  type KeyObject as KeyObjectType,
 } from "node:crypto";
 
 const KEY_BYTES = 32;
@@ -44,7 +46,7 @@ export interface CredentialRecoveryPublicKeyProvider {
   getCurrentPublicKey(): Promise<{
     keyId: string;
     keyVersion: string;
-    publicKey: string | Buffer | KeyObject;
+    publicKey: string | Buffer | KeyObjectType;
   }>;
 }
 
@@ -74,16 +76,43 @@ function validateKeyId(value: string): void {
   if (!/^[A-Za-z0-9._-]{1,128}$/.test(value)) throw new Error("Invalid recovery key identifier.");
 }
 
-function aad(context: CredentialEnvelopeV2Context, keyVersion: string): Buffer {
+function sha256(value: Buffer): Buffer {
+  return createHash("sha256").update(value).digest();
+}
+
+function aad(
+  context: CredentialEnvelopeV2Context,
+  keyVersion: string,
+  recoveryKeyId: string,
+  dpapiWrapped: Buffer,
+  recoveryWrapped: Buffer,
+): Buffer {
   return Buffer.from(JSON.stringify([
-    "enterprise-it-credential", 2, context.installationId, context.credentialId,
-    context.branchId, context.assetId, context.kind, keyVersion,
+    "enterprise-it-credential",
+    2,
+    context.installationId,
+    context.credentialId,
+    context.branchId,
+    context.assetId,
+    context.kind,
+    keyVersion,
+    recoveryKeyId,
+    sha256(dpapiWrapped).toString("hex"),
+    sha256(recoveryWrapped).toString("hex"),
   ]), "utf8");
 }
 
 function decodeBase64(value: string, expectedLength?: number, maximumLength?: number): Buffer {
-  if (typeof value !== "string" ||
-      !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) {
+  if (typeof value !== "string") throw new CredentialEnvelopeV2DecryptionError();
+  const maximumEncodedLength = expectedLength !== undefined
+    ? Math.ceil(expectedLength / 3) * 4
+    : maximumLength !== undefined
+      ? Math.ceil(maximumLength / 3) * 4
+      : 0;
+  if (maximumEncodedLength > 0 && value.length > maximumEncodedLength) {
+    throw new CredentialEnvelopeV2DecryptionError();
+  }
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) {
     throw new CredentialEnvelopeV2DecryptionError();
   }
   const decoded = Buffer.from(value, "base64");
@@ -112,10 +141,15 @@ function decryptAesGcm(ciphertext: Buffer, key: Buffer, nonce: Buffer, authTag: 
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
-function validatedPublicKey(material: string | Buffer | KeyObject): KeyObject {
-  let key: KeyObject;
+function validatedPublicKey(material: string | Buffer | KeyObjectType): KeyObjectType {
+  let key: KeyObjectType;
   try {
-    key = createPublicKey(material);
+    if (material instanceof KeyObject) {
+      if (material.type !== "public") throw new Error("Expected a public key.");
+      key = material;
+    } else {
+      key = createPublicKey(material);
+    }
   } catch {
     throw new Error("Recovery public key is invalid.");
   }
@@ -144,8 +178,8 @@ export async function encryptCredentialSecretV2(
   const dataKey = randomBytes(KEY_BYTES);
   const dataNonce = randomBytes(NONCE_BYTES);
   const plaintextBytes = Buffer.from(plaintext, "utf8");
-  const associatedData = aad(context, current.keyVersion);
   let dpapiWrapped: Buffer | undefined;
+  let recoveryWrapped: Buffer | undefined;
 
   try {
     dpapiWrapped = await localProtector.protect(dataKey, context);
@@ -153,8 +187,7 @@ export async function encryptCredentialSecretV2(
         dpapiWrapped.length > MAX_DPAPI_BLOB_BYTES) {
       throw new Error("DPAPI provider returned an invalid protected key blob.");
     }
-    const encrypted = encryptAesGcm(plaintextBytes, dataKey, dataNonce, associatedData);
-    const recoveryWrapped = publicEncrypt({
+    recoveryWrapped = publicEncrypt({
       key: publicKey,
       padding: constants.RSA_PKCS1_OAEP_PADDING,
       oaepHash: "sha256",
@@ -162,6 +195,12 @@ export async function encryptCredentialSecretV2(
     if (recoveryWrapped.length !== RSA_WRAPPED_KEY_BYTES) {
       throw new Error("Unexpected RSA recovery wrapper length.");
     }
+    const encrypted = encryptAesGcm(
+      plaintextBytes,
+      dataKey,
+      dataNonce,
+      aad(context, current.keyVersion, current.keyId, dpapiWrapped, recoveryWrapped),
+    );
     return {
       formatVersion: 2,
       installationId: context.installationId,
@@ -177,6 +216,7 @@ export async function encryptCredentialSecretV2(
     dataKey.fill(0);
     plaintextBytes.fill(0);
     dpapiWrapped?.fill(0);
+    recoveryWrapped?.fill(0);
   }
 }
 
@@ -188,6 +228,7 @@ export async function decryptCredentialSecretV2(
 ): Promise<string> {
   validateContext(context);
   let dpapiWrapped: Buffer | undefined;
+  let recoveryWrapped: Buffer | undefined;
   let dataKey: Buffer | undefined;
   let ciphertext: Buffer | undefined;
   let nonce: Buffer | undefined;
@@ -202,6 +243,7 @@ export async function decryptCredentialSecretV2(
     validateKeyId(record.recoveryKeyId);
     dpapiWrapped = decodeBase64(record.dpapiWrappedDataKey, undefined, MAX_DPAPI_BLOB_BYTES);
     if (dpapiWrapped.length < 1) throw new CredentialEnvelopeV2DecryptionError();
+    recoveryWrapped = decodeBase64(record.recoveryWrappedDataKey, RSA_WRAPPED_KEY_BYTES);
     dataKey = await localProtector.unprotect(dpapiWrapped, context);
     if (!Buffer.isBuffer(dataKey) || dataKey.length !== KEY_BYTES) {
       throw new CredentialEnvelopeV2DecryptionError();
@@ -210,7 +252,13 @@ export async function decryptCredentialSecretV2(
     if (ciphertext.length < 1) throw new CredentialEnvelopeV2DecryptionError();
     nonce = decodeBase64(record.nonce, NONCE_BYTES);
     authTag = decodeBase64(record.authTag, TAG_BYTES);
-    plaintext = decryptAesGcm(ciphertext, dataKey, nonce, authTag, aad(context, record.keyVersion));
+    plaintext = decryptAesGcm(
+      ciphertext,
+      dataKey,
+      nonce,
+      authTag,
+      aad(context, record.keyVersion, record.recoveryKeyId, dpapiWrapped, recoveryWrapped),
+    );
     if (plaintext.length < 1 || plaintext.length > MAX_SECRET_BYTES) {
       throw new CredentialEnvelopeV2DecryptionError();
     }
@@ -219,6 +267,7 @@ export async function decryptCredentialSecretV2(
     throw new CredentialEnvelopeV2DecryptionError();
   } finally {
     dpapiWrapped?.fill(0);
+    recoveryWrapped?.fill(0);
     dataKey?.fill(0);
     ciphertext?.fill(0);
     nonce?.fill(0);

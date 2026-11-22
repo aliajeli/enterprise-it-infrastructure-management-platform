@@ -1,3 +1,11 @@
+## 2026-11-22 — Authenticate both credential wrappers and fix RSA KeyObject typing (0.1.135)
+
+- Fixed CI TypeScript failure by handling Node.js public KeyObject instances directly and rejecting private KeyObjects at the public-key provider boundary.
+- Extended canonical AES-GCM AAD to bind the recovery key ID and SHA-256 digests of both the DPAPI and RSA-wrapped DEK blobs. Tampering with either wrapper or the recovery key ID is detected by the authenticated ciphertext.
+- Added pre-decode base64 length bounds, exact 384-byte RSA-3072 wrapper validation and regression tests for wrapper/key-ID substitution.
+- No production DPAPI adapter is connected yet. The test protector remains an identity fixture and is not secure for production. Recovery utility, persistence, v1-to-v2 migration, installer public-key enrollment and production credential use remain disabled.
+- Exact-head CI is the acceptance gate. No PR merged; no MikroTik, NAT, firewall or port-mapping changes.
+
 ## 2026-11-22 — Add isolated dual-wrapper credential envelope core (0.1.134)
 
 - Added a separate format-v2 crypto module; the existing format-v1 envelope and decrypt path remain unchanged.

@@ -1,4 +1,4 @@
-import { constants, createDecipheriv, generateKeyPairSync, privateDecrypt } from "node:crypto";
+import { constants, createDecipheriv, createHash, generateKeyPairSync, privateDecrypt } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
   CredentialEnvelopeV2DecryptionError,
@@ -28,15 +28,22 @@ const recoveryProvider = {
   },
 };
 
+function hash(value: Buffer): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 function recoverForTest(envelope: Awaited<ReturnType<typeof encryptCredentialSecretV2>>): string {
+  const dpapiWrapped = Buffer.from(envelope.dpapiWrappedDataKey, "base64");
+  const recoveryWrapped = Buffer.from(envelope.recoveryWrappedDataKey, "base64");
   const key = privateDecrypt({
     key: rsa.privateKey,
     padding: constants.RSA_PKCS1_OAEP_PADDING,
     oaepHash: "sha256",
-  }, Buffer.from(envelope.recoveryWrappedDataKey, "base64"));
+  }, recoveryWrapped);
   const associatedData = Buffer.from(JSON.stringify([
     "enterprise-it-credential", 2, context.installationId, context.credentialId,
     context.branchId, context.assetId, context.kind, envelope.keyVersion,
+    envelope.recoveryKeyId, hash(dpapiWrapped), hash(recoveryWrapped),
   ]), "utf8");
   const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(envelope.nonce, "base64"), { authTagLength: 16 });
   decipher.setAAD(associatedData);
@@ -46,6 +53,8 @@ function recoverForTest(envelope: Awaited<ReturnType<typeof encryptCredentialSec
     decipher.final(),
   ]);
   key.fill(0);
+  dpapiWrapped.fill(0);
+  recoveryWrapped.fill(0);
   return clear.toString("utf8");
 }
 
@@ -78,6 +87,23 @@ describe("credential vault dual-wrapper envelope v2", () => {
       .rejects.toBeInstanceOf(CredentialEnvelopeV2DecryptionError);
     await expect(decryptCredentialSecretV2({ ...envelope, ciphertext: Buffer.from("bad").toString("base64") }, context, protector))
       .rejects.toBeInstanceOf(CredentialEnvelopeV2DecryptionError);
+  });
+
+  it("authenticates both wrappers and the recovery key identifier as envelope metadata", async () => {
+    const protector = new TestProtector();
+    const envelope = await encryptCredentialSecretV2("secret", context, protector, recoveryProvider);
+    await expect(decryptCredentialSecretV2({
+      ...envelope,
+      recoveryWrappedDataKey: Buffer.alloc(384, 7).toString("base64"),
+    }, context, protector)).rejects.toBeInstanceOf(CredentialEnvelopeV2DecryptionError);
+    await expect(decryptCredentialSecretV2({
+      ...envelope,
+      dpapiWrappedDataKey: Buffer.alloc(32, 9).toString("base64"),
+    }, context, protector)).rejects.toBeInstanceOf(CredentialEnvelopeV2DecryptionError);
+    await expect(decryptCredentialSecretV2({
+      ...envelope,
+      recoveryKeyId: "substituted-key",
+    }, context, protector)).rejects.toBeInstanceOf(CredentialEnvelopeV2DecryptionError);
   });
 
   it("rejects recovery public keys weaker than RSA-3072", async () => {

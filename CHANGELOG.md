@@ -1,3 +1,10 @@
+## 0.1.135 — Fix recovery-key metadata authentication and public-key typing
+
+- Corrected Node.js KeyObject handling so RSA public-key objects are accepted without passing KeyObject through the incompatible createPublicKey overload; private KeyObjects are rejected.
+- Bound the recovery key ID and SHA-256 digests of both DPAPI and RSA wrappers into AES-256-GCM AAD. Wrapper substitution or key-ID tampering now fails authentication on the normal service path.
+- Added strict encoded-size bounds before base64 decoding and exact RSA-3072 wrapper length validation.
+- Expanded regression tests for wrapper and recovery key ID substitution. This remains a crypto-core increment; no production DPAPI adapter, recovery utility, migration or production credential use is enabled.
+
 ## 0.1.134 — Add versioned dual-wrapper credential envelope core
 
 - Added an isolated format-v2 AES-256-GCM envelope with a fresh per-secret DEK, local DPAPI-protector contract and independent RSA-3072 OAEP-SHA-256 recovery public-key wrapper.
