@@ -986,3 +986,8 @@
 - Offline installer archive validation now rejects Windows-invalid path segments, alternate data stream syntax, reserved DOS device names, trailing dots/spaces, control characters, and DOS reparse-point entries before extraction.
 - Added Windows regression cases for alternate data streams, reserved device names and trailing dot/space paths.
 - Root package and npm lockfile metadata advanced together to 0.1.125. Exact-head Windows CI is required; no real installation or signed release is claimed.
+
+## 2026-11-22 — Offline installer ZIP validator parser correction (v0.1.126)
+- Corrected the malformed PowerShell regex block in offline installer ZIP entry validation discovered by Windows CI.
+- Restored reserved-device-name, duplicate-path, Unix symlink and DOS reparse-point checks before extraction.
+- Root package and lockfile metadata advanced together. Exact-head Windows CI is required before accepting installer validation.

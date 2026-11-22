@@ -1236,3 +1236,8 @@ An earlier application-repository inspection reported an empty clone before the 
 - Hardened ZIP entry checks against Windows-specific extraction hazards: NTFS alternate data streams, reserved DOS device names, invalid/control characters, trailing dots/spaces, and DOS reparse-point attributes. Existing traversal, duplicate, absolute-path, symlink and 100 GB expansion checks remain.
 - Added regression tests for ADS syntax, CON device names, and trailing-dot/space paths. Exact-head CI must pass before this is accepted.
 - Root package.json and package-lock.json versions are synchronized at 0.1.125. This remains an unsigned script-based installer entry point; clean Windows Server install, repair/uninstall/rollback and signed release are still outstanding.
+
+## 2026-11-22 — Installer ZIP validator parser correction (v0.1.126)
+- Windows CI for v0.1.125 exposed a PowerShell ParserError in the ZIP path validation block before installer tests could execute.
+- Replaced the complete malformed block with syntactically complete checks for Windows-invalid segments, reserved DOS names, duplicate entries, Unix symlinks and DOS reparse-point attributes.
+- Version metadata synchronized at 0.1.126. Installer validation remains unaccepted until exact-head Windows CI succeeds.

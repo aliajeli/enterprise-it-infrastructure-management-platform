@@ -36,7 +36,12 @@ function Test-OfflineInstallerArchive {
    if(@($segments|Where-Object{$_ -eq '.' -or $_ -eq '..' -or $_ -eq ''}).Count -gt 0){throw "ZIP entry contains an unsafe path segment: $name"}
    foreach($segment in $segments){
     if($segment -match '[\x00-\x1F<>:"|?*]' -or $segment.EndsWith('.') -or $segment.EndsWith(' ')){throw "ZIP entry contains a Windows-invalid path segment: $name"}
-    if($segment -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?
+    if($segment -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$'){throw "ZIP entry uses a reserved Windows device name: $name"}
+   }
+   if(-not $names.Add($trimmed)){throw "Duplicate ZIP entry path is not allowed: $name"}
+   $unixType=($entry.ExternalAttributes -shr 16) -band 0xF000
+   $dosAttributes=$entry.ExternalAttributes -band 0xFFFF
+   if($unixType -eq 0xA000 -or ($dosAttributes -band 0x400) -ne 0){throw "Symbolic-link or reparse-point ZIP entries are not allowed: $name"}
    if(-not $name.EndsWith('/')){
     $totalExpanded += [int64]$entry.Length
     if($totalExpanded -gt 100GB){throw "Offline payload expands beyond the 100 GB safety limit."}
