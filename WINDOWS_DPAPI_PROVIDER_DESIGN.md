@@ -24,9 +24,28 @@ The active key version is explicit. Rotation creates a new random 32-byte KEK, p
 
 ## Recovery is independent of DPAPI
 
-Machine-scoped DPAPI blobs cannot be restored on a replacement host. Recovery therefore uses a separately generated recovery KEK that is not derived from DPAPI, the service SID, machine secrets, or the application binary. The recovery KEK must be generated and held through an owner-controlled offline custody process (for example, an HSM or encrypted removable recovery medium with split custody). The recovery export contains the KEK version registry encrypted under this independent recovery KEK, with authenticated metadata and a documented format version. The recovery KEK must never be stored beside the application, database, backup, DPAPI blob or service configuration.
+Machine-scoped DPAPI blobs cannot be restored on a replacement host. Recovery therefore uses an independent public-key envelope; removable media is not required and the private key is never installed on an operational server.
 
-A recovery drill must restore the exported key registry on a clean Windows host with a different machine identity and service SID, re-protect the recovered KEKs under the new host's DPAPI scope, then decrypt known non-production test credentials and verify AAD binding. The drill must prove that the old and new key versions remain available as expected. Until this passes, credential persistence and all production credential use remain disabled.
+For each protected credential, generate a cryptographically random 256-bit data-encryption key (DEK). Encrypt the credential with AES-256-GCM using a fresh 96-bit nonce and a 128-bit authentication tag. Bind immutable context as AAD: format version, installation ID, credential ID, credential purpose/type and key version. The persisted envelope contains ciphertext, nonce, tag and two independent wrappers for the same DEK:
+
+1. **Local-use wrapper:** protect the DEK with machine-scope DPAPI through the existing service-bound helper contract, with entropy bound to the dedicated service SID and installation ID. Only the dedicated service identity may unwrap it during normal operation.
+2. **Recovery wrapper:** wrap the DEK with the recovery RSA public key using RSA-3072 OAEP with SHA-256. Store the public-key identifier and wrapped DEK with the envelope. The corresponding private key is held outside the operational environment.
+
+The recovery public key is provisioned during installation through an authenticated, integrity-checked input. Its fingerprint and key identifier are pinned in installation metadata. The installer must reject an absent, malformed, weak or unexpected key; it must never silently generate a replacement recovery identity. Public-key rotation is explicit and versioned: new credentials use the new key, existing envelopes retain their prior recovery wrapper until a verified rewrap completes. Revocation and retirement require an audited rewrap/recovery plan.
+
+The recovery private key is stored in an organization-managed password manager protected by MFA and least-privilege access. Enable audited emergency access and maintain an independent encrypted backup of the private-key material and recovery instructions. The password manager is a custody location, not a runtime dependency. Do not place the private key in the repository, installer, offline payload, application host, database, routine database backup, logs or environment variables. Do not transmit it to application services.
+
+Recovery on a replacement host is an explicit administrative operation: obtain the private key through the approved custody process, unwrap the DEK, verify the authenticated context, and re-protect the DEK under the replacement host's DPAPI scope and new service identity. The recovery process must not emit plaintext credentials to disk, command-line arguments, environment variables or logs. If the recovery private key is unavailable or the authentication tag/AAD check fails, fail closed; do not fall back to an unprotected secret.
+
+A recovery drill must use a clean Windows host with a different machine identity and service SID. Restore a non-production credential envelope, unwrap its DEK with the recovery private key, verify AAD and AES-GCM authentication, re-protect it with the new host's DPAPI scope, then prove that the service identity can decrypt the known test credential. Also verify that the old host cannot be assumed to decrypt on the new host without recovery. Record key IDs, test outcomes and operator identity without recording secret or key material.
+
+## Key custody and operational controls
+
+- Generate the RSA-3072 key pair using an approved cryptographic provider; keep the private key exportable only as required by the organization's recovery custody process and protect the exported representation with a strong passphrase and password-manager controls.
+- Separate operational administration from recovery-key custody. Require MFA and audited privileged access; use dual authorization for emergency private-key retrieval where the organization's password manager supports it.
+- Maintain an independent encrypted backup and periodically test that it can be restored. A password-manager account alone is not an adequate disaster-recovery plan.
+- Record key identifier, public-key fingerprint, creation/activation/retirement times and rotation events. Never record private-key bytes, passphrases or plaintext DEKs.
+- Treat a compromised recovery private key as a credential incident: revoke its key ID, rotate affected credentials and rewrap under a newly approved public key.
 
 ## Required implementation sequence
 

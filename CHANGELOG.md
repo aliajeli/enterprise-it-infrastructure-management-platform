@@ -1,3 +1,9 @@
+## 0.1.133 — Define independent Windows credential recovery envelope
+
+- Replaced the removable-media recovery proposal with the approved public-key recovery model: local service use remains DPAPI-protected, while recovery uses an independent RSA-3072 OAEP-SHA-256 key pair and AES-256-GCM authenticated encryption.
+- Specified credential and installation context binding, key custody in an organization-managed password manager with MFA and independent encrypted backup, rotation/revocation, audit requirements and clean-host recovery acceptance gates.
+- This is a design-only change. No recovery cryptographic provider, installer flow, PostgreSQL administrator credential persistence, or production recovery operation is implemented or enabled by this commit.
+
 ## 0.1.132 — Isolate PostgreSQL bootstrap guard fixtures
 
 - Corrected the Windows bootstrap guard test to use a unique, test-owned versioned Program Files directory instead of the shared EnterpriseIT\1.2.3 path.

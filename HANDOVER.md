@@ -1,3 +1,12 @@
+## 2026-11-22 — Approve public-key credential recovery architecture (v0.1.133)
+
+- User approved removing USB/removable media from the recovery design.
+- The recovery design now uses a random per-secret data-encryption key (DEK), AES-256-GCM for secret encryption, local DPAPI protection for normal service use, and an independent RSA-3072 public-key wrapper using OAEP-SHA-256 for disaster recovery. The private key is never deployed to the operational host or included in repository, installer, payload, database or backups.
+- Recovery private-key custody is assigned to an organization-managed password manager protected by MFA, restricted access, audited emergency access and an independent encrypted backup. The password manager is a custody location, not a runtime dependency.
+- The current CredentialKeyProvider / AES-GCM envelope is not yet integrated with this dual-wrapper recovery format. The existing DPAPI helper remains service-SID-bound and must not be reused for installer administrator credentials.
+- This commit changes design documentation only. Recovery provider implementation, PostgreSQL administrator secret bootstrap, role/database provisioning, installer integration, key rotation/revocation tests and clean-host recovery drill remain outstanding. No production credential use is enabled.
+- No PR merged; no MikroTik, NAT, firewall or port-mapping changes.
+
 ## 2026-11-22 — Isolate PostgreSQL bootstrap CI fixtures (v0.1.132)
 
 - Review of v0.1.131 found its new test used the shared Program Files\EnterpriseIT\1.2.3 path and its cleanup deleted that entire install root. This could interfere with other Windows CI steps.
