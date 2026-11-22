@@ -1,3 +1,11 @@
+## 2026-11-22 — Preflight full service payload before provisioning (v0.1.129)
+
+- Verified v0.1.128 exact-head CI run 45006781170: Platform validation and Windows API runtime smoke passed; lockfile bootstrap was correctly skipped.
+- Review found that orchestration provisioned PostgreSQL, API, Worker and Web sequentially before Edge provisioning checked its host payload and certificate. A late missing Edge input could therefore leave earlier services/configuration partially provisioned.
+- v0.1.129 adds a read-only preflight before the first provisioner. It checks all five service-host executables, Node.js, API/Worker/Web entry points, PostgreSQL binaries and initialized PostgreSQL cluster files; it also validates PostgreSQL 18, loopback-only listen address/port and explicit remote IPv4/IPv6 rejection.
+- Added Windows regression tests for missing Edge host and unsafe PostgreSQL authentication policy. This reduces partial provisioning caused by missing/unsafe payload inputs; it is not a full transactional rollback of SCM registrations, ACLs, or DPAPI configuration.
+- Exact-head CI is required. No signed installer, Release, Repair/Uninstall, or clean Windows Server virtual-account acceptance is claimed. PR #7/#8/#9 remain unmerged. No MikroTik, NAT, firewall or port-mapping changes.
+
 ## 2026-11-22 — Verify bounded Windows service startup rollback (v0.1.128)
 
 - The v0.1.127 Windows API runtime smoke completed all 39 steps successfully, including Windows service-host builds/lifecycle checks, five-service orchestration policy, runtime staging, offline archive packaging, offline installer archive validation, DPAPI/keyring policy and API/Argon2 tests.

@@ -8,6 +8,38 @@ if($p.Dependencies.Count -ne 4 -or $p.ChangesFirewall -or $p.ChangesRouter -or $
 $bad=$false;try{Get-WindowsServiceOrchestrationPlan -InstallRoot (Join-Path $pf "EnterpriseIT\1.2.3") -EdgeBindAddress "127.0.0.1" -EdgeHttpsPort 443 -EdgeTlsHostname "it.example.internal" -EdgeCertificateThumbprint ("A"*40) -DataRoot (Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18\data")|Out-Null}catch{$bad=$true}
 if(-not $bad){throw "Loopback Edge bind must be rejected."}
 
+# Validate the complete payload and PostgreSQL policy before any service provisioning.
+$preflightRoot=Join-Path $env:TEMP ("enterpriseit-orchestration-preflight-"+[guid]::NewGuid().ToString("N"))
+$preflightData=Join-Path $preflightRoot "data"
+New-Item -ItemType Directory -Path $preflightRoot,$preflightData -Force|Out-Null
+try{
+ $fixturePlan=[pscustomobject]@{InstallRoot=(Join-Path $preflightRoot "install");DataRoot=$preflightData}
+ New-Item -ItemType Directory -Path $fixturePlan.InstallRoot -Force|Out-Null
+ foreach($file in (Get-WindowsServiceOrchestrationRequiredFiles -Plan $fixturePlan)){
+  $parent=Split-Path -Parent $file
+  New-Item -ItemType Directory -Path $parent -Force|Out-Null
+  $content="fixture"
+  if($file -like "*\PG_VERSION"){$content="18"}
+  elseif($file -like "*\postgresql.conf"){$content=@("listen_addresses = '127.0.0.1'","port = 5432") -join [Environment]::NewLine}
+  elseif($file -like "*\pg_hba.conf"){$content=@("host all all 127.0.0.1/32 scram-sha-256","host all all 0.0.0.0/0 reject","host all all ::/0 reject") -join [Environment]::NewLine}
+  [IO.File]::WriteAllText($file,$content)
+ }
+ $payloadCheck=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
+ if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 14){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
+ $edgeHost=Join-Path $fixturePlan.InstallRoot "EnterpriseIT.EdgeServiceHost.exe"
+ Remove-Item -LiteralPath $edgeHost -Force
+ $missingRejected=$false
+ try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$missingRejected=$true}
+ if(-not $missingRejected){throw "Missing Edge service host must fail before provisioning begins."}
+ [IO.File]::WriteAllText($edgeHost,"fixture")
+ [IO.File]::WriteAllText((Join-Path $preflightData "pg_hba.conf"),"host all all 127.0.0.1/32 trust")
+ $unsafeDatabaseRejected=$false
+ try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$unsafeDatabaseRejected=$true}
+ if(-not $unsafeDatabaseRejected){throw "A PostgreSQL authentication policy without remote-address rejection must fail preflight."}
+}finally{
+ if(Test-Path -LiteralPath $preflightRoot){Remove-Item -LiteralPath $preflightRoot -Recurse -Force -ErrorAction SilentlyContinue}
+}
+
 # Rollback must stop only services started by this invocation, in reverse order.
 $script:rollbackStops=[System.Collections.Generic.List[string]]::new()
 function Stop-Service {

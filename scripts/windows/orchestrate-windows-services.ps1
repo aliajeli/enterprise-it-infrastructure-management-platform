@@ -62,6 +62,36 @@ function Wait-HttpReady([string]$Uri,[string]$ServiceName){
  }finally{$client.Dispose()}
  throw "$ServiceName did not return HTTP 200 from its readiness endpoint within 60 seconds."
 }
+function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
+ @(
+  (Join-Path $Plan.InstallRoot "EnterpriseIT.ApiServiceHost.exe"),
+  (Join-Path $Plan.InstallRoot "EnterpriseIT.WebServiceHost.exe"),
+  (Join-Path $Plan.InstallRoot "EnterpriseIT.WorkerServiceHost.exe"),
+  (Join-Path $Plan.InstallRoot "EnterpriseIT.EdgeServiceHost.exe"),
+  (Join-Path $Plan.InstallRoot "runtime\node.exe"),
+  (Join-Path $Plan.InstallRoot "apps\api\dist\server.js"),
+  (Join-Path $Plan.InstallRoot "apps\worker\dist\main.js"),
+  (Join-Path $Plan.InstallRoot "apps\web\.next\standalone\service-entry.cjs"),
+  (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\postgres.exe"),
+  (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\pg_ctl.exe"),
+  (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\pg_isready.exe"),
+  (Join-Path $Plan.DataRoot "PG_VERSION"),
+  (Join-Path $Plan.DataRoot "postgresql.conf"),
+  (Join-Path $Plan.DataRoot "pg_hba.conf")
+ )
+}
+function Test-WindowsServiceOrchestrationPayload([pscustomobject]$Plan){
+ $requiredFiles=@(Get-WindowsServiceOrchestrationRequiredFiles -Plan $Plan)
+ $missing=@($requiredFiles|Where-Object{-not(Test-Path -LiteralPath $_ -PathType Leaf)})
+ if($missing.Count -gt 0){throw "Orchestration preflight failed before service provisioning; required payload or PostgreSQL cluster files are missing: $($missing -join '; ')"}
+ $version=(Get-Content -LiteralPath (Join-Path $Plan.DataRoot "PG_VERSION") -Raw).Trim()
+ if($version -ne "18"){throw "Orchestration preflight requires an initialized PostgreSQL 18 data directory."}
+ $postgresConfig=Get-Content -LiteralPath (Join-Path $Plan.DataRoot "postgresql.conf") -Raw
+ if($postgresConfig -notmatch "(?m)^\s*listen_addresses\s*=\s*'127\.0\.0\.1'" -or $postgresConfig -notmatch "(?m)^\s*port\s*=\s*5432\s*$"){throw "Orchestration preflight requires PostgreSQL to bind only to 127.0.0.1:5432."}
+ $hba=Get-Content -LiteralPath (Join-Path $Plan.DataRoot "pg_hba.conf") -Raw
+ if($hba -notmatch "127\.0\.0\.1/32\s+scram-sha-256" -or $hba -notmatch "0\.0\.0\.0/0\s+reject" -or $hba -notmatch "::/0\s+reject"){throw "Orchestration preflight requires loopback-only SCRAM authentication and explicit remote IPv4/IPv6 rejection."}
+ [pscustomobject]@{valid=$true;requiredFileCount=$requiredFiles.Count;postgresMajorVersion=$version;postgresListenAddress="127.0.0.1";postgresPort=5432}
+}
 function Start-ManagedService([string]$Name,[System.Collections.Generic.List[string]]$Started){
  $service=Get-Service -Name $Name -ErrorAction Stop
  if($service.Status -ne "Running"){Start-Service -Name $Name -ErrorAction Stop;$Started.Add($Name)}
@@ -75,6 +105,7 @@ function Stop-OrchestrationStartedServices([System.Collections.Generic.List[stri
 }
 function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl){
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
+  Test-WindowsServiceOrchestrationPayload -Plan $Plan|Out-Null
  $resolved=@([Net.Dns]::GetHostAddresses($Plan.EdgeTlsHostname)|ForEach-Object{$_.IPAddressToString})
  if($Plan.EdgeBindAddress -notin $resolved){throw "Edge TLS hostname must resolve to the configured Edge bind address on this server."}
  # Load each guarded provisioning function only when needed; all provisioners are side-effect free under WhatIf.

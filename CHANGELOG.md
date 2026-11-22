@@ -1,3 +1,10 @@
+## 0.1.129 — Preflight complete service payload before provisioning
+
+- Added a read-only orchestration preflight that verifies all five service hosts, Node.js, API/Worker/Web entry points, PostgreSQL binaries and initialized cluster files before any Windows service registration or ACL changes.
+- The preflight also enforces PostgreSQL 18, loopback-only listener configuration and explicit IPv4/IPv6 remote rejection before provisioning begins.
+- Added Windows regression coverage for a missing Edge host and an unsafe PostgreSQL authentication policy. Existing provisioning remains non-destructive; no service registrations or application data are removed by this preflight.
+- Root package and lockfile versions advanced together. Exact-head Push and PR CI are required before accepting the change.
+
 ## 0.1.128 — Test rollback scope for Windows service orchestration
 
 - Extracted the orchestration failure cleanup into a dedicated helper that stops only services started by the current invocation, in reverse startup order.
