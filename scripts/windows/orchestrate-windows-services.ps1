@@ -109,7 +109,10 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
  $resolved=@([Net.Dns]::GetHostAddresses($Plan.EdgeTlsHostname)|ForEach-Object{$_.IPAddressToString})
  if($Plan.EdgeBindAddress -notin $resolved){throw "Edge TLS hostname must resolve to the configured Edge bind address on this server."}
  # Load each guarded provisioning function only when needed; all provisioners are side-effect free under WhatIf.
- . (Join-Path $PSScriptRoot "provision-postgresql-service.ps1") -InstallRoot $Plan.InstallRoot -DataRoot $Plan.DataRoot
+  . (Join-Path $PSScriptRoot "provision-edge-service.ps1") -InstallRoot $Plan.InstallRoot -BindAddress $Plan.EdgeBindAddress -HttpsPort $Plan.EdgeHttpsPort -TlsHostname $Plan.EdgeTlsHostname -CertificateThumbprint $Plan.EdgeCertificateThumbprint
+ $edgePreflightPlan=Get-EdgeServiceProvisioningPlan -InstallRoot $Plan.InstallRoot -BindAddress $Plan.EdgeBindAddress -HttpsPort $Plan.EdgeHttpsPort -TlsHostname $Plan.EdgeTlsHostname -CertificateThumbprint $Plan.EdgeCertificateThumbprint
+ Test-EdgeServicePreflight -Plan $edgePreflightPlan|Out-Null
+. (Join-Path $PSScriptRoot "provision-postgresql-service.ps1") -InstallRoot $Plan.InstallRoot -DataRoot $Plan.DataRoot
  $pgPlan=Get-PostgreSqlServiceProvisioningPlan -InstallRoot $Plan.InstallRoot -DataRoot $Plan.DataRoot
  Invoke-PostgreSqlServiceProvisioning -Plan $pgPlan -Confirm:$false|Out-Null
  . (Join-Path $PSScriptRoot "provision-api-service.ps1") -InstallRoot $Plan.InstallRoot

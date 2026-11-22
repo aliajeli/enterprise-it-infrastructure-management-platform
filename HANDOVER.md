@@ -1,3 +1,11 @@
+## 2026-11-22 — Validate Edge certificate before any service provisioning (v0.1.130)
+
+- v0.1.129 exact-head Push CI run 45016701472 passed all three jobs: Windows API runtime smoke (including all 39 steps and five-service orchestration policy), Node.js 26/PostgreSQL 18 platform validation, and lockfile refresh. PR run 45016706686 passed Windows and platform jobs; lockfile refresh was correctly skipped.
+- Review found Edge certificate, machine private-key provider/path, assigned bind IP and occupied HTTPS port were checked only when Edge provisioning ran last, after PostgreSQL/API/Worker/Web provisioning and ACL/config changes.
+- v0.1.130 adds a shared read-only Edge preflight and invokes it before the first provisioner. It verifies certificate validity, private key, DNS name, Server Authentication EKU, trusted machine chain, supported RSA CNG/CSP key provider and key-file existence, plus listener address/port and Edge host payload. Edge provisioning repeats the same contract immediately before its own changes.
+- Added fact-driven regression coverage for valid and invalid certificate/key/listener facts. This reduces late-failure partial provisioning; it does not implement full rollback of SCM registrations, ACLs, DPAPI configuration or pre-existing state.
+- PR #9 remains Draft/open and unmerged; PR #7/#8 remain unmerged. No installer signing, Release, Repair/Uninstall, or clean Windows Server virtual-account acceptance is claimed. No MikroTik, NAT, firewall or port-mapping changes.
+
 ## 2026-11-22 — Preflight full service payload before provisioning (v0.1.129)
 
 - Verified v0.1.128 exact-head CI run 45006781170: Platform validation and Windows API runtime smoke passed; lockfile bootstrap was correctly skipped.

@@ -1,3 +1,10 @@
+## 0.1.130 — Preflight Edge certificate and listener before provisioning
+
+- Added a read-only Edge preflight that verifies the host executable, assigned LAN address, unoccupied HTTPS port, machine certificate validity/private key, DNS name, Server Authentication EKU, trusted certificate chain, supported RSA key provider and private-key file.
+- The five-service orchestrator now runs this preflight before PostgreSQL/API/Worker/Web provisioning, preventing a late Edge certificate or listener failure from leaving earlier services partially provisioned.
+- Edge provisioning reuses the same validation contract immediately before applying service, ACL and configuration changes; added fact-driven Windows regression coverage for invalid certificate/key/listener states.
+- Root package and lockfile versions advanced together. Hosted Windows CI is required; this is not full transactional rollback or clean Windows Server acceptance.
+
 ## 0.1.129 — Preflight complete service payload before provisioning
 
 - Added a read-only orchestration preflight that verifies all five service hosts, Node.js, API/Worker/Web entry points, PostgreSQL binaries and initialized cluster files before any Windows service registration or ACL changes.
