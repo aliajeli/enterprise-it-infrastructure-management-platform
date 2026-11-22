@@ -1230,3 +1230,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Hardened `stage-windows-service-hosts.ps1`: all four self-contained .NET service hosts are published and copied into a temporary promotion area before the versioned installation directory is modified.
 - The script preflights all final destinations, promotes only after all four outputs exist, and removes outputs promoted by the current invocation if promotion fails. Existing immutable destinations are never overwritten.
 - Expanded plan tests. CI acceptance on the exact commit is still required; this does not create an installer or establish clean-VM installation acceptance.
+
+## 2026-11-22 — Offline installer ZIP path hardening (v0.1.125)
+- Reviewed the current installer path: archive digest verification, ZIP entry preflight, extraction to a unique staging directory, manifest verification, immutable version-directory promotion, then service orchestration.
+- Hardened ZIP entry checks against Windows-specific extraction hazards: NTFS alternate data streams, reserved DOS device names, invalid/control characters, trailing dots/spaces, and DOS reparse-point attributes. Existing traversal, duplicate, absolute-path, symlink and 100 GB expansion checks remain.
+- Added regression tests for ADS syntax, CON device names, and trailing-dot/space paths. Exact-head CI must pass before this is accepted.
+- Root package.json and package-lock.json versions are synchronized at 0.1.125. This remains an unsigned script-based installer entry point; clean Windows Server install, repair/uninstall/rollback and signed release are still outstanding.

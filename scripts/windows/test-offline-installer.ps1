@@ -35,5 +35,35 @@ try{
  $unsafeHash=(Get-FileHash -LiteralPath $unsafe -Algorithm SHA256).Hash
  $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $unsafe -ExpectedSha256 $unsafeHash|Out-Null}catch{$rejected=$true}
  if(-not $rejected){throw 'ZIP path traversal entry was accepted.'}
+ $windowsUnsafe=Join-Path $root 'windows-unsafe.zip'
+ $stream=[IO.File]::Open($windowsUnsafe,[IO.FileMode]::CreateNew)
+ try{
+  $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
+  try{
+   foreach($item in @(@('package.json','{}'),@('payload.manifest.json','{}'),@('folder/file:stream','x'))){
+    $entry=$zip.CreateEntry($item[0]);$writer=[IO.StreamWriter]::new($entry.Open())
+    try{$writer.Write($item[1])}finally{$writer.Dispose()}
+   }
+  }finally{$zip.Dispose()}
+ }finally{$stream.Dispose()}
+ $windowsUnsafeHash=(Get-FileHash -LiteralPath $windowsUnsafe -Algorithm SHA256).Hash
+ $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $windowsUnsafe -ExpectedSha256 $windowsUnsafeHash|Out-Null}catch{$rejected=$true}
+ if(-not $rejected){throw 'ZIP alternate-data-stream path was accepted.'}
+ foreach($unsafeName in @('CON.txt','folder/trailing.','folder/trailing ')){
+  $casePath=Join-Path $root ('unsafe-'+[guid]::NewGuid().ToString('N')+'.zip')
+  $stream=[IO.File]::Open($casePath,[IO.FileMode]::CreateNew)
+  try{
+   $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
+   try{
+    foreach($name in @('package.json','payload.manifest.json',$unsafeName)){
+     $entry=$zip.CreateEntry($name);$writer=[IO.StreamWriter]::new($entry.Open())
+     try{$writer.Write('{}')}finally{$writer.Dispose()}
+    }
+   }finally{$zip.Dispose()}
+  }finally{$stream.Dispose()}
+  $caseHash=(Get-FileHash -LiteralPath $casePath -Algorithm SHA256).Hash
+  $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $casePath -ExpectedSha256 $caseHash|Out-Null}catch{$rejected=$true}
+  if(-not $rejected){throw "ZIP Windows-invalid path was accepted: $unsafeName"}
+ }
  Write-Output 'Offline installer archive validation tests passed.'
 }finally{if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue}}

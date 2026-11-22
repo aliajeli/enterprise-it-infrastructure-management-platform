@@ -981,3 +981,8 @@
 - Promotes the complete host set only after every publish succeeds; removes any executables promoted by the current run if a later promotion fails.
 - Extended Windows staging-plan checks for project presence, executable names and immutable payload policy.
 - This remains a payload staging operation, not the product installer.
+
+## 2026-11-22 — Windows ZIP extraction path hardening (v0.1.125)
+- Offline installer archive validation now rejects Windows-invalid path segments, alternate data stream syntax, reserved DOS device names, trailing dots/spaces, control characters, and DOS reparse-point entries before extraction.
+- Added Windows regression cases for alternate data streams, reserved device names and trailing dot/space paths.
+- Root package and npm lockfile metadata advanced together to 0.1.125. Exact-head Windows CI is required; no real installation or signed release is claimed.
