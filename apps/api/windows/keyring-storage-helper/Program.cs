@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -96,6 +97,14 @@ internal static class Program
 
     private static void RequireLock(){if(heldLock is null || serviceSid is null) throw new InvalidOperationException();}
 
+    // NtCreateFile failures are surfaced as Win32Exception by OpenVaultFile.
+    // A missing registry is an expected first-run state; all other failures remain fail-closed.
+    private static SafeFileHandle? TryOpenVaultFile(string name,uint access,uint share)
+    {
+        try { return directoryChain!.OpenVaultFile(name,access,share); }
+        catch(Win32Exception ex) when(ex.NativeErrorCode==2) { return null; }
+    }
+
     private static async Task BeginTransaction()
     {
         serviceSid=GetServiceSid();
@@ -121,8 +130,8 @@ internal static class Program
 
     private static string? ReadRegistry()
     {
-        var h=directoryChain!.OpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
-        if(h.IsInvalid) { var error=Marshal.GetLastWin32Error(); h.Dispose(); if(error==2) return null; throw new IOException(); }
+        var h=TryOpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
+        if(h is null) return null;
         using(h)
         {
             VerifyAcl(h,serviceSid!); VerifyNotReparse(h);
@@ -136,9 +145,10 @@ internal static class Program
     private static void WriteRegistry(byte[] data)
     {
         if(data.Length is <1 or >Max) throw new InvalidDataException();
-        var existing=directoryChain!.OpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
-        if(!existing.IsInvalid) { using(existing) { VerifyAcl(existing,serviceSid!); VerifyNotReparse(existing); } }
-        else { var error=Marshal.GetLastWin32Error(); existing.Dispose(); if(error!=2) throw new IOException(); }
+        using(var existing=TryOpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead))
+        {
+            if(existing is not null) { VerifyAcl(existing,serviceSid!); VerifyNotReparse(existing); }
+        }
         var tempName=".keyring-"+Guid.NewGuid().ToString("N")+".tmp";
         var temp=Path.Combine(Root,tempName);
         var sddl=$"O:{serviceSid!.Value}D:P(A;;FA;;;{serviceSid.Value})(A;;FA;;;SY)";

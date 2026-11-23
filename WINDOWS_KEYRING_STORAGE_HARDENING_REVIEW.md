@@ -1,3 +1,11 @@
+## Implementation status update — 2026-11-23 (branch revision 0.1.141)
+
+The 0.1.140 relative-open change is now the active implementation for lock acquisition, registry reads/existence checks and temporary-file creation. Review of the new call path found that `OpenVaultFile` translates a missing leaf into a `Win32Exception`, while the caller had incorrectly expected an invalid handle. The helper now treats Win32 file-not-found (error 2) as the expected first-run absence only; access denied, reparse/type violations, and all other native failures continue to fail closed.
+
+This is a correctness fix, not completion of handle-relative storage. Atomic replacement and orphan cleanup still resolve names through Win32 paths. F-03 and F-04 remain open; F-05 remains blocking because positive provisioned-Service-SID and adversarial namespace tests are not present. File identity metadata is queried on open but is not yet retained and compared across rename/commit. The Node keyring adapter remains unregistered; no credential persistence or production approval is granted.
+
+---
+
 ## Implementation status update — 2026-11-23 (branch revision 0.1.137)
 
 The first parent-chain mitigation is now wired into the helper transaction lifecycle. `WindowsDirectoryHandleChain.OpenKnownProgramData()` acquires the local volume root and opens ProgramData, EnterpriseIT and CredentialVault relative to retained parent handles. It rejects reparse-point directory components and volume changes. These handles are held from BEGIN until process exit and are opened without FILE_SHARE_DELETE. Vault owner/DACL checks use the retained Vault handle.

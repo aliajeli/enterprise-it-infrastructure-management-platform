@@ -1,3 +1,9 @@
+## 0.1.141 — Handle missing keyring registry through native open semantics
+
+- Corrected the first-run/missing-registry path: `OpenVaultFile` reports NTSTATUS failures as `Win32Exception`, not an invalid handle. The helper now maps only Win32 file-not-found (error 2) to an absent registry for reads and existence checks.
+- All other open errors remain fail-closed; ACL and reparse validation still run on every successfully opened leaf.
+- Atomic replacement and orphan cleanup remain path-based acceptance blockers. No production credential persistence, PR merge, or MikroTik/NAT/port-mapping change.
+
 ## 0.1.140 — Open keyring leaf files relative to the retained Vault handle
 
 - Changed lock-file acquisition, registry reads, existing-registry checks and temporary-file creation to open fixed leaf names relative to the retained CredentialVault directory handle using NtCreateFile with a root directory handle.

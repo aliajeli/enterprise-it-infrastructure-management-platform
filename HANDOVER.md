@@ -1,3 +1,9 @@
+## 2026-11-23 — Handle missing keyring registry through native open semantics (0.1.141)
+
+- Fixed the mismatch between `WindowsDirectoryHandleChain.OpenVaultFile` and its callers: NTSTATUS-to-Win32 translation raises `Win32Exception`; only native error 2 is now treated as the expected absent registry during read/existence checks.
+- Other errors remain fail-closed. This does not complete handle-relative rename/delete: atomic replacement and orphan cleanup remain path-based; file identity is queried but not retained/compared across commit.
+- Exact-head CI and dedicated-Service-SID/adversarial Windows acceptance remain required. Keyring client remains unregistered; PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Handle-relative keyring leaf opens (0.1.140)
 
 - Lock-file acquisition, registry reads/existence checks and temporary-file creation now resolve the leaf name relative to the retained CredentialVault directory handle through NtCreateFile.
