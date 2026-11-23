@@ -28,7 +28,7 @@ admin_psql --command "ALTER ROLE \"$migrator\" SET role = '$owner'"
 admin_psql --command "CREATE DATABASE \"$database\" OWNER \"$owner\""
 
 # Prove the login identity is distinct while effective current_user is the schema owner.
-identity="$(PGPASSWORD="$migrator_password" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --host "$PGHOST" --port "$PGPORT" --username "$migrator" --dbname "$database" --command 'SELECT session_user || "|" || current_user')"
+identity="$(PGPASSWORD="$migrator_password" psql --no-psqlrc --tuples-only --no-align --set ON_ERROR_STOP=1 --host "$PGHOST" --port "$PGPORT" --username "$migrator" --dbname "$database" --command 'SELECT session_user || chr(124) || current_user')"
 if [[ "$identity" != "$migrator|$owner" ]]; then
   printf 'Unexpected migration identity: %s\n' "$identity" >&2
   exit 1

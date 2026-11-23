@@ -1,3 +1,9 @@
+## 2026-11-23 — Migration identity assertion correction (0.1.149)
+
+- Corrected the test query in `scripts/database/test-prisma-migration-ownership.sh` to use `chr(124)` as the separator between `session_user` and `current_user`.
+- The previous query used double quotes around the delimiter, which PostgreSQL interprets as a quoted identifier. The corrected test must be validated by the next exact-head CI run.
+- No production database behavior, roles, grants, migration runner, secret transport or installer flow changed. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Prisma migration owner CI experiment (0.1.148)
 
 - Added `scripts/database/test-prisma-migration-ownership.sh` and wired it into Platform validation.

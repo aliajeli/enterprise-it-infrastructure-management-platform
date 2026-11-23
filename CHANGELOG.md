@@ -1,3 +1,8 @@
+## 0.1.149 — Correct migration identity assertion in CI harness
+
+- Corrected the SQL delimiter expression in the disposable Prisma migration ownership experiment so PostgreSQL concatenates the login and effective role identities without treating the delimiter as an identifier.
+- The exact-head PostgreSQL 18 / Prisma 7.10.1 experiment remains pending CI execution; no production role bootstrap or installer behavior is claimed.
+
 ## 0.1.148 — Add Prisma migration ownership integration experiment
 
 - Added a disposable PostgreSQL 18 CI experiment for the repository-pinned Prisma 7.10.1 migration engine.
