@@ -106,7 +106,7 @@ internal static class Program
         {
             try
             {
-                var h=Open(Lock,GenericRead|GenericWrite|ReadControl,0,OpenExisting,OpenReparse);
+                var h=directoryChain!.OpenVaultFile("keyring.lock",GenericRead|GenericWrite|ReadControl,0);
                 try
                 {
                     VerifyAcl(h,serviceSid); VerifyNotReparse(h);
@@ -121,7 +121,7 @@ internal static class Program
 
     private static string? ReadRegistry()
     {
-        var h=CreateFile(Registry,GenericRead|ReadControl,ShareRead,IntPtr.Zero,OpenExisting,OpenReparse,IntPtr.Zero);
+        var h=directoryChain!.OpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
         if(h.IsInvalid) { var error=Marshal.GetLastWin32Error(); h.Dispose(); if(error==2) return null; throw new IOException(); }
         using(h)
         {
@@ -136,19 +136,19 @@ internal static class Program
     private static void WriteRegistry(byte[] data)
     {
         if(data.Length is <1 or >Max) throw new InvalidDataException();
-        var existing=CreateFile(Registry,GenericRead|ReadControl,ShareRead,IntPtr.Zero,OpenExisting,OpenReparse,IntPtr.Zero);
+        var existing=directoryChain!.OpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
         if(!existing.IsInvalid) { using(existing) { VerifyAcl(existing,serviceSid!); VerifyNotReparse(existing); } }
         else { var error=Marshal.GetLastWin32Error(); existing.Dispose(); if(error!=2) throw new IOException(); }
-        var temp=Path.Combine(Root,".keyring-"+Guid.NewGuid().ToString("N")+".tmp");
+        var tempName=".keyring-"+Guid.NewGuid().ToString("N")+".tmp";
+        var temp=Path.Combine(Root,tempName);
         var sddl=$"O:{serviceSid!.Value}D:P(A;;FA;;;{serviceSid.Value})(A;;FA;;;SY)";
         IntPtr sd=IntPtr.Zero;
         try
         {
             if(!ConvertSddl(sddl,1,out sd,out _)) throw new IOException();
             var sa=new SecurityAttributes{Length=Marshal.SizeOf<SecurityAttributes>(),SecurityDescriptor=sd,InheritHandle=false};
-            using(var h=CreateFileWithSecurity(temp,GenericRead|GenericWrite|ReadControl,0,ref sa,CreateNew,FileNormal|WriteThrough,IntPtr.Zero))
+            using(var h=directoryChain!.OpenVaultFile(tempName,GenericRead|GenericWrite|ReadControl,0,2,sd))
             {
-                if(h.IsInvalid) throw new IOException();
                 VerifyAcl(h,serviceSid); VerifyNotReparse(h);
                 using var s=new FileStream(h,FileAccess.Write); s.Write(data); s.Flush(true);
             }

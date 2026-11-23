@@ -1,3 +1,10 @@
+## 2026-11-23 — Handle-relative keyring leaf opens (0.1.140)
+
+- Lock-file acquisition, registry reads/existence checks and temporary-file creation now resolve the leaf name relative to the retained CredentialVault directory handle through NtCreateFile.
+- The helper rejects directory/reparse-point leaf handles and verifies file-identity metadata on each open.
+- Atomic replacement and orphan cleanup remain path-based; this increment does not close the full leaf-operation race or authorize production credential persistence.
+- Exact-head Windows CI and dedicated-Service-SID/adversarial Windows acceptance remain required. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Correct keyring directory-chain source documentation (0.1.139)
 
 - Corrected the `WindowsDirectoryHandleChain` XML summary to match its current integration in the helper transaction lifecycle.

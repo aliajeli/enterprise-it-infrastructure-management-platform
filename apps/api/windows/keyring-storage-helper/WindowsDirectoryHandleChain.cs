@@ -148,6 +148,72 @@ internal sealed class WindowsDirectoryHandleChain : IDisposable
         }
     }
 
+    /// <summary>
+    /// Opens a fixed-name file relative to the retained Vault directory handle.
+    /// </summary>
+    internal SafeFileHandle OpenVaultFile(string component, uint desiredAccess, uint shareAccess,
+        uint createDisposition = FileOpen, IntPtr securityDescriptor = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        if (string.IsNullOrWhiteSpace(component) || component.Length > 128 ||
+            component is "." or ".." ||
+            component.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not '-' and not '_' and not '.'))
+            throw new ArgumentException("Invalid fixed vault file component.", nameof(component));
+
+        var nameBuffer = Marshal.StringToHGlobalUni(component);
+        var unicodeNameBuffer = Marshal.AllocHGlobal(Marshal.SizeOf<UnicodeString>());
+        SafeFileHandle? file = null;
+        var addedRef = false;
+        try
+        {
+            var unicodeName = new UnicodeString
+            {
+                Length = checked((ushort)(component.Length * sizeof(char))),
+                MaximumLength = checked((ushort)((component.Length + 1) * sizeof(char))),
+                Buffer = nameBuffer
+            };
+            Marshal.StructureToPtr(unicodeName, unicodeNameBuffer, false);
+            var attributes = new ObjectAttributes
+            {
+                Length = Marshal.SizeOf<ObjectAttributes>(),
+                RootDirectory = vaultRoot.DangerousGetHandle(),
+                ObjectName = unicodeNameBuffer,
+                Attributes = ObjectCaseInsensitive,
+                SecurityDescriptor = securityDescriptor
+            };
+            var ioStatus = new IoStatusBlock();
+            vaultRoot.DangerousAddRef(ref addedRef);
+            var status = NtCreateFile(out file, desiredAccess | Synchronize,
+                ref attributes, ref ioStatus, IntPtr.Zero, 0x80, shareAccess,
+                createDisposition, 0x40 | FileOpenReparsePoint | FileSynchronousIoNonAlert,
+                IntPtr.Zero, 0);
+            if (status < 0)
+            {
+                file?.Dispose();
+                file = null;
+                throw new Win32Exception(unchecked((int)RtlNtStatusToDosError(status)));
+            }
+
+            if (!GetFileAttributeTagInfo(file, AttributeTagInfoClass,
+                    out var tag, Marshal.SizeOf<FileAttributeTagInfo>()) ||
+                (tag.FileAttributes & (DirectoryAttribute | ReparseAttribute)) != 0)
+                throw new UnauthorizedAccessException("A keyring leaf is a directory or reparse point.");
+            if (!GetFileIdentityInfo(file, FileIdInfoClass, out _, Marshal.SizeOf<FileIdInfo>()))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
+            var result = file;
+            file = null;
+            return result;
+        }
+        finally
+        {
+            if (addedRef) vaultRoot.DangerousRelease();
+            file?.Dispose();
+            Marshal.FreeHGlobal(unicodeNameBuffer);
+            Marshal.FreeHGlobal(nameBuffer);
+        }
+    }
+
     private static DirectoryIdentity ReadAndVerifyDirectory(SafeFileHandle handle)
     {
         if (handle.IsInvalid || !GetFileAttributeTagInfo(handle, AttributeTagInfoClass,

@@ -1,3 +1,10 @@
+## 0.1.140 — Open keyring leaf files relative to the retained Vault handle
+
+- Changed lock-file acquisition, registry reads, existing-registry checks and temporary-file creation to open fixed leaf names relative to the retained CredentialVault directory handle using NtCreateFile with a root directory handle.
+- The relative-open helper rejects directory and reparse-point leaves and verifies that the opened file exposes stable file identity metadata before returning its handle.
+- Atomic replacement and orphan cleanup still use path-based operations and remain explicit acceptance blockers; this is a partial leaf-operation hardening increment, not closure of F-03/F-04.
+- Exact-head Windows CI and provisioned-Service-SID/adversarial namespace acceptance are required. No production credential persistence enabled; no PR merged; no MikroTik/NAT/port-mapping changes.
+
 ## 0.1.139 — Correct keyring directory-chain implementation contract
 
 - Corrected the XML summary on `WindowsDirectoryHandleChain`: the chain is now retained by the keyring helper for the full transaction, rather than being described as not wired into storage.
