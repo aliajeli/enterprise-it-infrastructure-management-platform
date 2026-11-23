@@ -1,3 +1,10 @@
+## 0.1.147 — Inventory PostgreSQL runtime privileges and migration ownership gate
+
+- Derived a provisional API privilege matrix from current route/security Prisma operations and raw SQL, including explicit append-only restrictions for audit events and port observations.
+- Confirmed the current Worker source only performs lease recovery/claim operations on `discovery_runs`; discovery handlers remain disabled and the source allow-list is empty. Documented the narrow current Worker privilege candidate.
+- Recorded the unresolved Prisma Migrate object-ownership/current_user contract and required exact-engine PostgreSQL 18 experiments before implementing role bootstrap or grant SQL.
+- Documentation/design only. No database roles, grants, migration runner, secret transport, runtime behavior or installer flow changed. No PR merge, Installer/Release, or MikroTik/NAT/port-mapping changes.
+
 ## 0.1.146 — Specify PostgreSQL first-install and migration contract
 
 - Added a verified implementation inventory and security contract for first-install PostgreSQL bootstrap, role separation, least-privilege runtime grants, migration execution, secret transport, retry semantics and Windows Server acceptance.

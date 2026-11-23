@@ -1,3 +1,11 @@
+## 2026-11-23 — Source-derived PostgreSQL privilege matrix (0.1.147)
+
+- Reviewed API authentication, user, branch and inventory routes; API session resolution and one-time administrator bootstrap; Worker queue/recovery SQL; Prisma schema and the current migration set.
+- Added `WINDOWS_POSTGRESQL_PRIVILEGE_MATRIX.md` with provisional table-level API grants, the Worker-only `discovery_runs` baseline, append-only table restrictions, sequence/DDL observations, and explicit source-change review requirements.
+- Confirmed the current Worker has no discovery handlers and an empty source allow-list; it currently recovers expired leases on `discovery_runs` and does not need broad inventory/user privileges.
+- Kept migration role/schema-owner implementation blocked pending a disposable PostgreSQL 18 test with the exact pinned Prisma Migrate engine proving `current_user`, `_prisma_migrations` ownership, DDL ownership, repeated deploy and interruption/retry semantics.
+- Documentation/design only. No role/grant bootstrap, migration runner, credential transport, runtime or installer behavior changed. CI for this new commit is not yet known. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — PostgreSQL first-install and migration contract (0.1.146)
 
 - Reviewed the PostgreSQL cluster initializer, SCM provisioner, five-service orchestrator, API/Worker DPAPI database configuration, Prisma migration package and API readiness behavior.
