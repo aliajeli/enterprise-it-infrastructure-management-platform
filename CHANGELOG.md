@@ -1,3 +1,9 @@
+## 0.1.157 — Route API audit verification through the admin fixture
+
+- Corrected the API identity integration test so audit-event lookup and append-only mutation assertions use the dedicated API_TEST_FIXTURE_DATABASE_URL connection, not the restricted API runtime Prisma client.
+- API setup, authenticated routes and ordinary persistence remain on the restricted API login. This preserves INSERT-only audit permissions while keeping read/tamper verification separate.
+- Exact-head CI must verify both API and Worker integration suites; no runtime grant is broadened.
+
 ## 0.1.156 — Complete restricted audit and observation integration coverage
 
 - Routed authentication audit writes through the INSERT-only append helper, including login, password-change and logout/lockout event paths. This closes remaining Prisma create() calls that require SELECT on audit_events.

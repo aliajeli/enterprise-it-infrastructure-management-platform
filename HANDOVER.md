@@ -1,3 +1,10 @@
+## 2026-11-23 — Correct API audit fixture routing (0.1.157)
+
+- Exact-head CI for 0.1.156 passed the SQL privilege probes, the inventory integration suite (including append-only observation trigger assertion through the admin fixture), and 49 API tests, but one API integration assertion still queried audit_events using the restricted runtime db client.
+- The two audit lookups and the append-only audit update assertion in database.integration.test.ts now use a dedicated verificationDb created from API_TEST_FIXTURE_DATABASE_URL. API route operations continue to use db under the restricted API login. The fixture client is disconnected only when the test created it.
+- No SELECT grant on audit_events is added to the API runtime role. Exact-head CI must now prove the complete API and Worker integration suites.
+- PR #7/#8/#9 remain unmerged. No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Finish API audit append-only integration wiring (0.1.156)
 
 - 0.1.155 converted branch, inventory and user-route audit writes to INSERT-only SQL, but exact-head CI found remaining auth-route Prisma AuditEvent.create() calls. Temporary login returned HTTP 500 because those paths still emitted INSERT ... RETURNING. All five auth-route audit writes now use appendAuditEvent.
