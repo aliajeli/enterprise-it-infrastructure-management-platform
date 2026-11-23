@@ -1,3 +1,11 @@
+## 2026-11-23 — Prisma migration-owner experiment passes exact-head CI (0.1.151)
+
+- Push run 45148082967 completed successfully at parent commit `bc21475f04338c52c279c0b3366906209c52db43`; Platform validation confirmed `session_user=platform_migrator` and `current_user=platform_schema_owner`.
+- The experiment ran Prisma Migrate deploy twice and verified the database, `_prisma_migrations`, relations/indexes/sequences/views, enum types and functions are owned by `platform_schema_owner`.
+- PR-event run 45148094311 also completed successfully; PR #9 remains Draft/open/unmerged. PR #7 and #8 remain unmerged.
+- This closes only the disposable PostgreSQL 18 / Prisma 7.10.1 ownership-mechanism experiment. It does not authorize production role bootstrap or migration credential transport. Runtime API/Worker privilege tests, interrupted migration retry, Windows Server virtual-account acceptance, Keyring provisioning, offline payload, and integrated installer remain open.
+- No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes were made.
+
 ## 2026-11-23 — CI PostgreSQL test credential wiring (0.1.150)
 
 - Added the disposable PostgreSQL service password to the migration ownership experiment step environment.

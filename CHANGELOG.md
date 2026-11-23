@@ -1,3 +1,9 @@
+## 0.1.151 — Record successful Prisma migration-owner CI proof
+
+- Recorded the exact-head PostgreSQL 18 / Prisma 7.10.1 CI result: the migration login remained `session_user=platform_migrator`, the effective role was `current_user=platform_schema_owner`, database and migration-created object ownership matched the schema owner, and a second `prisma migrate deploy` succeeded.
+- The Push validation run (45148082967) and PR validation run (45148094311) completed successfully for the migration ownership experiment and the other executed validation jobs.
+- This is a disposable CI proof of the role-default mechanism only. It does not implement production role provisioning, secure migration-secret transport, API/Worker least-privilege grants, interruption recovery, or clean Windows Server acceptance.
+
 ## 0.1.150 — Provide disposable PostgreSQL admin credential to CI experiment
 
 - Fixed the CI test-step environment so the migration ownership experiment receives the disposable PostgreSQL service administrator password required for role/database setup.
