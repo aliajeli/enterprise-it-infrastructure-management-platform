@@ -89,4 +89,9 @@ expect_denied "$worker_role" "$worker_password" "CREATE TABLE public.worker_runt
 expect_denied "$worker_role" "$worker_password" "TRUNCATE public.discovery_runs" "TRUNCATE discovery_runs"
 expect_denied "$worker_role" "$worker_password" "CREATE ROLE worker_runtime_forbidden" "CREATE ROLE"
 
-printf 'Runtime privilege matrix passed: API candidate grants/denials and Worker discovery_runs-only grants/denials verified against disposable PostgreSQL. No production role or grant was created.\n'
+# Execute the actual Prisma integration suites before the disposable roles are dropped.
+# Fixture/admin connections are used only for setup, cleanup and audit verification.
+DATABASE_URL="postgresql://${api_role}:${api_password}@${PGHOST}:${PGPORT}/${PGDATABASE}?schema=public" API_TEST_FIXTURE_DATABASE_URL="postgresql://${PGUSER}:${admin_password}@${PGHOST}:${PGPORT}/${PGDATABASE}?schema=public" npm test --workspace @platform/api
+DATABASE_URL="postgresql://${worker_role}:${worker_password}@${PGHOST}:${PGPORT}/${PGDATABASE}?schema=public" WORKER_TEST_FIXTURE_DATABASE_URL="postgresql://${PGUSER}:${admin_password}@${PGHOST}:${PGPORT}/${PGDATABASE}?schema=public" npm test --workspace @platform/worker
+
+printf 'Runtime privilege matrix and restricted API/Worker Prisma integration suites passed against disposable PostgreSQL. No production role or grant was created.\n'

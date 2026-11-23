@@ -1,3 +1,10 @@
+## 0.1.153 — Run API and Worker Prisma suites with restricted runtime identities
+
+- API database integration tests use the API runtime login for route, session, branch and user operations; a separate disposable administrator fixture connection is reserved for audit-event verification and append-only trigger assertions.
+- Worker queue integration tests use the restricted Worker login for claim, lease, heartbeat, retry, cancellation and recovery operations. A separate disposable fixture connection creates and removes fixture branches and queue rows.
+- The runtime privilege CI script executes both workspace integration suites before dropping its disposable roles. It does not broaden API or Worker grants or change production role provisioning.
+- Exact-head CI is required to establish the integration result. This does not establish production credential transport, Windows Server virtual-account acceptance, or installer readiness.
+
 ## 0.1.152 — Add PostgreSQL API/Worker runtime privilege integration checks
 
 - Added a disposable PostgreSQL 18 CI test that creates temporary API and Worker login roles and applies the source-derived candidate privilege matrix.

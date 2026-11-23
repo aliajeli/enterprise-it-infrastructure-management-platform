@@ -1,3 +1,12 @@
+## 2026-11-23 — Restricted API/Worker Prisma integration suites (0.1.153)
+
+- The runtime privilege script now runs the API and Worker integration suites while the disposable least-privilege login roles remain provisioned.
+- API route operations execute through the API runtime login. `API_TEST_FIXTURE_DATABASE_URL` is used only for audit-event lookup and append-only trigger verification; it is not passed to the API application instance.
+- Worker queue operations (claim, heartbeat, lease expiry, retry, cancellation and recovery) execute through the Worker runtime login. `WORKER_TEST_FIXTURE_DATABASE_URL` is used only to create and remove test branches and queue rows; Worker queue code continues to receive the restricted client.
+- Fixture clients fall back to the existing test client when the dedicated fixture URL is absent. Separately created fixture clients are disconnected during teardown.
+- Exact-head CI result is pending. If integration exposes a missing grant, inspect generated SQL/source and add only the minimum justified permission. Do not grant API audit SELECT/UPDATE or Worker queue INSERT/DELETE merely for fixture setup.
+- This remains disposable CI evidence, not production role provisioning or Windows Server acceptance. PR #7/#8/#9 remain unmerged. No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Add runtime database privilege boundary CI experiment (0.1.152)
 
 - Added `scripts/database/test-runtime-privilege-matrix.sh`, executed after baseline Prisma migrations in the PostgreSQL 18 validation job.
