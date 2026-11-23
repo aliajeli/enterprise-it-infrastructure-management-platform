@@ -1,3 +1,15 @@
+## Implementation status update — 2026-11-23 (revision 0.1.145)
+
+Exact-head hosted CI for commit `603af65f33cbac61083c81e7ae6c7a72c7368e20` completed successfully in both Push validation and PR validation. The Windows API runtime smoke job passed in both workflows. This confirms the tested hosted workflow only; it does not establish native filesystem behavior on supported Windows Server versions or a positive transaction under the provisioned `NT SERVICE\\EnterpriseITApi` identity.
+
+A focused review of `WindowsDirectoryHandleChain.OpenKnownProgramData()` and the provisioning scripts found a remaining policy gap. The chain retains handles for the volume root, ProgramData, EnterpriseIT and CredentialVault and checks each opened directory for directory type, reparse status and volume identity. It does not retrieve or validate the owner/DACL of ProgramData or EnterpriseIT. The helper's exact two-ACE owner/DACL check applies to the Vault directory and managed leaf files only.
+
+Do not solve this by imposing the Vault leaf's exact two-ACE policy on ProgramData. ProgramData is OS-managed and needs a supported-Windows-version trust baseline. EnterpriseIT and CredentialVault are application-owned and need an explicit installer provisioning contract, including owner, protected/inherited DACL policy, service SID lifecycle and the pre-created `keyring.lock`. The currently reviewed service provisioning scripts create API database configuration directories but do not provision this keyring hierarchy and lock file. Until installer behavior and expected descriptors are specified, adding parent ACL checks would risk rejecting legitimate supported hosts or encoding an unsafe assumed baseline.
+
+**Disposition:** parent owner/DACL verification is not implemented in this revision. F-01/F-02 remain open. Next prerequisite is to define and implement installer provisioning and a versioned ACL policy for each parent component, then add handle-based positive/negative ACL tests on clean supported Windows Server VMs. F-03 remains open for crash-orphan enumeration, failure injection and adversarial identity/race acceptance. F-04/F-05 remain open for native Windows Server and provisioned-Service-SID acceptance. The Node adapter remains unregistered and production credential persistence remains disabled.
+
+---
+
 ## Implementation status update — 2026-11-23 (revision 0.1.144)
 
 The retained CredentialVault directory handle now requests both FILE_ADD_FILE (0x2) and FILE_DELETE_CHILD (0x40). The first is required for relative temporary-file creation; the second is required for replacement semantics when FileRenameInformation is asked to replace an existing destination. The directory ACL remains independently checked by the helper. This is a static access-mask correction; native replacement still requires execution on supported Windows Server baselines.

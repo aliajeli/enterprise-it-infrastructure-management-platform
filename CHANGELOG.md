@@ -1,3 +1,11 @@
+## 0.1.145 — Record keyring parent ACL acceptance boundary
+
+- Revalidated exact-head Push validation and PR validation for commit 603af65f33cbac61083c81e7ae6c7a72c7368e20; both workflows completed successfully, including the Windows API runtime smoke job. This is hosted CI evidence, not supported Windows Server acceptance.
+- Reviewed the retained directory-chain implementation against the installer/provisioning scripts. ProgramData, EnterpriseIT and CredentialVault are opened and checked for directory type, reparse status and volume identity, but parent owner/DACL policy is not verified.
+- Recorded that ProgramData requires an OS-managed trust baseline distinct from the strict CredentialVault leaf policy, and EnterpriseIT/CredentialVault plus keyring.lock need explicit installer provisioning before parent ACL verification can be safely implemented.
+- Crash-orphan enumeration, failure injection, adversarial namespace tests, positive provisioned-Service-SID acceptance and Windows Server runtime acceptance remain open. Node keyring adapter remains unregistered; production credential persistence remains disabled.
+- No PR merge, Installer/Release, or MikroTik/NAT/port-mapping changes.
+
 ## 0.1.144 — Request directory delete-child access for keyring replacement
 
 - Added FILE_DELETE_CHILD to the retained CredentialVault directory handle access mask alongside FILE_ADD_FILE, so handle-relative FileRenameInformation replacement has the required destination-directory access.

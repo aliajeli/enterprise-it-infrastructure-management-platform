@@ -1,3 +1,15 @@
+## Revision 0.1.145 — parent ACL boundary
+
+The exact-head hosted Push and PR workflows for the preceding implementation commit completed successfully, including Windows API runtime smoke. This is CI evidence only; it is not native Windows Server acceptance.
+
+The retained directory chain currently validates directory type, reparse status and volume identity for ProgramData, EnterpriseIT and CredentialVault. It does not yet validate the owner/DACL of ProgramData or EnterpriseIT. The strict owner + protected two-ACE policy is currently applied to the CredentialVault directory and managed files, not its ancestors.
+
+Parent ACL work is intentionally blocked on two explicit inputs: (1) an OS-version-aware trust baseline for the OS-managed ProgramData directory, and (2) installer provisioning for EnterpriseIT, CredentialVault and the pre-created keyring.lock with a defined owner/DACL and service-SID lifecycle. Do not infer the ProgramData baseline from the Vault policy or silently repair ACLs at runtime. Existing service provisioning does not yet create the keyring hierarchy.
+
+Crash-orphan enumeration, failure injection, adversarial namespace acceptance, positive provisioned-Service-SID tests and supported Windows Server runtime tests remain open. The Node adapter remains unregistered.
+
+---
+
 # Windows Keyring Handle-Relative Filesystem Primitive
 
 **Milestone:** 0.1.144  

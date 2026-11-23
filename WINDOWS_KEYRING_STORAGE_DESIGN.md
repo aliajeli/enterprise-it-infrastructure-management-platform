@@ -23,6 +23,9 @@ The existing DPAPI operation remains separate. The storage helper may share the 
 
 ## 3. Owner and DACL policy
 
+**Scope clarification:** the exact policy below applies to the CredentialVault directory and its managed files. It must not be copied verbatim onto the OS-managed ProgramData directory or assumed for the EnterpriseIT parent. The helper must verify each parent against a separately defined trust policy. ProgramData requires a supported-Windows-version OS baseline; EnterpriseIT requires an installer-owned descriptor and provisioning contract. The installer must create EnterpriseIT, CredentialVault and the fixed `keyring.lock` before the API service starts. Until these descriptors and installer behavior are implemented and tested, parent owner/DACL verification remains an open acceptance gate. Runtime code must fail closed and must not silently repair or broaden ACLs.
+
+
 The installer is responsible for creating the storage directory and service identity before first launch. The helper verifies security on every operation, not only at initialization.
 
 Expected security descriptor:

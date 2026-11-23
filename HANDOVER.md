@@ -1,3 +1,11 @@
+## 2026-11-23 — Keyring parent ACL acceptance boundary (0.1.145)
+
+- Exact-head hosted Push validation and PR validation for 603af65f33cbac61083c81e7ae6c7a72c7368e20 both completed successfully; Windows API runtime smoke passed. This does not replace a clean supported Windows Server acceptance run.
+- Code review confirmed that the retained ProgramData -> EnterpriseIT -> CredentialVault chain currently verifies directory type, reparse status and volume identity, but does not inspect parent owner/DACL descriptors.
+- Do not copy the strict two-ACE CredentialVault leaf policy onto ProgramData. Establish an OS-specific ProgramData trust baseline and an installer-owned EnterpriseIT/Vault/lock provisioning policy first. Existing provisioning scripts do not yet provision the keyring directory hierarchy and lock file.
+- Parent ACL verification is deliberately not implemented until those baselines and installer behavior are defined. F-01/F-02 remain open; F-03 crash-orphan enumeration/failure injection, F-04 Windows baseline acceptance and F-05 provisioned-Service-SID/adversarial acceptance remain open.
+- Node keyring adapter remains unregistered; credential persistence remains disabled. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Keyring replace access mask correction (0.1.144)
 
 - CredentialVault directory handle now requests FILE_ADD_FILE | FILE_DELETE_CHILD for relative temp creation and replacement of an existing registry file.
