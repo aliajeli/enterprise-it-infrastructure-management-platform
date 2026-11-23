@@ -8,8 +8,8 @@ namespace CredentialVault.KeyringStorageHelper;
 
 /// <summary>
 /// Acquires the fixed ProgramData -> EnterpriseIT -> CredentialVault directory
-/// chain using retained handles. The keyring helper retains this chain for the
-/// complete transaction; leaf-file operations remain path-based pending acceptance.
+/// chain using retained handles. Leaf-file open, rename and disposition operations
+/// are rooted in the retained Vault handle; Windows adversarial acceptance remains pending.
 /// </summary>
 internal sealed class WindowsDirectoryHandleChain : IDisposable
 {

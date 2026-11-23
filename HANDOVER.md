@@ -1,3 +1,11 @@
+## 2026-11-23 — Keyring temp cleanup gap correction (0.1.143)
+
+- Temporary keyring content is now written and flushed through RandomAccess on the original SafeFileHandle.
+- Every failure before successful rename retains the exact created file handle and attempts FileDispositionInformation before closing it, including setup and ACL/type failures that previously could leave a temp file.
+- After rename, the source handle is closed before destination reopen/read-back to respect the no-share open mode.
+- Crash-orphan enumeration/cleanup is still unimplemented. The design/review documents now distinguish in-process failure cleanup from crash recovery; F-03/F-04/F-05 remain open.
+- PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Handle-relative keyring rename/delete (0.1.142)
 
 - Keyring helper now performs lock/read/temp creation, atomic registry replacement and orphan cleanup using leaf handles relative to the retained Vault directory handle. Rename uses `NtSetInformationFile(FileRenameInformation)`; deletion uses handle-based `FileDispositionInformation`.

@@ -1,3 +1,11 @@
+## 0.1.143 — Close pre-rename keyring temp cleanup gap
+
+- Replaced the owning FileStream in the keyring temp-write path with RandomAccess on the exact SafeFileHandle, so cleanup retains the file handle through failure handling.
+- Pre-rename failures after temp creation now attempt handle-based FileDispositionInformation, including ACL/type validation and setup failures before any write.
+- Successful rename closes the source handle before destination read-back, then validates file identity, ACL, type, length and bytes.
+- Corrected documentation: crash-orphan temp enumeration/cleanup is not implemented; F-03/F-04/F-05 remain open pending Windows Server and adversarial acceptance.
+- No credential persistence activation, PR merge, Installer/Release, or MikroTik/NAT/port-mapping change.
+
 ## 0.1.142 — Perform keyring replacement and cleanup relative to the Vault handle
 
 - Replaced path-based `MoveFileEx`, post-commit path reopen, `File.Exists` and `File.Delete` operations with `NtSetInformationFile` handle-relative rename and disposition operations rooted at the retained CredentialVault directory handle.

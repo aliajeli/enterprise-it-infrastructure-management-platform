@@ -147,49 +147,65 @@ internal static class Program
     {
         if(data.Length is <1 or >Max) throw new InvalidDataException();
         using(var existing=TryOpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead))
-        { if(existing is not null) { VerifyAcl(existing,serviceSid!); VerifyNotReparse(existing); } }
+        {
+            if(existing is not null) { VerifyAcl(existing,serviceSid!); VerifyNotReparse(existing); }
+        }
         var tempName=".keyring-"+Guid.NewGuid().ToString("N")+".tmp";
         var sddl=$"O:{serviceSid!.Value}D:P(A;;FA;;;{serviceSid.Value})(A;;FA;;;SY)";
-        IntPtr sd=IntPtr.Zero; FileStream? tempStream=null; var renamed=false;
+        IntPtr sd=IntPtr.Zero;
+        SafeFileHandle? tempHandle=null;
+        var renamed=false;
         try
         {
             if(!ConvertSddl(sddl,1,out sd,out _)) throw new IOException();
-            var tempHandle=directoryChain!.OpenVaultFile(tempName,GenericRead|GenericWrite|ReadControl|DeleteAccess,0,2,sd);
+            tempHandle=directoryChain!.OpenVaultFile(tempName,GenericRead|GenericWrite|ReadControl|DeleteAccess,0,2,sd);
+            VerifyAcl(tempHandle,serviceSid);
+            VerifyNotReparse(tempHandle);
+            // Keep writes and cleanup bound to the exact handle; no owning FileStream.
+            var originalIdentity=directoryChain.GetVaultFileIdentity(tempHandle);
+            RandomAccess.Write(tempHandle,data,0);
+            RandomAccess.FlushToDisk(tempHandle);
+            directoryChain.RenameVaultFile(tempHandle,"keyring.v1.json",replaceIfExists:true);
+            renamed=true;
+            // Source was opened without FILE_SHARE_READ/WRITE/DELETE.
+            tempHandle.Dispose();
+            tempHandle=null;
+            using var committed=directoryChain.OpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
+            VerifyAcl(committed,serviceSid);
+            VerifyNotReparse(committed);
+            if(directoryChain.GetVaultFileIdentity(committed)!=originalIdentity)
+                throw new IOException("Committed keyring file identity changed during rename.");
+            if(RandomAccess.GetLength(committed)!=data.Length) throw new IOException();
+            var check=new byte[data.Length];
             try
             {
-                VerifyAcl(tempHandle,serviceSid); VerifyNotReparse(tempHandle);
-                tempStream=new FileStream(tempHandle,FileAccess.Write);
-                var originalIdentity=directoryChain.GetVaultFileIdentity(tempStream.SafeFileHandle);
-                tempStream.Write(data); tempStream.Flush(true);
-                directoryChain.RenameVaultFile(tempStream.SafeFileHandle,"keyring.v1.json",replaceIfExists:true); renamed=true;
-                tempStream.Dispose(); tempStream=null;
-                using var committed=directoryChain.OpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
-                VerifyAcl(committed,serviceSid); VerifyNotReparse(committed);
-                var committedIdentity=directoryChain.GetVaultFileIdentity(committed);
-                if(committedIdentity!=originalIdentity) throw new IOException("Committed keyring file identity changed during rename.");
-                using var verify=new FileStream(committed,FileAccess.Read);
-                if(verify.Length!=data.Length) throw new IOException();
-                var check=new byte[data.Length]; verify.ReadExactly(check);
-                try{if(!CryptographicOperations.FixedTimeEquals(check,data)) throw new IOException();}
-                finally{CryptographicOperations.ZeroMemory(check);}
+                var offset=0;
+                while(offset<check.Length)
+                {
+                    var read=RandomAccess.Read(committed,check.AsSpan(offset),offset);
+                    if(read<=0) throw new IOException();
+                    offset+=read;
+                }
+                if(!CryptographicOperations.FixedTimeEquals(check,data)) throw new IOException();
             }
-            catch
-            {
-                if(tempStream is null&&!renamed) tempHandle.Dispose(); throw;
-            }
+            finally { CryptographicOperations.ZeroMemory(check); }
         }
         finally
         {
             try
             {
-                if(tempStream is not null&&!renamed) directoryChain!.DeleteVaultFile(tempStream.SafeFileHandle);
+                // Includes failures after create but before the previous FileStream
+                // construction point; deletion is bound to the created file handle.
+                if(tempHandle is not null && !renamed) directoryChain!.DeleteVaultFile(tempHandle);
             }
             finally
             {
-                tempStream?.Dispose(); if(sd!=IntPtr.Zero) _=LocalFree(sd);
+                tempHandle?.Dispose();
+                if(sd!=IntPtr.Zero) _=LocalFree(sd);
             }
         }
     }
+
     private static void VerifyDirectory()
     {
         var chain=directoryChain ?? throw new UnauthorizedAccessException();
