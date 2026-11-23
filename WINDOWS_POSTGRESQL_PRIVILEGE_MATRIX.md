@@ -84,3 +84,9 @@ If Prisma Migrate cannot satisfy the ownership contract using a supported and te
 ## Current status
 
 This is documentation based on source inspection. No database role, grant, ownership, migration runner, secret transport, or installer behavior changed. The PostgreSQL first-install and migration blockers remain open; no production-ready installer or Release is claimed.
+
+## Automated migration-owner experiment
+
+The validation workflow now includes a disposable PostgreSQL 18 experiment using the exact repository-pinned Prisma CLI (7.10.1). It creates a non-login schema owner and a separate deployment login, grants explicit `SET` membership, configures the login's session role, verifies `session_user` differs from `current_user`, runs `prisma migrate deploy` twice, and checks database, migration table, tables/indexes/sequences/views, enum types and functions for owner consistency.
+
+This is an experiment, not an accepted production mechanism until the workflow passes on the exact head. It does not yet test Windows secret transport, Windows Server deployment, runtime API/Worker grants, interrupted migrations, or installer integration. If PostgreSQL rejects the role setup or Prisma does not preserve the expected owner identity, the CI job must fail and the identity design must be revisited.

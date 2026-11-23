@@ -1,3 +1,9 @@
+## 0.1.148 — Add Prisma migration ownership integration experiment
+
+- Added a disposable PostgreSQL 18 CI experiment for the repository-pinned Prisma 7.10.1 migration engine.
+- The experiment separates the migration login from a NOLOGIN schema owner, checks session_user/current_user, applies migrations twice, and asserts ownership of the database and created objects.
+- The result is pending exact-head CI; no production role bootstrap, secret transport, runtime grants, migration runner integration, or installer behavior is claimed.
+
 ## 0.1.147 — Inventory PostgreSQL runtime privileges and migration ownership gate
 
 - Derived a provisional API privilege matrix from current route/security Prisma operations and raw SQL, including explicit append-only restrictions for audit events and port observations.

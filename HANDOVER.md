@@ -1,3 +1,10 @@
+## 2026-11-23 — Prisma migration owner CI experiment (0.1.148)
+
+- Added `scripts/database/test-prisma-migration-ownership.sh` and wired it into Platform validation.
+- The test uses the exact pinned Prisma CLI 7.10.1 against disposable PostgreSQL 18, separates login and schema-owner identities, checks `session_user` versus `current_user`, runs migrations twice, and checks ownership of the database and generated objects.
+- This is an experiment only. Exact-head CI result is pending; do not use the role-default mechanism in production until verified and separately reviewed for credential handling and Windows deployment.
+- No production database roles/grants, migration runner integration, secret transport, runtime or installer behavior changed. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Source-derived PostgreSQL privilege matrix (0.1.147)
 
 - Reviewed API authentication, user, branch and inventory routes; API session resolution and one-time administrator bootstrap; Worker queue/recovery SQL; Prisma schema and the current migration set.
