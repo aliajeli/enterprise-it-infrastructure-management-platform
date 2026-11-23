@@ -18,7 +18,7 @@ internal sealed class WindowsDirectoryHandleChain : IDisposable
     private const uint BackupSemantics = 0x02000000, OpenReparsePoint = 0x00200000;
     private const uint DirectoryAttribute = 0x10, ReparseAttribute = 0x400;
     private const int AttributeTagInfoClass = 9, FileIdInfoClass = 18, FileRenameInformationClass = 10, FileDispositionInformationClass = 13;
-    private const uint ObjectCaseInsensitive = 0x40, FileDirectoryFile = 1, FileAddFile = 0x2;
+    private const uint ObjectCaseInsensitive = 0x40, FileDirectoryFile = 1, FileAddFile = 0x2, FileDeleteChild = 0x40;
     private const uint FileSynchronousIoNonAlert = 0x20, FileOpenReparsePoint = 0x00200000;
     private const uint FileOpen = 1;
 
@@ -63,7 +63,7 @@ internal sealed class WindowsDirectoryHandleChain : IDisposable
             _ = ReadAndVerifyDirectory(data);
             enterprise = OpenChildDirectory(data, "EnterpriseIT", volumeIdentity);
             _ = ReadAndVerifyDirectory(enterprise);
-            vault = OpenChildDirectory(enterprise, "CredentialVault", volumeIdentity, FileAddFile);
+            vault = OpenChildDirectory(enterprise, "CredentialVault", volumeIdentity, FileAddFile | FileDeleteChild);
             _ = ReadAndVerifyDirectory(vault);
 
             var chain = new WindowsDirectoryHandleChain(volume, data, enterprise, vault);

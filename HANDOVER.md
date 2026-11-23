@@ -1,3 +1,9 @@
+## 2026-11-23 — Keyring replace access mask correction (0.1.144)
+
+- CredentialVault directory handle now requests FILE_ADD_FILE | FILE_DELETE_CHILD for relative temp creation and replacement of an existing registry file.
+- Native replacement still requires supported Windows Server runtime acceptance; no production credential persistence enabled.
+- PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Keyring temp cleanup gap correction (0.1.143)
 
 - Temporary keyring content is now written and flushed through RandomAccess on the original SafeFileHandle.

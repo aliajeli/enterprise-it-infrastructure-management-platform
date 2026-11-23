@@ -1,3 +1,11 @@
+## Implementation status update — 2026-11-23 (revision 0.1.144)
+
+The retained CredentialVault directory handle now requests both FILE_ADD_FILE (0x2) and FILE_DELETE_CHILD (0x40). The first is required for relative temporary-file creation; the second is required for replacement semantics when FileRenameInformation is asked to replace an existing destination. The directory ACL remains independently checked by the helper. This is a static access-mask correction; native replacement still requires execution on supported Windows Server baselines.
+
+F-01/F-02 remain open for parent-directory owner/DACL verification and complete namespace-race acceptance. F-03 remains open for crash-orphan enumeration, failure injection and adversarial identity/race acceptance. F-04/F-05 remain open pending Windows Server and provisioned-Service-SID acceptance. The Node adapter remains unregistered; production credential persistence remains disabled.
+
+---
+
 ## Implementation status update — 2026-11-23 (revision 0.1.143)
 
 The helper's temporary-file write path now uses RandomAccess directly against the SafeFileHandle rather than an owning FileStream. This closes a cleanup gap: if ACL/type verification or setup failed after the temporary file was created but before the old FileStream construction point, the previous code disposed the handle without marking the file for deletion. The revised finally block attempts handle-based FileDispositionInformation for every pre-rename failure while the exact created handle remains open. After a successful rename, the source handle is closed before the destination is reopened for identity/ACL/type/length/byte verification.

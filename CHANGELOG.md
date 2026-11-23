@@ -1,3 +1,10 @@
+## 0.1.144 — Request directory delete-child access for keyring replacement
+
+- Added FILE_DELETE_CHILD to the retained CredentialVault directory handle access mask alongside FILE_ADD_FILE, so handle-relative FileRenameInformation replacement has the required destination-directory access.
+- Documented the access-mask requirement. Runtime replacement on supported Windows Server versions remains an acceptance gate.
+- F-01 through F-05 remain open as documented; Node adapter remains unregistered.
+- No Installer/Release, PR merge, or MikroTik/NAT/port-mapping changes.
+
 ## 0.1.143 — Close pre-rename keyring temp cleanup gap
 
 - Replaced the owning FileStream in the keyring temp-write path with RandomAccess on the exact SafeFileHandle, so cleanup retains the file handle through failure handling.

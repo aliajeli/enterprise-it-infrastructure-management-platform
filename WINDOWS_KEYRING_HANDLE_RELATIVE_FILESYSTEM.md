@@ -1,11 +1,11 @@
 # Windows Keyring Handle-Relative Filesystem Primitive
 
-**Milestone:** 0.1.143  
+**Milestone:** 0.1.144  
 **Status:** Handle-relative leaf open, rename and in-process failure cleanup are implemented. Crash-orphan enumeration and Windows adversarial acceptance remain open.
 
 ## Implemented operations
 
-- The helper retains the ProgramData -> EnterpriseIT -> CredentialVault directory chain for the transaction.
+- The helper retains the ProgramData -> EnterpriseIT -> CredentialVault directory chain for the transaction. The Vault directory handle requests FILE_ADD_FILE and FILE_DELETE_CHILD for same-directory create and replace operations.
 - Fixed leaf files are opened with NtCreateFile and OBJECT_ATTRIBUTES.RootDirectory.
 - Lock acquisition, registry read/existence check and temporary-file creation are relative to the retained Vault handle.
 - Registry replacement uses NtSetInformationFile(FileRenameInformation) with the retained Vault handle as RootDirectory.
