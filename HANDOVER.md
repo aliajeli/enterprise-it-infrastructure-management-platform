@@ -1,3 +1,9 @@
+## 2026-11-23 — Isolate Windows orchestration fixtures (0.1.160)
+
+- Review immediately after 0.1.159 identified that the new test fixture referenced the runner's real `%ProgramData%`. Changed the orchestration test plan to accept an injectable ProgramDataRoot and moved all keyring fixture creation/removal under its temporary test directory.
+- Production calls still default to the OS-known ProgramData root. This is test isolation only; the 0.1.159 presence/reparse guard remains unchanged.
+- Version and lockfile metadata advanced to `0.1.160`. Exact-head Windows CI is required.
+
 ## 2026-11-23 — Restricted database suites pass; Credential Vault orchestration guard (0.1.159)
 
 - Exact-head CI for parent `cfd360abff5b34e5731e2aef095729e45deb3be5`, run [45171097975](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45171097975), completed successfully across all three jobs.

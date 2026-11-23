@@ -1,3 +1,9 @@
+## 0.1.160 — Isolate Credential Vault preflight fixtures from host ProgramData
+
+- Corrected the 0.1.159 orchestration regression test so its ProgramData root is injected from a temporary fixture directory instead of writing under the Windows runner's real `%ProgramData%`.
+- The orchestration functions now accept an optional ProgramDataRoot on their test plan; production invocation continues to use the OS ProgramData location.
+- No production behavior or security boundary is relaxed. Exact-head CI must validate the correction.
+
 ## 0.1.159 — Gate Windows service orchestration on pre-provisioned Credential Vault infrastructure
 
 - The five-service orchestration preflight now requires the fixed `%ProgramData%\\EnterpriseIT\\CredentialVault\\keyring.lock` file and CredentialVault directory to exist before any service provisioning begins.

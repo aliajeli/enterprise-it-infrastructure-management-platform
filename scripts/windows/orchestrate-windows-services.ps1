@@ -63,6 +63,7 @@ function Wait-HttpReady([string]$Uri,[string]$ServiceName){
  throw "$ServiceName did not return HTTP 200 from its readiness endpoint within 60 seconds."
 }
 function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
+ $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{$env:ProgramData}
  @(
   (Join-Path $Plan.InstallRoot "EnterpriseIT.ApiServiceHost.exe"),
   (Join-Path $Plan.InstallRoot "EnterpriseIT.WebServiceHost.exe"),
@@ -78,15 +79,16 @@ function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
   (Join-Path $Plan.DataRoot "PG_VERSION"),
   (Join-Path $Plan.DataRoot "postgresql.conf"),
   (Join-Path $Plan.DataRoot "pg_hba.conf"),
-  (Join-Path $env:ProgramData "EnterpriseIT\CredentialVault\keyring.lock")
+  (Join-Path $programDataRoot "EnterpriseIT\CredentialVault\keyring.lock")
  )
 }
 function Test-WindowsServiceOrchestrationPayload([pscustomobject]$Plan){
  $requiredFiles=@(Get-WindowsServiceOrchestrationRequiredFiles -Plan $Plan)
  $missing=@($requiredFiles|Where-Object{-not(Test-Path -LiteralPath $_ -PathType Leaf)})
  if($missing.Count -gt 0){throw "Orchestration preflight failed before service provisioning; required payload or PostgreSQL cluster files are missing: $($missing -join '; ')"}
- $vaultRoot=Join-Path $env:ProgramData "EnterpriseIT\CredentialVault"
- $enterpriseRoot=Join-Path $env:ProgramData "EnterpriseIT"
+ $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{$env:ProgramData}
+ $vaultRoot=Join-Path $programDataRoot "EnterpriseIT\CredentialVault"
+ $enterpriseRoot=Join-Path $programDataRoot "EnterpriseIT"
  foreach($path in @($enterpriseRoot,$vaultRoot,(Join-Path $vaultRoot "keyring.lock"))){
   $item=Get-Item -LiteralPath $path -Force -ErrorAction Stop
   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw "Keyring provisioning preflight rejected a reparse-point path component."}

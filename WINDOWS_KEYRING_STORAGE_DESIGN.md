@@ -174,3 +174,8 @@ This confirms process lifecycle only; it does not establish installer provisioni
 The five-service orchestrator now refuses to begin service provisioning unless the fixed `%ProgramData%\\EnterpriseIT\\CredentialVault\\` directory and `keyring.lock` file already exist. It checks the EnterpriseIT, CredentialVault and lock path components for reparse-point attributes. A regression test removes the lock file and confirms that orchestration preflight fails before provisioning.
 
 This is intentionally a presence/reparse guard, not a provisioning implementation or a security-descriptor acceptance test. It does not create directories/files, set owner/DACL, validate parent ACLs through retained handles, or repair existing state. The .NET helper continues to perform its own strict service-SID, handle-based owner/DACL and reparse checks at runtime. Because the installer still does not provision this infrastructure, a clean install remains blocked until a separate secure provisioner is implemented and tested. Keep the Node adapter unregistered and do not store real equipment credentials.
+
+
+## 16. Test fixture isolation correction (0.1.160)
+
+The orchestration preflight test now injects a temporary ProgramData root through its test plan. It no longer creates or deletes files beneath the Windows runner's actual `%ProgramData%`. Production plans omit this optional test-only property and continue to resolve ProgramData from the operating system.

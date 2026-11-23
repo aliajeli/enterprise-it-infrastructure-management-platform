@@ -11,9 +11,10 @@ if(-not $bad){throw "Loopback Edge bind must be rejected."}
 # Validate the complete payload and PostgreSQL policy before any service provisioning.
 $preflightRoot=Join-Path $env:TEMP ("enterpriseit-orchestration-preflight-"+[guid]::NewGuid().ToString("N"))
 $preflightData=Join-Path $preflightRoot "data"
-New-Item -ItemType Directory -Path $preflightRoot,$preflightData -Force|Out-Null
+$preflightProgramData=Join-Path $preflightRoot "programdata"
+New-Item -ItemType Directory -Path $preflightRoot,$preflightData,$preflightProgramData -Force|Out-Null
 try{
- $fixturePlan=[pscustomobject]@{InstallRoot=(Join-Path $preflightRoot "install");DataRoot=$preflightData}
+ $fixturePlan=[pscustomobject]@{InstallRoot=(Join-Path $preflightRoot "install");DataRoot=$preflightData;ProgramDataRoot=$preflightProgramData}
  New-Item -ItemType Directory -Path $fixturePlan.InstallRoot -Force|Out-Null
  foreach($file in (Get-WindowsServiceOrchestrationRequiredFiles -Plan $fixturePlan)){
   $parent=Split-Path -Parent $file
@@ -26,7 +27,7 @@ try{
  }
  $payloadCheck=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
  if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 15){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
- $keyringLock=Join-Path $env:ProgramData "EnterpriseIT\CredentialVault\keyring.lock"
+ $keyringLock=Join-Path $fixturePlan.ProgramDataRoot "EnterpriseIT\CredentialVault\keyring.lock"
  Remove-Item -LiteralPath $keyringLock -Force
  $missingKeyringRejected=$false
  try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$missingKeyringRejected=$true}
