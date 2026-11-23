@@ -1,3 +1,10 @@
+## 2026-11-23 — Handle-relative keyring rename/delete (0.1.142)
+
+- Keyring helper now performs lock/read/temp creation, atomic registry replacement and orphan cleanup using leaf handles relative to the retained Vault directory handle. Rename uses `NtSetInformationFile(FileRenameInformation)`; deletion uses handle-based `FileDispositionInformation`.
+- The Vault handle is granted FILE_ADD_FILE for relative create/rename. The temporary file is opened with DELETE access. Its file ID is captured before rename and compared with the destination reopened relative to the Vault handle after closing the source handle.
+- Lock acquisition retries sharing/lock violations (Win32 32/33) and still fails closed if the installer-provisioned lock file is absent.
+- Exact-head CI is pending. F-05 provisioned-Service-SID/adversarial Windows acceptance, crash/restart testing, installer integration and production credential persistence remain outstanding. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Handle missing keyring registry through native open semantics (0.1.141)
 
 - Fixed the mismatch between `WindowsDirectoryHandleChain.OpenVaultFile` and its callers: NTSTATUS-to-Win32 translation raises `Win32Exception`; only native error 2 is now treated as the expected absent registry during read/existence checks.

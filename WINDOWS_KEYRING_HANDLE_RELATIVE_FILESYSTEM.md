@@ -1,7 +1,7 @@
 # Windows Keyring Handle-Relative Filesystem Primitive
 
-**Milestone:** 0.1.34 groundwork  
-**Status:** Isolated compile-time primitive; not wired into keyring storage and not security-approved.
+**Milestone:** 0.1.142 handle-relative leaf operations  
+**Status:** Keyring helper uses handle-relative open, rename and delete operations. Not security-approved pending provisioned-Service-SID and adversarial Windows acceptance.
 
 ## Purpose
 
@@ -18,12 +18,12 @@ For each opened component the primitive verifies directory type, rejects reparse
 
 ## Important limitations
 
-This milestone deliberately does not change Program.cs storage operations. Existing lock, read, write, replace and cleanup operations remain path-based. The new chain is not called by the helper, the Node client remains unregistered, and no credential may be stored through it.
+The helper retains the directory chain for the transaction. Lock, registry and temporary-file opens are relative to the Vault handle. Atomic replacement uses NtSetInformationFile with FileRenameInformation and the retained Vault handle as RootDirectory; orphan cleanup uses FileDispositionInformation against the still-open temporary-file handle. The Vault directory handle includes FILE_ADD_FILE for relative creation and rename. The Node client remains unregistered, and no credential may be stored through it.
 
 The class also does not establish the complete security proof:
 - Parent owner/DACL baselines and the exact vault ACL are not checked.
 - The ProgramData path is constrained to the standard local <drive>:\\ProgramData layout; nonstandard deployments fail closed.
-- File IDs are collected but no operation yet consumes them for before/after identity binding.
+- Leaf file identity is captured before replacement and compared with the destination reopened after rename; broader crash/recovery identity coverage remains outstanding.
 - Native interop layouts and share-mode behavior require supported-Windows-version testing.
 - Share-mode pinning alone is not claimed to prevent every rename or namespace race.
 
@@ -42,8 +42,8 @@ The class also does not establish the complete security proof:
 1. Add a Windows test harness on supported Windows Server images; verify directory type, reparse rejection, volume identity and file-ID stability.
 2. Exercise concurrent rename/delete/junction replacement attempts while the chain is held. Tests must prove operations cannot be redirected, not merely that an open succeeded.
 3. Add parent-component owner/DACL policy checks and exact vault ACL verification against handles.
-4. Extend the transaction object so lock, registry, temporary-file creation, rename/replace, read-back and cleanup are all relative to retained directory handles. No path-based fallback.
-5. Add file identity checks before and after every mutation, and fail closed on any mismatch.
+4. Run supported-Windows acceptance tests for handle-relative rename/replace and handle-based deletion, including concurrent namespace mutation and destination races. The helper now uses these operations, but the Windows Server behavior has not yet been accepted.
+5. Extend identity checks through crash/restart and recovery, and fail closed on any mismatch.
 6. Add crash/failure injection and multi-process lock tests under the provisioned dedicated service SID.
 7. Only after the full Windows acceptance suite passes may the Node storage client be registered.
 

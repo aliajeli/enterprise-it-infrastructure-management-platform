@@ -1,3 +1,10 @@
+## 0.1.142 — Perform keyring replacement and cleanup relative to the Vault handle
+
+- Replaced path-based `MoveFileEx`, post-commit path reopen, `File.Exists` and `File.Delete` operations with `NtSetInformationFile` handle-relative rename and disposition operations rooted at the retained CredentialVault directory handle.
+- Opened the Vault directory handle with FILE_ADD_FILE for relative temp creation and rename. Temporary files are opened with DELETE access; the helper captures file identity before rename, closes the source handle, reopens the committed registry relative to the Vault handle, and requires the destination identity to match before read-back verification.
+- Corrected lock contention handling to retry native sharing/lock violation codes while keeping missing pre-provisioned lock files fail-closed. Missing registry remains a first-run absence only for Win32 error 2.
+- This removes known path-based leaf mutation calls but does not constitute Windows security acceptance. Provisioned-Service-SID, adversarial namespace, crash/restart and target Windows Server tests remain mandatory; Node storage adapter remains unregistered.
+
 ## 0.1.141 — Handle missing keyring registry through native open semantics
 
 - Corrected the first-run/missing-registry path: `OpenVaultFile` reports NTSTATUS failures as `Win32Exception`, not an invalid handle. The helper now maps only Win32 file-not-found (error 2) to an absent registry for reads and existence checks.

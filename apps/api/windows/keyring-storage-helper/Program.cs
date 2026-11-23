@@ -16,13 +16,11 @@ internal static class Program
     private const int Header=6, Max=32768;
     private const int TokenGroupsInformation=2;
     private const uint GroupEnabled=0x00000004, GroupUseForDenyOnly=0x00000010;
-    private const uint ReadControl=0x20000, FileReadAttributes=0x80, GenericRead=0x80000000, GenericWrite=0x40000000;
-    private const uint OpenExisting=3, CreateNew=1, FileNormal=0x80, Reparse=0x400, WriteThrough=0x80000000, OpenReparse=0x200000, BackupSemantics=0x2000000;
-    private const uint ShareRead=1, ShareWrite=2, ShareDelete=4, ReplaceExisting=1, MoveWriteThrough=8;
+    private const uint ReadControl=0x20000, GenericRead=0x80000000, GenericWrite=0x40000000;
+    private const uint Reparse=0x400, DeleteAccess=0x10000;
+    private const uint ShareRead=1;
     private const uint FileObject=1, OwnerInfo=1, DaclInfo=4, FullControl=0x001F01FF;
     private static readonly Encoding Utf8=new UTF8Encoding(false,true);
-    private static readonly string Root=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),"EnterpriseIT","CredentialVault");
-    private static readonly string Registry=Path.Combine(Root,"keyring.v1.json"), Lock=Path.Combine(Root,"keyring.lock");
     private static FileStream? heldLock;
     private static SecurityIdentifier? serviceSid;
     private static WindowsDirectoryHandleChain? directoryChain;
@@ -124,7 +122,10 @@ internal static class Program
                 }
                 catch {h.Dispose(); throw;}
             }
-            catch(IOException) when(timer.Elapsed<TimeSpan.FromSeconds(10)){await Task.Delay(50);}
+            catch(Win32Exception ex) when((ex.NativeErrorCode is 32 or 33) && timer.Elapsed<TimeSpan.FromSeconds(10))
+            {
+                await Task.Delay(50);
+            }
         }
     }
 
@@ -146,53 +147,55 @@ internal static class Program
     {
         if(data.Length is <1 or >Max) throw new InvalidDataException();
         using(var existing=TryOpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead))
-        {
-            if(existing is not null) { VerifyAcl(existing,serviceSid!); VerifyNotReparse(existing); }
-        }
+        { if(existing is not null) { VerifyAcl(existing,serviceSid!); VerifyNotReparse(existing); } }
         var tempName=".keyring-"+Guid.NewGuid().ToString("N")+".tmp";
-        var temp=Path.Combine(Root,tempName);
         var sddl=$"O:{serviceSid!.Value}D:P(A;;FA;;;{serviceSid.Value})(A;;FA;;;SY)";
-        IntPtr sd=IntPtr.Zero;
+        IntPtr sd=IntPtr.Zero; FileStream? tempStream=null; var renamed=false;
         try
         {
             if(!ConvertSddl(sddl,1,out sd,out _)) throw new IOException();
-            var sa=new SecurityAttributes{Length=Marshal.SizeOf<SecurityAttributes>(),SecurityDescriptor=sd,InheritHandle=false};
-            using(var h=directoryChain!.OpenVaultFile(tempName,GenericRead|GenericWrite|ReadControl,0,2,sd))
+            var tempHandle=directoryChain!.OpenVaultFile(tempName,GenericRead|GenericWrite|ReadControl|DeleteAccess,0,2,sd);
+            try
             {
-                VerifyAcl(h,serviceSid); VerifyNotReparse(h);
-                using var s=new FileStream(h,FileAccess.Write); s.Write(data); s.Flush(true);
+                VerifyAcl(tempHandle,serviceSid); VerifyNotReparse(tempHandle);
+                tempStream=new FileStream(tempHandle,FileAccess.Write);
+                var originalIdentity=directoryChain.GetVaultFileIdentity(tempStream.SafeFileHandle);
+                tempStream.Write(data); tempStream.Flush(true);
+                directoryChain.RenameVaultFile(tempStream.SafeFileHandle,"keyring.v1.json",replaceIfExists:true); renamed=true;
+                tempStream.Dispose(); tempStream=null;
+                using var committed=directoryChain.OpenVaultFile("keyring.v1.json",GenericRead|ReadControl,ShareRead);
+                VerifyAcl(committed,serviceSid); VerifyNotReparse(committed);
+                var committedIdentity=directoryChain.GetVaultFileIdentity(committed);
+                if(committedIdentity!=originalIdentity) throw new IOException("Committed keyring file identity changed during rename.");
+                using var verify=new FileStream(committed,FileAccess.Read);
+                if(verify.Length!=data.Length) throw new IOException();
+                var check=new byte[data.Length]; verify.ReadExactly(check);
+                try{if(!CryptographicOperations.FixedTimeEquals(check,data)) throw new IOException();}
+                finally{CryptographicOperations.ZeroMemory(check);}
             }
-            VerifyDirectory();
-            if(!MoveFileEx(temp,Registry,ReplaceExisting|MoveWriteThrough)) throw new IOException();
-            using var committed=Open(Registry,GenericRead|ReadControl,ShareRead,OpenExisting,OpenReparse);
-            VerifyAcl(committed,serviceSid); VerifyNotReparse(committed);
-            using var verify=new FileStream(committed,FileAccess.Read);
-            if(verify.Length!=data.Length) throw new IOException();
-            var check=new byte[data.Length]; verify.ReadExactly(check);
-            try{if(!CryptographicOperations.FixedTimeEquals(check,data)) throw new IOException();}
-            finally{CryptographicOperations.ZeroMemory(check);}
+            catch
+            {
+                if(tempStream is null&&!renamed) tempHandle.Dispose(); throw;
+            }
         }
         finally
         {
-            if(sd!=IntPtr.Zero) _=LocalFree(sd);
             try
             {
-                if(File.Exists(temp))
-                {
-                    using var orphan=Open(temp,ReadControl|FileReadAttributes,ShareRead|ShareWrite|ShareDelete,OpenExisting,OpenReparse);
-                    VerifyAcl(orphan,serviceSid!); VerifyNotReparse(orphan); File.Delete(temp);
-                }
-            }catch{}
+                if(tempStream is not null&&!renamed) directoryChain!.DeleteVaultFile(tempStream.SafeFileHandle);
+            }
+            finally
+            {
+                tempStream?.Dispose(); if(sd!=IntPtr.Zero) _=LocalFree(sd);
+            }
         }
     }
-
     private static void VerifyDirectory()
     {
         var chain=directoryChain ?? throw new UnauthorizedAccessException();
         // The trusted ProgramData -> EnterpriseIT -> CredentialVault chain stays
-        // open for the entire helper transaction. Its handles deny delete sharing,
-        // so the path-based leaf operations below cannot be redirected by renaming
-        // or replacing a parent directory while this transaction is active.
+        // open for the entire helper transaction. All keyring leaf opens, rename
+        // and delete operations are relative to the retained Vault handle.
         var vault=chain.VaultHandle;
         VerifyAcl(vault,serviceSid!);
         VerifyNotReparse(vault);
@@ -283,12 +286,6 @@ internal static class Program
            (info.FileAttributes&Reparse)!=0) throw new UnauthorizedAccessException();
     }
 
-    private static SafeFileHandle Open(string path,uint access,uint share,uint disposition,uint flags)
-    {
-        var h=CreateFile(path,access,share,IntPtr.Zero,disposition,flags,IntPtr.Zero);
-        if(h.IsInvalid){h.Dispose();throw new IOException();} return h;
-    }
-
     private static async Task<byte[]?> ReadFrame(Stream input)
     {
         using var timeout=new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -308,15 +305,11 @@ internal static class Program
 
     [StructLayout(LayoutKind.Sequential)] private struct SidAndAttributes{public IntPtr Sid;public uint Attributes;}
     [StructLayout(LayoutKind.Sequential)] private struct TokenGroupsLayout{public uint GroupCount;public SidAndAttributes FirstGroup;}
-    [StructLayout(LayoutKind.Sequential)] private struct SecurityAttributes{public int Length;public IntPtr SecurityDescriptor;[MarshalAs(UnmanagedType.Bool)]public bool InheritHandle;}
     [StructLayout(LayoutKind.Sequential)] private struct FileAttributeTagInfo{public uint FileAttributes;public uint ReparseTag;}
     [DllImport("advapi32.dll",SetLastError=true)] private static extern bool GetTokenInformation(IntPtr token,int informationClass,IntPtr information,int informationLength,out int returnLength);
-    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] private static extern SafeFileHandle CreateFile(string n,uint a,uint s,IntPtr sa,uint d,uint f,IntPtr t);
-    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true,EntryPoint="CreateFileW")] private static extern SafeFileHandle CreateFileWithSecurity(string n,uint a,uint s,ref SecurityAttributes sa,uint d,uint f,IntPtr t);
     [DllImport("kernel32.dll",SetLastError=true)] private static extern bool GetFileInformationByHandleEx(SafeFileHandle h,int c,out FileAttributeTagInfo i,int z);
     [DllImport("advapi32.dll",SetLastError=true)] private static extern uint GetSecurityInfo(SafeFileHandle h,uint t,uint i,out IntPtr o,out IntPtr g,out IntPtr d,out IntPtr s,out IntPtr p);
     [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true,EntryPoint="ConvertStringSecurityDescriptorToSecurityDescriptorW")] private static extern bool ConvertSddl(string s,uint r,out IntPtr p,out uint z);
     [DllImport("kernel32.dll",SetLastError=true)] private static extern IntPtr LocalFree(IntPtr p);
     [DllImport("advapi32.dll",SetLastError=true)] private static extern uint GetSecurityDescriptorLength(IntPtr p);
-    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true,EntryPoint="MoveFileExW")] private static extern bool MoveFileEx(string a,string b,uint f);
 }

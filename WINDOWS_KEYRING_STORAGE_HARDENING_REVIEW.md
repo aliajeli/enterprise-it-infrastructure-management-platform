@@ -1,3 +1,11 @@
+## Implementation status update — 2026-11-23 (branch revision 0.1.142)
+
+The helper now performs lock acquisition, registry reads, temporary-file creation, atomic replacement and orphan cleanup relative to the retained Vault directory handle. Rename uses `NtSetInformationFile(FileRenameInformation)` with the Vault handle as `RootDirectory`; deletion uses `FileDispositionInformation` against the still-open temporary-file handle. The Vault directory handle is opened with FILE_ADD_FILE so relative temp creation and rename have the required directory access. The temporary file is opened with DELETE access. Its file identity is captured before rename, then the committed destination is reopened relative to the Vault handle and required to retain the same identity before read-back verification. The source handle is closed before reopening the destination. Lock contention retries native sharing/lock violation codes; a missing pre-provisioned lock file still fails closed. Missing-registry first-run handling remains limited to Win32 file-not-found (error 2).
+
+This removes the known path-based leaf mutation calls from the helper, but it is not security acceptance. F-05 remains blocking because positive provisioned-Service-SID, crash/restart, adversarial namespace and target Windows Server tests are not present. Broader transaction and recovery identity tests remain required. The Node keyring adapter remains unregistered; no credential persistence or production approval is granted.
+
+---
+
 ## Implementation status update — 2026-11-23 (branch revision 0.1.141)
 
 The 0.1.140 relative-open change is now the active implementation for lock acquisition, registry reads/existence checks and temporary-file creation. Review of the new call path found that `OpenVaultFile` translates a missing leaf into a `Win32Exception`, while the caller had incorrectly expected an invalid handle. The helper now treats Win32 file-not-found (error 2) as the expected first-run absence only; access denied, reparse/type violations, and all other native failures continue to fail closed.
