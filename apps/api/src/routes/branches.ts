@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@platform/database";
+import { appendAuditEvent } from "../security/audit-events.js";
 import type { ApiConfig } from "../config.js";
 import { requireAdmin, requirePlatformAction } from "../security/authorization.js";
 
@@ -113,7 +114,7 @@ export async function registerBranchRoutes(
             data: { ...values, status: "ACTIVE" },
             select: branchSelect,
           });
-          await tx.auditEvent.create({
+          await appendAuditEvent(tx,{
             data: {
               actorUserId: actor.user.id,
               actorType: "USER",
@@ -189,7 +190,7 @@ export async function registerBranchRoutes(
             where: { id: request.params.branchId },
             select: branchSelect,
           });
-          await tx.auditEvent.create({
+          await appendAuditEvent(tx,{
             data: {
               actorUserId: actor.user.id,
               actorType: "USER",
@@ -275,7 +276,7 @@ export async function registerBranchRoutes(
           where: { branchId: request.params.branchId, revokedAt: null },
           data: { revokedAt: now },
         });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: actor.user.id,
             actorType: "USER",
@@ -348,7 +349,7 @@ export async function registerBranchRoutes(
           where: { id: request.params.branchId },
           select: branchSelect,
         });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: actor.user.id,
             actorType: "USER",

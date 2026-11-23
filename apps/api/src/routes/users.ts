@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@platform/database";
+import { appendAuditEvent } from "../security/audit-events.js";
 import type { ApiConfig } from "../config.js";
 import { normalizeUsername } from "../security/credentials.js";
 import { hashPassword } from "../security/credentials.js";
@@ -177,7 +178,7 @@ export async function registerUserRoutes(
             include: userInclude,
           });
 
-          await tx.auditEvent.create({
+          await appendAuditEvent(tx,{
             data: {
               actorUserId: actor.user.id,
               actorType: "USER",
@@ -285,7 +286,7 @@ export async function registerUserRoutes(
           where: { userId: target.id, revokedAt: null },
           data: { revokedAt: now },
         });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: actor.user.id,
             actorType: "USER",
@@ -364,7 +365,7 @@ export async function registerUserRoutes(
           where: { userId: target.id, revokedAt: null },
           data: { revokedAt: now },
         });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: actor.user.id,
             actorType: "USER",
@@ -464,7 +465,7 @@ export async function registerUserRoutes(
               grantedByUserId: actor.user.id,
             })),
           });
-          await tx.auditEvent.create({
+          await appendAuditEvent(tx,{
             data: {
               actorUserId: actor.user.id,
               actorType: "USER",
@@ -565,7 +566,7 @@ export async function registerUserRoutes(
           where: { userId: target.id, revokedAt: null },
           data: { revokedAt: now },
         });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: actor.user.id,
             actorType: "USER",

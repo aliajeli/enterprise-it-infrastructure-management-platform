@@ -109,3 +109,8 @@ The runtime privilege CI script now invokes the API and Worker workspace integra
 ## Restricted Prisma test harness build dependency
 
 The API and Worker workspace integration tests import @platform/database, whose package exports resolve to packages/database/dist/index.js. Prisma client generation alone does not compile that workspace entrypoint. The disposable privilege test script therefore builds the database workspace before running either restricted suite. This is test-harness build preparation only and does not grant additional privileges to API or Worker runtime roles.
+
+
+## API append-only audit write implementation
+
+The API candidate role intentionally has INSERT but no SELECT/UPDATE/DELETE on audit_events. Restricted integration CI demonstrated that Prisma AuditEvent.create() uses INSERT ... RETURNING, which requires SELECT and causes a permission failure. API route audit writes now use a parameterized INSERT-only helper with an application-generated UUID and no RETURNING clause. Audit verification remains on a separate fixture/admin connection. The API role receives no SELECT grant on audit_events.

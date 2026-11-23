@@ -1,6 +1,7 @@
 import { isIP } from "node:net";
 import type { FastifyInstance } from "fastify";
 import type { PrismaClient } from "@platform/database";
+import { appendAuditEvent } from "../security/audit-events.js";
 import type { ApiConfig } from "../config.js";
 import { requireBranchAction, requirePlatformAction } from "../security/authorization.js";
 
@@ -280,7 +281,7 @@ export async function registerInventoryRoutes(
             },
             include: { switch: true },
           });
-          await tx.auditEvent.create({
+          await appendAuditEvent(tx,{
             data: {
               actorUserId: actor.user.id,
               actorType: "USER",
@@ -370,7 +371,7 @@ export async function registerInventoryRoutes(
           });
           if (changed.count !== 1) return null;
           const asset = await tx.asset.findUniqueOrThrow({ where: { id: existing.id } });
-          await tx.auditEvent.create({
+          await appendAuditEvent(tx,{
             data: {
               actorUserId: actor.user.id,
               actorType: "USER",
@@ -530,7 +531,7 @@ export async function registerInventoryRoutes(
               connectedDeviceLabel: clean(body.connectedDeviceLabel, 255),
             },
           });
-          await tx.auditEvent.create({
+          await appendAuditEvent(tx,{
             data: {
               actorUserId: actor.user.id,
               actorType: "USER",
@@ -606,7 +607,7 @@ export async function registerInventoryRoutes(
         });
         if (changed.count !== 1) return null;
         const port = await tx.switchPort.findUniqueOrThrow({ where: { id: request.params.portId } });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: actor.user.id,
             actorType: "USER",

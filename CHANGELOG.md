@@ -1,3 +1,9 @@
+## 0.1.155 — Preserve INSERT-only audit access for API runtime
+
+- Replaced Prisma AuditEvent create() calls in API branch, inventory and user routes with a parameterized INSERT-only audit writer. Prisma create() emits INSERT ... RETURNING and PostgreSQL requires SELECT on returned columns; restricted CI proved this caused API mutations to fail with permission denied on audit_events.
+- The new writer inserts an application-generated UUID and typed values without RETURNING, preserving append-only triggers and the intended API INSERT-only privilege. Audit read/tamper assertions continue through the separate administrator fixture connection.
+- This is based on exact-head PostgreSQL 18 integration evidence; rerun CI must verify API and Worker restricted suites end-to-end. No SELECT grant is added to the API role.
+
 ## 0.1.154 — Build database workspace before restricted integration tests
 
 - Fixed the restricted-runtime CI sequence: Prisma client generation alone does not emit the @platform/database workspace entrypoint declared by its exports (dist/index.js). The privilege test script now builds the database workspace before invoking API and Worker integration suites.

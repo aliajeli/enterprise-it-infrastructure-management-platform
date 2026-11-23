@@ -1,3 +1,10 @@
+## 2026-11-23 — Keep audit writes compatible with INSERT-only API role (0.1.155)
+
+- 0.1.154 resolved the missing @platform/database dist entrypoint and executed the restricted API suite. The suite then exposed two 500 responses on branch and inventory creation. PostgreSQL logs confirmed permission denied on audit_events while the API role had INSERT but no SELECT.
+- Root cause: Prisma auditEvent.create() generates INSERT ... RETURNING, and PostgreSQL requires SELECT privilege on returned columns. Granting broad SELECT would weaken the intended append-only boundary.
+- Added apps/api/src/security/audit-events.ts. It writes a parameterized INSERT without RETURNING, supplies UUIDs in the application, casts enum/inet/jsonb parameters explicitly, and asserts exactly one affected row. Updated branch, inventory and user routes to use it. Audit SELECT/update tamper assertions remain on the separate admin fixture connection.
+- Exact-head CI for 0.1.155 must confirm API integration, Worker queue integration, and the remaining workflow. No API SELECT grant on audit_events was added. PR #7/#8/#9 remain unmerged; no MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Build database workspace before restricted Prisma suites (0.1.154)
 
 - Exact-head CI for 0.1.153 passed Windows API runtime smoke and SQL privilege probes, but the API integration suite failed during module loading: @platform/database exports dist/index.js, while the workflow had only run Prisma client generation and had not compiled the workspace package.
