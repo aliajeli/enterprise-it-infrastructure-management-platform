@@ -1,3 +1,9 @@
+## 0.1.158 — Isolate Worker queue fixtures from restricted runtime identity
+
+- Worker queue integration now creates/deletes branch and DiscoveryRun fixtures through WORKER_TEST_FIXTURE_DATABASE_URL. Actual claim, lease, heartbeat, recovery, completion, cancellation and retry code continues to use the restricted Worker runtime Prisma client.
+- This keeps the Worker runtime role at SELECT/UPDATE on discovery_runs and removes its previous test-only need for branch access or queue INSERT/DELETE.
+- Exact-head CI must execute both API and Worker suites end-to-end under their restricted logins.
+
 ## 0.1.157 — Route API audit verification through the admin fixture
 
 - Corrected the API identity integration test so audit-event lookup and append-only mutation assertions use the dedicated API_TEST_FIXTURE_DATABASE_URL connection, not the restricted API runtime Prisma client.

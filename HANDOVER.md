@@ -1,3 +1,10 @@
+## 2026-11-23 — Separate Worker queue fixtures from runtime identity (0.1.158)
+
+- Review of the current branch revealed that the Worker fixture split had not reached the live queue integration test. It still created/deleted branches and DiscoveryRun rows through the restricted Worker client, which would require permissions that the production Worker should not have.
+- The Worker test now provisions and cleans test branches/queue rows using WORKER_TEST_FIXTURE_DATABASE_URL, while all queue state transitions and reads continue through the Worker runtime client. The fixture client is disconnected only when independently created.
+- Worker grants remain SELECT/UPDATE on discovery_runs only; no INSERT/DELETE or branch-table grant is added. API audit fixture routing is fixed in 0.1.157. Exact-head CI must now confirm API suite success followed by Worker suite success.
+- PR #7/#8/#9 remain unmerged. No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Correct API audit fixture routing (0.1.157)
 
 - Exact-head CI for 0.1.156 passed the SQL privilege probes, the inventory integration suite (including append-only observation trigger assertion through the admin fixture), and 49 API tests, but one API integration assertion still queried audit_events using the restricted runtime db client.

@@ -119,3 +119,8 @@ The API candidate role intentionally has INSERT but no SELECT/UPDATE/DELETE on a
 ## Restricted integration fixture boundaries — follow-up
 
 All API authentication-route audit append paths now use the INSERT-only raw SQL writer; the prior Prisma create() use required SELECT because it emitted RETURNING. The inventory integration suite performs its negative port-observation UPDATE/append-only-trigger assertion through its separate administrator fixture connection. The API runtime identity continues to have SELECT/INSERT only on port_observations and INSERT only on audit_events. No broader grants were introduced.
+
+
+## Worker fixture identity separation
+
+Worker queue integration tests use WORKER_TEST_FIXTURE_DATABASE_URL only for creating/deleting fixture branches and DiscoveryRun rows. Queue transitions, leases, heartbeats, recovery and state verification remain on the restricted Worker client. The candidate Worker role therefore remains SELECT/UPDATE on discovery_runs only; it receives no INSERT/DELETE or branch-table privileges.
