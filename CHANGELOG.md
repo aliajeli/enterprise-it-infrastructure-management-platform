@@ -1,3 +1,10 @@
+## 0.1.146 — Specify PostgreSQL first-install and migration contract
+
+- Added a verified implementation inventory and security contract for first-install PostgreSQL bootstrap, role separation, least-privilege runtime grants, migration execution, secret transport, retry semantics and Windows Server acceptance.
+- Recorded the integration gap: cluster initialization, application role/database creation and Prisma migration execution are not connected to the five-service orchestrator; API/Worker DPAPI configuration currently accepts externally supplied database URLs.
+- Documentation/design only. No runtime behavior, database schema, role grants, credential transport or installer flow changed.
+- Existing-cluster protection, secret lifecycle, role isolation, migration interruption/retry, clean-VM acceptance and installer integration remain open. No PR merge, Installer/Release, or MikroTik/NAT/port-mapping changes.
+
 ## 0.1.145 — Record keyring parent ACL acceptance boundary
 
 - Revalidated exact-head Push validation and PR validation for commit 603af65f33cbac61083c81e7ae6c7a72c7368e20; both workflows completed successfully, including the Windows API runtime smoke job. This is hosted CI evidence, not supported Windows Server acceptance.

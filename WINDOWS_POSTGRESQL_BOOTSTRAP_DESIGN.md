@@ -1,0 +1,77 @@
+# Windows PostgreSQL first-install and migration contract
+
+Status: design/acceptance contract for the five-service Windows deployment workstream. This document does not claim that first-install database bootstrap or migrations are implemented.
+
+## Verified current behavior
+
+- `initialize-postgresql-cluster.ps1` initializes PostgreSQL 18 with SCRAM-SHA-256, creates the initial `platform_admin` superuser, limits the listener to `127.0.0.1:5432`, and refuses an existing or non-empty data directory.
+- The initializer accepts the bootstrap password as a PowerShell `SecureString`, writes it temporarily to a workspace whose protected ACL is checked before the password file is created, and removes the workspace in its cleanup path.
+- `provision-postgresql-service.ps1` registers PostgreSQL under `NT SERVICE\\EnterpriseITPostgreSQL`, applies a dedicated service SID and data ACL, and deliberately does not start the service.
+- `orchestrate-windows-services.ps1` requires an already initialized cluster during preflight. It provisions PostgreSQL and application services, accepts separate API and Worker database URLs, stores them through service-specific DPAPI configuration paths, and starts PostgreSQL, API, Worker, Web and Edge in dependency order.
+- The orchestrator does not invoke cluster initialization, create database roles, create the application database, execute Prisma migrations, or validate that the supplied API/Worker credentials exist and have the intended grants.
+- API readiness checks database connectivity and the presence of `public.users`; this detects a missing baseline table but does not apply migrations.
+
+## Required database identity separation
+
+| Identity | Purpose | Required boundary |
+|---|---|---|
+| `platform_admin` | One-time cluster bootstrap and role/database administration | PostgreSQL superuser; never used by API, Worker or Web; credential must not be persisted in service configuration |
+| Schema owner | Owns application schema objects and migration-created objects | Not used by API/Worker at runtime; ownership and default privileges must be deterministic |
+| Migration identity | Executes the versioned Prisma migration set during an explicit deployment operation | Deployment-only credential; no service DPAPI config; no interactive application login |
+| API runtime identity | Normal API data access | No superuser, CREATEDB, CREATEROLE, schema CREATE or migration-table ownership |
+| Worker runtime identity | Worker queue/job data access | No superuser, CREATEDB, CREATEROLE, schema CREATE or migration-table ownership; grants limited to actual Worker queries |
+
+The exact API and Worker table/sequence/function grants must be derived from Prisma and raw SQL access paths. Do not grant database-owner or superuser privileges merely to make installation pass. Existing append-only triggers and application authorization remain in force.
+
+## Required first-install sequence
+
+1. Verify elevation, supported Windows Server build, architecture, disk, versioned immutable payload, PostgreSQL binaries and port availability.
+2. Verify the target data directory is absent/empty and installer-owned, or a recognized existing Enterprise IT PostgreSQL 18 cluster. Never reinitialize, delete, replace or silently adopt an unknown cluster.
+3. Initialize only a new cluster using the existing SCRAM-protected script and a one-time bootstrap secret supplied through a protected input channel. Keep it out of command-line arguments, logs, transcripts, persistent environment variables and installer manifests.
+4. Provision PostgreSQL SCM identity, service SID and NTFS ACLs. Start PostgreSQL only after service configuration and data access are verified.
+5. Wait for readiness on loopback. Verify major version, expected cluster identity, SCRAM policy, effective listener and absence of remote listener exposure.
+6. Through a separately reviewed bounded bootstrap operation, create the application database, schema owner, migration identity, API runtime identity and Worker runtime identity. Apply explicit grants and default privileges; verify effective privileges from each runtime identity.
+7. Apply Prisma migrations using the controlled migration identity. Migration failure must stop deployment before API or Worker starts; do not attempt destructive automatic rollback of a partially applied schema.
+8. Validate migration state and required schema objects, then provision API/Worker DPAPI configuration from the separately supplied runtime credentials. Reject cross-service credential substitution.
+9. Start API and Worker only after database readiness and migration verification. Continue with Web and Edge after upstream readiness checks.
+10. Record non-secret installation state and migration outcome for safe retry. Never record passwords, connection URLs, DPAPI plaintext, private keys or recovery material.
+
+## Secret transport and lifecycle requirements
+
+- The initializer's `SecureString` parameter is not a complete bootstrap credential lifecycle. The orchestrator has no corresponding parameter and does not call the initializer.
+- Never place a PostgreSQL password in process arguments, PowerShell transcripts, verbose/debug output, CI logs, persistent machine environment variables, generated manifests or service logs.
+- A candidate local bootstrap transport (such as a short-lived ACL-protected password file or a dedicated native helper reading standard input) must be threat-reviewed and tested on supported Windows Server versions before implementation. File ACLs must be verified before secret bytes are written; cleanup and crash residue behavior must be explicit.
+- Never store the `platform_admin` password in API/Worker DPAPI files or use either runtime identity as a bootstrap/migration identity.
+- Do not claim that deleting a temporary file securely erases NTFS/SSD historical data. The boundary is access control and short exposure, not guaranteed physical erasure.
+- A generated random bootstrap credential and its one-time custody/recovery policy, or an explicit administrator-supplied credential flow, must be approved before implementation. This design note does not approve either custody behavior.
+
+## Idempotency, retry and failure semantics
+
+- Initialize only an absent/empty data directory within the fixed version-specific ProgramData root.
+- Verify recognized existing clusters; never reinitialize them. Unknown identity, unexpected owner/ACL, unsupported major version, non-SCRAM authentication, remote binding or occupied port is a fail-closed preflight error.
+- Role/database creation must be transactional where PostgreSQL permits it. Non-transactional operations require explicit existence checks and postcondition verification.
+- A retry resumes only from verified durable state. It must not rotate credentials, replace roles, reset passwords, overwrite a database or drop schema objects implicitly.
+- Migration failure preserves cluster and migration evidence. Stop dependent services and report sanitized diagnostics; never drop/recreate the database as rollback.
+- `-WhatIf` must perform no filesystem, ACL, SCM, database, credential or network mutation. Tests must prove this.
+- Rollback stops only services started by the current invocation. It never removes PostgreSQL data, roles, databases, existing service registrations or user data.
+
+## Acceptance tests required before Orchestrator integration
+
+1. Fresh Windows Server VM: initialize cluster, provision service identity/ACL, start/stop PostgreSQL and verify loopback-only SCRAM.
+2. Existing-cluster protection: refuse a populated/unknown cluster without changing sentinel files, database, role, configuration or service.
+3. Secret handling: prove no secret appears in process arguments, logs, transcripts, errors, persistent environment or CI artifacts; verify ACL-before-write and cleanup.
+4. Role isolation: connect separately as API and Worker and assert allowed/denied SQL operations, including CREATE/ALTER/DROP, migration metadata, sequences and append-only tables.
+5. Migration lifecycle: clean install, repeated deploy, no-op deploy, interrupted migration, retry, schema drift and unsupported migration state.
+6. Credential handoff: verify API/Worker URLs map to intended roles and are DPAPI-protected for the corresponding actual virtual service SID.
+7. Orchestration: migration failure prevents API/Worker/Web/Edge startup; success starts services in dependency order; rollback affects only services started by this invocation.
+8. Upgrade/backup/restore: preserve existing data and prove backup/restore before schema or PostgreSQL major-version upgrade.
+
+## Current blockers (must remain open)
+
+- No approved secure transport for the one-time PostgreSQL bootstrap credential across initialization, role provisioning and migration.
+- No implemented database/application role bootstrap or least-privilege grant matrix.
+- No migration runner integrated into Windows deployment.
+- No clean supported Windows Server acceptance for PostgreSQL virtual-account ownership, role bootstrap, migrations, backup/restore or upgrade/rollback.
+- No complete installer repair/uninstall or signed release.
+
+Until these gates pass, the five-service Windows deployment remains a foundation, not a production-ready installer or a completed milestone.

@@ -1,3 +1,12 @@
+## 2026-11-23 — PostgreSQL first-install and migration contract (0.1.146)
+
+- Reviewed the PostgreSQL cluster initializer, SCM provisioner, five-service orchestrator, API/Worker DPAPI database configuration, Prisma migration package and API readiness behavior.
+- Confirmed the initializer creates `platform_admin` using a supplied SecureString and protects its temporary password workspace; the Orchestrator does not invoke the initializer and has no bootstrap-superuser input.
+- Confirmed the Orchestrator requires an initialized PostgreSQL 18 cluster, accepts separate API/Worker connection URLs and stores them through service-specific DPAPI hosts, but does not create database roles or execute Prisma migrations.
+- Added `WINDOWS_POSTGRESQL_BOOTSTRAP_DESIGN.md` defining identity separation, secret-transport constraints, fail-closed/idempotent lifecycle and acceptance tests.
+- Design/documentation only. No role bootstrap, migration runner or installer integration was implemented. First-install PostgreSQL is not complete.
+- PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Keyring parent ACL acceptance boundary (0.1.145)
 
 - Exact-head hosted Push validation and PR validation for 603af65f33cbac61083c81e7ae6c7a72c7368e20 both completed successfully; Windows API runtime smoke passed. This does not replace a clean supported Windows Server acceptance run.
