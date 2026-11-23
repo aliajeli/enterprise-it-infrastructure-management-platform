@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { PrismaClient } from "@platform/database";
+import { appendAuditEvent } from "../security/audit-events.js";
 import type { ApiConfig } from "../config.js";
 import {
   hashPassword,
@@ -77,7 +78,7 @@ async function writeLoginFailure(
       `;
     }
 
-    await tx.auditEvent.create({
+    await appendAuditEvent(tx,{
       data: {
         actorType: "SYSTEM",
         action: "AUTH_LOGIN_FAILED",
@@ -176,7 +177,7 @@ export async function registerAuthRoutes(
           },
         });
 
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: user.id,
             actorType: "USER",
@@ -221,7 +222,7 @@ export async function registerAuthRoutes(
           where: { id: session.id, revokedAt: null },
           data: { revokedAt: now },
         });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: session.userId,
             actorType: "USER",
@@ -279,7 +280,7 @@ export async function registerAuthRoutes(
           .passwordHash,
       );
       if (!currentMatches) {
-        await db.auditEvent.create({
+        await appendAuditEvent(db,{
           data: {
             actorUserId: session.user.id,
             actorType: "USER",
@@ -327,7 +328,7 @@ export async function registerAuthRoutes(
           where: { userId: session.user.id, revokedAt: null },
           data: { revokedAt: now },
         });
-        await tx.auditEvent.create({
+        await appendAuditEvent(tx,{
           data: {
             actorUserId: session.user.id,
             actorType: "USER",

@@ -1,3 +1,9 @@
+## 0.1.156 — Complete restricted audit and observation integration coverage
+
+- Routed authentication audit writes through the INSERT-only append helper, including login, password-change and logout/lockout event paths. This closes remaining Prisma create() calls that require SELECT on audit_events.
+- Inventory integration now uses the separate administrator fixture connection only to attempt a prohibited port-observation update and verify the append-only trigger. API runtime remains SELECT/INSERT only on port_observations; no UPDATE grant is added.
+- Exact-head CI must now verify the full API integration suite and then the Worker queue suite under their respective restricted identities.
+
 ## 0.1.155 — Preserve INSERT-only audit access for API runtime
 
 - Replaced Prisma AuditEvent create() calls in API branch, inventory and user routes with a parameterized INSERT-only audit writer. Prisma create() emits INSERT ... RETURNING and PostgreSQL requires SELECT on returned columns; restricted CI proved this caused API mutations to fail with permission denied on audit_events.

@@ -114,3 +114,8 @@ The API and Worker workspace integration tests import @platform/database, whose 
 ## API append-only audit write implementation
 
 The API candidate role intentionally has INSERT but no SELECT/UPDATE/DELETE on audit_events. Restricted integration CI demonstrated that Prisma AuditEvent.create() uses INSERT ... RETURNING, which requires SELECT and causes a permission failure. API route audit writes now use a parameterized INSERT-only helper with an application-generated UUID and no RETURNING clause. Audit verification remains on a separate fixture/admin connection. The API role receives no SELECT grant on audit_events.
+
+
+## Restricted integration fixture boundaries — follow-up
+
+All API authentication-route audit append paths now use the INSERT-only raw SQL writer; the prior Prisma create() use required SELECT because it emitted RETURNING. The inventory integration suite performs its negative port-observation UPDATE/append-only-trigger assertion through its separate administrator fixture connection. The API runtime identity continues to have SELECT/INSERT only on port_observations and INSERT only on audit_events. No broader grants were introduced.

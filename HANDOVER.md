@@ -1,3 +1,10 @@
+## 2026-11-23 — Finish API audit append-only integration wiring (0.1.156)
+
+- 0.1.155 converted branch, inventory and user-route audit writes to INSERT-only SQL, but exact-head CI found remaining auth-route Prisma AuditEvent.create() calls. Temporary login returned HTTP 500 because those paths still emitted INSERT ... RETURNING. All five auth-route audit writes now use appendAuditEvent.
+- The inventory integration test attempted to update port_observations through the restricted API runtime client and expected the append-only trigger message. PostgreSQL correctly denied the statement earlier due to the absence of UPDATE privilege, so the test was not reaching the trigger. The test now uses API_TEST_FIXTURE_DATABASE_URL only for this negative trigger assertion; normal app operations and observation inserts continue through the restricted API identity.
+- No API SELECT grant on audit_events and no API UPDATE grant on port_observations was added. Exact-head CI must validate API and Worker integration tests.
+- PR #7/#8/#9 remain unmerged. No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Keep audit writes compatible with INSERT-only API role (0.1.155)
 
 - 0.1.154 resolved the missing @platform/database dist entrypoint and executed the restricted API suite. The suite then exposed two 500 responses on branch and inventory creation. PostgreSQL logs confirmed permission denied on audit_events while the API role had INSERT but no SELECT.

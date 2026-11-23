@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDatabaseClient } from "@platform/database";
+import type { PrismaClient } from "@platform/database";
 import { buildApp } from "../app.js";
 import type { ApiConfig } from "../config.js";
 import { issueSessionToken } from "../security/session-token.js";
@@ -19,6 +20,8 @@ const config: ApiConfig = {
 
 describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
   const db = createDatabaseClient();
+  let fixtureDb: PrismaClient | undefined;
+  let ownsFixtureDb = false;
   let app: Awaited<ReturnType<typeof buildApp>> | undefined;
   let operatorCookie = "";
   let viewerCookie = "";
@@ -49,6 +52,12 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
   }
 
   beforeAll(async () => {
+    fixtureDb = db;
+    const fixtureUrl = process.env.API_TEST_FIXTURE_DATABASE_URL;
+    if (fixtureUrl) {
+      fixtureDb = createDatabaseClient(fixtureUrl);
+      ownsFixtureDb = true;
+    }
     const suffix = randomUUID().replaceAll("-", "").slice(0, 10).toUpperCase();
     const branch = await db.branch.create({ data: { branchCode: `M2-${suffix}`, name: "M2 test branch" } });
     const other = await db.branch.create({ data: { branchCode: `M2O-${suffix}`, name: "M2 other branch" } });
@@ -75,6 +84,7 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
 
   afterAll(async () => {
     await app?.close();
+    if (ownsFixtureDb) await fixtureDb?.$disconnect();
     await db.$disconnect();
   });
 
@@ -343,8 +353,9 @@ describe.skipIf(!enabled)("inventory API authorization and persistence", () => {
     });
     expect(mismatchedPortHistory.statusCode).toBe(404);
 
+    if (!fixtureDb) throw new Error("Inventory fixture database was not initialized.");
     await expect(
-      db.portObservation.update({
+      fixtureDb.portObservation.update({
         where: { id: observation.id },
         data: { operState: "DOWN" },
       }),
