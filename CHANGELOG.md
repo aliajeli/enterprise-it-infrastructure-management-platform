@@ -1,3 +1,8 @@
+## 0.1.150 — Provide disposable PostgreSQL admin credential to CI experiment
+
+- Fixed the CI test-step environment so the migration ownership experiment receives the disposable PostgreSQL service administrator password required for role/database setup.
+- The previous run stopped before the identity/ownership assertions because PGPASSWORD was not exposed to the script. This change addresses only test harness configuration; Prisma ownership semantics remain unverified pending rerun.
+
 ## 0.1.149 — Correct migration identity assertion in CI harness
 
 - Corrected the SQL delimiter expression in the disposable Prisma migration ownership experiment so PostgreSQL concatenates the login and effective role identities without treating the delimiter as an identifier.

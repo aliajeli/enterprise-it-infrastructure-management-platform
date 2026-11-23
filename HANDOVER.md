@@ -1,3 +1,9 @@
+## 2026-11-23 — CI PostgreSQL test credential wiring (0.1.150)
+
+- Added the disposable PostgreSQL service password to the migration ownership experiment step environment.
+- The 0.1.149 run completed baseline migrations but stopped at the experiment precondition because PGPASSWORD was unset; no Prisma ownership conclusion could be drawn.
+- The test is rerun on this commit. No production database roles, grants, migration runner, secret transport, runtime or installer behavior changed. PR #7/#8/#9 remain unmerged; no MikroTik/NAT/port-mapping changes.
+
 ## 2026-11-23 — Migration identity assertion correction (0.1.149)
 
 - Corrected the test query in `scripts/database/test-prisma-migration-ownership.sh` to use `chr(124)` as the separator between `session_user` and `current_user`.

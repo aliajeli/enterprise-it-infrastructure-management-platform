@@ -94,6 +94,8 @@ jobs:
       - name: Verify Prisma Migrate executes as the intended schema owner
         shell: bash
         run: bash scripts/database/test-prisma-migration-ownership.sh
+        env:
+          PGPASSWORD: platform_test_password
 
       - name: Verify dependency tree
         run: npm ls --all
