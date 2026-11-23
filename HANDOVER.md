@@ -1,3 +1,11 @@
+## 2026-11-23 — Add runtime database privilege boundary CI experiment (0.1.152)
+
+- Added `scripts/database/test-runtime-privilege-matrix.sh`, executed after baseline Prisma migrations in the PostgreSQL 18 validation job.
+- The experiment creates temporary login roles, applies candidate table-level grants, then tests positive and negative SQL access using those actual logins. API is denied UPDATE/DELETE on append-only audit/observation tables, recovery_codes, migration metadata, schema DDL and administrative operations. Worker is limited to SELECT/UPDATE on discovery_runs and is denied unrelated tables, INSERT/DELETE, migration metadata and DDL.
+- Roles are disposable CI-only identities and are dropped on exit. No production bootstrap, installer wiring, runtime connection configuration, or production grants were implemented.
+- This is SQL-level privilege-boundary evidence only; it does not replace API Prisma integration tests under the restricted API identity, Worker queue integration tests under the restricted Worker identity, role-attribute/ownership audits, interrupted migration recovery, secure Windows credential transport, or Windows Server acceptance.
+- PR #7/#8/#9 remain Draft/open/unmerged. No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Prisma migration-owner experiment passes exact-head CI (0.1.151)
 
 - Push run 45148082967 completed successfully at parent commit `bc21475f04338c52c279c0b3366906209c52db43`; Platform validation confirmed `session_user=platform_migrator` and `current_user=platform_schema_owner`.

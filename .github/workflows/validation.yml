@@ -97,6 +97,12 @@ jobs:
         env:
           PGPASSWORD: platform_test_password
 
+      - name: Verify API and Worker runtime privilege boundaries
+        shell: bash
+        run: bash scripts/database/test-runtime-privilege-matrix.sh
+        env:
+          PGPASSWORD: platform_test_password
+
       - name: Verify dependency tree
         run: npm ls --all
 

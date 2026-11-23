@@ -1,3 +1,10 @@
+## 0.1.152 — Add PostgreSQL API/Worker runtime privilege integration checks
+
+- Added a disposable PostgreSQL 18 CI test that creates temporary API and Worker login roles and applies the source-derived candidate privilege matrix.
+- Verifies API positive table access, append-only audit/observation restrictions, denied recovery-code and migration-metadata access, and denied DDL/TRUNCATE/database creation.
+- Verifies Worker access is limited to SELECT/UPDATE on discovery_runs and rejects access to unrelated application tables, INSERT/DELETE, migration metadata and administrative DDL.
+- Test roles are disposable, removed on exit, and are not production provisioning. API Prisma route/integration tests under the restricted login, interrupted migration retry, secure Windows credential transport, and Windows Server acceptance remain open.
+
 ## 0.1.151 — Record successful Prisma migration-owner CI proof
 
 - Recorded the exact-head PostgreSQL 18 / Prisma 7.10.1 CI result: the migration login remained `session_user=platform_migrator`, the effective role was `current_user=platform_schema_owner`, database and migration-created object ownership matched the schema owner, and a second `prisma migrate deploy` succeeded.

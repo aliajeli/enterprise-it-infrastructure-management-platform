@@ -57,7 +57,7 @@ The intended separation remains:
 4. API runtime login: the API candidate privileges above.
 5. Worker runtime login: the Worker candidate privileges above.
 
-The exact mechanism by which Prisma Migrate executes DDL as the schema owner is **not yet validated**. PostgreSQL role membership/inherited privileges do not by themselves establish the desired object ownership. The deployment must prove which database role is `current_user` for every migration connection and for creation of `_prisma_migrations`, tables, enum types, indexes, and trigger functions.
+The Prisma role-default mechanism has a disposable PostgreSQL 18 / Prisma 7.10.1 CI proof-of-concept; production deployment suitability, secure credential transport and Windows acceptance remain unvalidated. PostgreSQL role membership/inherited privileges do not by themselves establish the desired object ownership. The deployment must prove which database role is `current_user` for every migration connection and for creation of `_prisma_migrations`, tables, enum types, indexes, and trigger functions.
 
 Do not implement a role bootstrap based on an assumed `SET ROLE` behavior or an unverified connection-string startup option. Before implementation, run a disposable PostgreSQL 18 integration experiment using the exact pinned Prisma CLI/engine and prove:
 
@@ -92,3 +92,10 @@ The validation workflow now includes a disposable PostgreSQL 18 experiment using
 **Result: passed on exact head `bc21475f04338c52c279c0b3366906209c52db43`.** Push run `45148082967` and PR-event run `45148094311` completed successfully. The experiment log reports `session_user=platform_migrator`, `current_user=platform_schema_owner`, database/schema/migration-object ownership by `platform_schema_owner`, and successful repeated `prisma migrate deploy`.
 
 This closes only the disposable PostgreSQL 18 / Prisma 7.10.1 proof-of-concept for the role-default ownership mechanism. It does not establish production suitability or test Windows secret transport, clean Windows Server deployment, runtime API/Worker grants, interrupted migration recovery, or installer integration. Production use remains blocked until those separate acceptance gates pass.
+
+
+## Automated runtime privilege-boundary experiment
+
+The validation workflow now runs `scripts/database/test-runtime-privilege-matrix.sh` after the baseline migrations. It creates disposable API and Worker login roles, applies the current source-derived candidate grants, and connects as each role to verify allowed and denied SQL operations. The API test covers candidate table reads/writes, append-only table mutation denial, unlisted recovery-code and migration-metadata denial, and DDL/TRUNCATE/database-creation denial. The Worker test verifies SELECT/UPDATE on `discovery_runs` only and denies access to other application tables, queue INSERT/DELETE, migration metadata and administrative DDL.
+
+This is a SQL-level CI experiment, not production role provisioning. It does not yet execute the API's Prisma route/integration suite using the restricted API login or the Worker queue integration suite using the restricted Worker login. It also does not prove production connection configuration, secure credential transport, migration interruption/retry, or Windows Server virtual-account acceptance. Keep the candidate matrix provisional until those tests pass.
