@@ -1,3 +1,13 @@
+## 2026-11-23 — Restricted database suites pass; Credential Vault orchestration guard (0.1.159)
+
+- Exact-head CI for parent `cfd360abff5b34e5731e2aef095729e45deb3be5`, run [45171097975](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45171097975), completed successfully across all three jobs.
+- PostgreSQL validation executed the runtime privilege probes and both restricted Prisma integration suites. API database identity tests: 2 passed; inventory integration: 1 passed; Worker queue integration: 8 passed. The workflow log explicitly reported that the runtime privilege matrix and restricted API/Worker suites passed against disposable PostgreSQL; no production role/grant was created.
+- Windows smoke passed all five service-host provisioning/lifecycle policy groups. .NET tests passed: API 23, Web 17, Worker 10, Edge 11. Windows Node tests reported 48 passed and 4 skipped; skipped tests remain gated on a provisioned service identity/environment.
+- Added an orchestration guard requiring the fixed CredentialVault directory and `keyring.lock` before service provisioning. It rejects reparse-point components and has a missing-lock regression test. This deliberately does not create or repair the store and does not claim exact ACL verification.
+- Remaining Credential Vault gap: secure installer provisioning of directory/lock with exact service-SID owner and protected DACL, parent trust validation, crash-orphan cleanup, adversarial Windows Server tests, Node adapter registration and actual credential persistence. Helper remains fail-closed and unregistered.
+- Root version and lockfile metadata advanced to `0.1.159`. Exact-head CI for this commit is still required.
+- PR #7/#8/#9 remain unmerged. No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Separate Worker queue fixtures from runtime identity (0.1.158)
 
 - Review of the current branch revealed that the Worker fixture split had not reached the live queue integration test. It still created/deleted branches and DiscoveryRun rows through the restricted Worker client, which would require permissions that the production Worker should not have.

@@ -77,13 +77,22 @@ function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
   (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\pg_isready.exe"),
   (Join-Path $Plan.DataRoot "PG_VERSION"),
   (Join-Path $Plan.DataRoot "postgresql.conf"),
-  (Join-Path $Plan.DataRoot "pg_hba.conf")
+  (Join-Path $Plan.DataRoot "pg_hba.conf"),
+  (Join-Path $env:ProgramData "EnterpriseIT\CredentialVault\keyring.lock")
  )
 }
 function Test-WindowsServiceOrchestrationPayload([pscustomobject]$Plan){
  $requiredFiles=@(Get-WindowsServiceOrchestrationRequiredFiles -Plan $Plan)
  $missing=@($requiredFiles|Where-Object{-not(Test-Path -LiteralPath $_ -PathType Leaf)})
  if($missing.Count -gt 0){throw "Orchestration preflight failed before service provisioning; required payload or PostgreSQL cluster files are missing: $($missing -join '; ')"}
+ $vaultRoot=Join-Path $env:ProgramData "EnterpriseIT\CredentialVault"
+ $enterpriseRoot=Join-Path $env:ProgramData "EnterpriseIT"
+ foreach($path in @($enterpriseRoot,$vaultRoot,(Join-Path $vaultRoot "keyring.lock"))){
+  $item=Get-Item -LiteralPath $path -Force -ErrorAction Stop
+  if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw "Keyring provisioning preflight rejected a reparse-point path component."}
+ }
+ if(-not (Test-Path -LiteralPath $vaultRoot -PathType Container)){throw "Credential Vault directory must be provisioned before service orchestration."}
+ if(-not (Test-Path -LiteralPath (Join-Path $vaultRoot "keyring.lock") -PathType Leaf)){throw "Credential Vault lock file must be provisioned before service orchestration."}
  $version=(Get-Content -LiteralPath (Join-Path $Plan.DataRoot "PG_VERSION") -Raw).Trim()
  if($version -ne "18"){throw "Orchestration preflight requires an initialized PostgreSQL 18 data directory."}
  $postgresConfig=Get-Content -LiteralPath (Join-Path $Plan.DataRoot "postgresql.conf") -Raw

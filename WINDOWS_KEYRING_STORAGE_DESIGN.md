@@ -167,3 +167,10 @@ Windows CI now launches the built helper as a separate process on the unprovisio
 After the helper acknowledges END_TRANSACTION with END_OK, the Node client closes helper stdin and waits for the process close event. Exit code 0 is required. A non-zero exit or timeout fails the enclosing storage transaction; it is not converted into a successful callback result. The client kills the helper on shutdown failure and releases its in-process transaction queue in a finally path. Unit tests cover successful exit and non-zero exit after END_OK.
 
 This confirms process lifecycle only; it does not establish installer provisioning, ACL correctness under a provisioned service SID, or cross-process filesystem acceptance.
+
+
+## 15. Orchestration guard for missing installer provisioning (0.1.159)
+
+The five-service orchestrator now refuses to begin service provisioning unless the fixed `%ProgramData%\\EnterpriseIT\\CredentialVault\\` directory and `keyring.lock` file already exist. It checks the EnterpriseIT, CredentialVault and lock path components for reparse-point attributes. A regression test removes the lock file and confirms that orchestration preflight fails before provisioning.
+
+This is intentionally a presence/reparse guard, not a provisioning implementation or a security-descriptor acceptance test. It does not create directories/files, set owner/DACL, validate parent ACLs through retained handles, or repair existing state. The .NET helper continues to perform its own strict service-SID, handle-based owner/DACL and reparse checks at runtime. Because the installer still does not provision this infrastructure, a clean install remains blocked until a separate secure provisioner is implemented and tested. Keep the Node adapter unregistered and do not store real equipment credentials.

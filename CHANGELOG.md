@@ -1,3 +1,10 @@
+## 0.1.159 — Gate Windows service orchestration on pre-provisioned Credential Vault infrastructure
+
+- The five-service orchestration preflight now requires the fixed `%ProgramData%\\EnterpriseIT\\CredentialVault\\keyring.lock` file and CredentialVault directory to exist before any service provisioning begins.
+- The preflight rejects reparse-point components in the EnterpriseIT/Vault/lock path and has a regression test proving a missing lock file blocks orchestration.
+- This is a fail-closed readiness gate only. It does not create the directory or lock file, validate the exact owner/DACL through retained handles, or complete installer provisioning. The keyring helper remains authoritative for handle-based owner/DACL validation and will still reject an incorrectly provisioned store.
+- Exact-head Windows and platform CI must pass. No keyring adapter registration, credential persistence, Installer/Release, or production acceptance is claimed.
+
 ## 0.1.158 — Isolate Worker queue fixtures from restricted runtime identity
 
 - Worker queue integration now creates/deletes branch and DiscoveryRun fixtures through WORKER_TEST_FIXTURE_DATABASE_URL. Actual claim, lease, heartbeat, recovery, completion, cancellation and retry code continues to use the restricted Worker runtime Prisma client.

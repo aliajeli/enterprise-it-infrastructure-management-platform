@@ -25,7 +25,13 @@ try{
   [IO.File]::WriteAllText($file,$content)
  }
  $payloadCheck=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
- if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 14){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
+ if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 15){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
+ $keyringLock=Join-Path $env:ProgramData "EnterpriseIT\CredentialVault\keyring.lock"
+ Remove-Item -LiteralPath $keyringLock -Force
+ $missingKeyringRejected=$false
+ try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$missingKeyringRejected=$true}
+ if(-not $missingKeyringRejected){throw "Missing Credential Vault lock file must fail before service provisioning."}
+ [IO.File]::WriteAllText($keyringLock,"")
  $edgeHost=Join-Path $fixturePlan.InstallRoot "EnterpriseIT.EdgeServiceHost.exe"
  Remove-Item -LiteralPath $edgeHost -Force
  $missingRejected=$false
