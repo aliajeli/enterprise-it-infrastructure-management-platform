@@ -35,8 +35,6 @@ describe.skipIf(!isDisposableTestDatabase)(
   "PostgreSQL 18 identity and user-lifecycle integration",
   () => {
     let db: PrismaClient | undefined;
-    let verificationDb: PrismaClient | undefined;
-    let ownsVerificationDb = false;
     let app: Awaited<ReturnType<typeof buildApp>> | undefined;
     let adminCookie = "";
     let adminId = "";
@@ -45,12 +43,6 @@ describe.skipIf(!isDisposableTestDatabase)(
     beforeAll(async () => {
       const databaseModule = await import("@platform/database");
       db = databaseModule.prisma;
-      verificationDb = db;
-      const fixtureUrl = process.env.API_TEST_FIXTURE_DATABASE_URL;
-      if (fixtureUrl) {
-        verificationDb = databaseModule.createDatabaseClient(fixtureUrl);
-        ownsVerificationDb = true;
-      }
 
       const suffix = randomUUID().replaceAll("-", "").slice(0, 12);
       const admin = await db.user.create({
@@ -88,7 +80,6 @@ describe.skipIf(!isDisposableTestDatabase)(
 
     afterAll(async () => {
       await app?.close();
-      if (ownsVerificationDb) await verificationDb?.$disconnect();
       await db?.$disconnect();
     });
 
@@ -103,7 +94,7 @@ describe.skipIf(!isDisposableTestDatabase)(
     });
 
     it("provisions users, forces password change, scopes branches and revokes sessions", async () => {
-      if (!db || !app || !verificationDb) throw new Error("PostgreSQL integration was not initialized.");
+      if (!db || !app) throw new Error("PostgreSQL integration was not initialized.");
 
       const branchResponse = await app.inject({
         method: "POST",
@@ -358,7 +349,7 @@ describe.skipIf(!isDisposableTestDatabase)(
       expect(resetLogin.statusCode).toBe(200);
       expect(resetLogin.json().user.mustChangePassword).toBe(true);
 
-      const resetAudit = await verificationDb.auditEvent.findFirst({
+      const resetAudit = await db.auditEvent.findFirst({
         where: { action: "USER_PASSWORD_RESET", objectId: userId },
       });
       expect(resetAudit).not.toBeNull();
@@ -380,12 +371,12 @@ describe.skipIf(!isDisposableTestDatabase)(
       });
       expect(selfDisable.statusCode).toBe(409);
 
-      const auditEvent = await verificationDb.auditEvent.findFirst({
+      const auditEvent = await db.auditEvent.findFirst({
         where: { action: "USER_CREATED", objectId: userId },
       });
       if (!auditEvent) throw new Error("User creation audit event is missing.");
       await expect(
-        verificationDb.auditEvent.update({
+        db.auditEvent.update({
           where: { id: auditEvent.id },
           data: { action: "AUDIT_TAMPER_ATTEMPT" },
         }),

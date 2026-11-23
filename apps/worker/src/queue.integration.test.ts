@@ -17,20 +17,12 @@ describe.skipIf(!isDisposableTestDatabase)(
   "PostgreSQL discovery worker queue integration",
   () => {
     let db: PrismaClient | undefined;
-    let fixtureDb: PrismaClient | undefined;
-    let ownsFixtureDb = false;
     let branchId = "";
 
     beforeAll(async () => {
       const databaseModule = await import("@platform/database");
       db = databaseModule.prisma;
-      fixtureDb = db;
-      const fixtureUrl = process.env.WORKER_TEST_FIXTURE_DATABASE_URL;
-      if (fixtureUrl) {
-        fixtureDb = databaseModule.createDatabaseClient(fixtureUrl);
-        ownsFixtureDb = true;
-      }
-      const branch = await fixtureDb.branch.create({
+      const branch = await db.branch.create({
         data: {
           branchCode: `WQ-${randomUUID().slice(0, 8)}`,
           name: "Worker queue integration branch",
@@ -40,17 +32,16 @@ describe.skipIf(!isDisposableTestDatabase)(
     }, 30_000);
 
     beforeEach(async () => {
-      if (fixtureDb && branchId) {
-        await fixtureDb.discoveryRun.deleteMany({ where: { branchId } });
+      if (db && branchId) {
+        await db.discoveryRun.deleteMany({ where: { branchId } });
       }
     });
 
     afterAll(async () => {
-      if (fixtureDb && branchId) {
-        await fixtureDb.discoveryRun.deleteMany({ where: { branchId } });
-        await fixtureDb.branch.delete({ where: { id: branchId } });
+      if (db && branchId) {
+        await db.discoveryRun.deleteMany({ where: { branchId } });
+        await db.branch.delete({ where: { id: branchId } });
       }
-      if (ownsFixtureDb) await fixtureDb?.$disconnect();
       await db?.$disconnect();
     });
 
@@ -59,8 +50,8 @@ describe.skipIf(!isDisposableTestDatabase)(
       attemptCount?: number;
       cancelRequested?: boolean;
     } = {}): Promise<string> {
-      if (!fixtureDb) throw new Error("Database fixture was not initialized.");
-      const run = await fixtureDb.discoveryRun.create({
+      if (!db) throw new Error("Database integration was not initialized.");
+      const run = await db.discoveryRun.create({
         data: {
           branchId,
           source: "SNMP",

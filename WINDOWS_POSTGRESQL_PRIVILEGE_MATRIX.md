@@ -104,3 +104,8 @@ This is a SQL-level CI experiment, not production role provisioning. It does not
 ## Restricted Prisma integration execution
 
 The runtime privilege CI script now invokes the API and Worker workspace integration suites before its cleanup trap removes the disposable roles. API route operations use the API candidate login; a separate administrator fixture connection is limited to audit-event assertions. Worker queue operations use the Worker candidate login; a separate fixture connection creates and removes test branches and queue rows. The Worker runtime identity remains restricted to SELECT/UPDATE on discovery_runs. This implementation of the integration-test gate remains pending exact-head CI. It does not provision production roles or credentials.
+
+
+## Restricted Prisma test harness build dependency
+
+The API and Worker workspace integration tests import @platform/database, whose package exports resolve to packages/database/dist/index.js. Prisma client generation alone does not compile that workspace entrypoint. The disposable privilege test script therefore builds the database workspace before running either restricted suite. This is test-harness build preparation only and does not grant additional privileges to API or Worker runtime roles.

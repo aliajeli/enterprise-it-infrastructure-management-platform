@@ -1,3 +1,8 @@
+## 0.1.154 — Build database workspace before restricted integration tests
+
+- Fixed the restricted-runtime CI sequence: Prisma client generation alone does not emit the @platform/database workspace entrypoint declared by its exports (dist/index.js). The privilege test script now builds the database workspace before invoking API and Worker integration suites.
+- This addresses the package-resolution failure observed in exact-head CI for 0.1.153; it does not change runtime grants or database behavior. The rerun must confirm both restricted suites actually execute.
+
 ## 0.1.153 — Run API and Worker Prisma suites with restricted runtime identities
 
 - API database integration tests use the API runtime login for route, session, branch and user operations; a separate disposable administrator fixture connection is reserved for audit-event verification and append-only trigger assertions.

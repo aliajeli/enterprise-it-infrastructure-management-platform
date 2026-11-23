@@ -1,3 +1,10 @@
+## 2026-11-23 — Build database workspace before restricted Prisma suites (0.1.154)
+
+- Exact-head CI for 0.1.153 passed Windows API runtime smoke and SQL privilege probes, but the API integration suite failed during module loading: @platform/database exports dist/index.js, while the workflow had only run Prisma client generation and had not compiled the workspace package.
+- The runtime privilege script now runs npm run build --workspace @platform/database before API/Worker integration tests. This emits the package entrypoint and generated Prisma client artifacts expected by workspace exports. No runtime grant is expanded.
+- 0.1.154 exact-head CI must establish that both restricted integration suites run. If API passes and Worker fails, inspect its own output before changing grants.
+- PR #7/#8/#9 remain unmerged. No MikroTik, firewall, NAT, DST-NAT, or port-mapping changes.
+
 ## 2026-11-23 — Restricted API/Worker Prisma integration suites (0.1.153)
 
 - The runtime privilege script now runs the API and Worker integration suites while the disposable least-privilege login roles remain provisioned.
