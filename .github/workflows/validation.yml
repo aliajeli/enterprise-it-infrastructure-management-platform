@@ -555,6 +555,24 @@ jobs:
             exit 1
           }
 
+  windows-isolated-account-probe:
+    name: Windows isolated account process access probe
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Probe synthetic isolated account process boundary
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-isolated-account-process-access.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Isolated account process probe failed::$message"
+            exit 1
+          }
+
   windows-initdb-restricted-child-access:
     name: Windows real initdb restricted child access probe
     runs-on: windows-latest

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.215 — 2026-11-24
+
+- Added a disposable Windows CI experiment for process access across a temporary non-admin local test account, with a same-account positive control and identity-checked cleanup. This is not PostgreSQL credential transport or production security approval.
+
 ## 0.1.214 — 2026-11-24
 
 - Added independent concurrent Vault provisioner fixture coverage and verified retry preserves existing data and exact ACLs. This nondeterministic test is not exhaustive race or Windows Server security acceptance.

@@ -1,3 +1,11 @@
+## 0.1.215 disposable isolated-account diagnostic — 2026-11-24
+
+Added a separate GitHub-hosted Windows CI-only experiment creating a random, expiring non-admin local account, starting a synthetic victim under that identity, and comparing PROCESS_DUP_HANDLE access from the runner identity versus a same-isolated-user positive control. Identity is checked for both processes, no PostgreSQL credential or marker is sent, and cleanup verifies the created SID before deleting the test account. The synthetic account password is randomly generated and used in process memory/OS account management only, never argv, files, logs or persistent environment. This is not integrated into deployment, does not test actual initdb, does not protect against a compromised admin or same-isolated-user attacker, and requires exact-head CI. Production secret transport, cluster ownership, bootstrap/migration and installer gates remain closed; independent security review and clean Windows Server acceptance remain mandatory. No merge/release authorized.
+
+## Latest completed CI — 2026-11-24
+
+[CI 45450355828](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45450355828) on `5acb70bae1d40ced4135725531ee46866d360730` (0.1.214) passed the Windows Vault provisioning policy step including the new three nondeterministic concurrent fixture rounds, deterministic fault tests and release-hook exclusion; Windows runtime, fast and fully assembled/extracted disposable migrations, publication, Web, Linux and isolated staging also passed. Overall failed: synthetic same-user interception, PROCESS_DUP_HANDLE access on real initdb child, and real named-pipe client PID mismatch. No production credential custody or clean Windows Server acceptance follows.
+
 ## 0.1.214 concurrent Vault provisioner fixtures — 2026-11-24
 
 Added three independent-process races against fresh SYSTEM-only CI fixtures, requiring at least one successful provisioning, exact Vault/lock ACLs, and a subsequent non-destructive retry preserving a sentinel. Scheduling is nondeterministic; this is supplemental race coverage, not exhaustive race proof or service-SID/Windows Server acceptance. Exact-head Windows CI required. Database initialization/bootstrap/migration/orchestration/installer remain disabled; no merge/release authorized.
