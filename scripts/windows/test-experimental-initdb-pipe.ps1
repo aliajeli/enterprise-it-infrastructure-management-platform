@@ -15,7 +15,7 @@ try{Invoke-ExperimentalInitDbPipe -Executable $pwsh -TestPrefixArguments @('-NoL
 if(-not $blocked -or (Test-Path -LiteralPath $fakeData)){throw 'Nonconnecting child must be terminated without data mutation.'}
 $blocked=$false
 try{Invoke-ExperimentalInitDbPipe -Executable $pwsh -TestPrefixArguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$fixture,'--fixture-wrong-client') -DataPath $fakeData -Password $secret -TimeoutSeconds 10|Out-Null}catch{
- if($_.Exception.Message -notlike '*verify-client-pid-mismatch*'){throw 'Wrong-client fixture did not reach the PID mismatch guard.'}
+ if($_.Exception.Message -notmatch '^Experimental initdb pipe operation failed at verify-client-pid-mismatch-(direct-same-image|other|unavailable)\.$'){throw 'Wrong-client fixture did not reach the fixed-only PID mismatch guard.'}
  $blocked=$true
 }
 if(-not $blocked){throw 'A different same-user process must not receive the pipe credential.'}

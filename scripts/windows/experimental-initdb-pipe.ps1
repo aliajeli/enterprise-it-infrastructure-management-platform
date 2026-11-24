@@ -117,7 +117,25 @@ public static class EnterpriseItInitDbPipeNative {
   }
   [uint32]$clientPid=0
   if(-not [EnterpriseItInitDbPipeNative]::GetNamedPipeClientProcessId($pipe.SafePipeHandle,[ref]$clientPid)){$stage='verify-client-query-failed';throw 'Unable to verify initdb pipe client.'}
-  if($clientPid -ne $process.Id){$stage='verify-client-pid-mismatch';throw 'Unexpected initdb pipe client.'}
+  if($clientPid -ne $process.Id){
+   # Diagnostic only: a direct child and matching executable path can suggest
+   # PostgreSQL's re-exec, but are not authentication. An adversary may spoof
+   # parentage or access the child. Never send the password on a PID mismatch.
+   $stage='verify-client-pid-mismatch-unavailable'
+   try{
+    $clientInfo=@(Get-CimInstance -ClassName Win32_Process -Filter ("ProcessId = "+[string]$clientPid) -ErrorAction Stop)
+    if($clientInfo.Count -eq 1 -and -not [string]::IsNullOrWhiteSpace([string]$clientInfo[0].ExecutablePath)){
+     $clientPath=[IO.Path]::GetFullPath([string]$clientInfo[0].ExecutablePath)
+     $expectedPath=[IO.Path]::GetFullPath($Executable)
+     if([uint32]$clientInfo[0].ParentProcessId -eq [uint32]$process.Id -and [string]::Equals($clientPath,$expectedPath,[StringComparison]::OrdinalIgnoreCase)){
+      $stage='verify-client-pid-mismatch-direct-same-image'
+     }else{$stage='verify-client-pid-mismatch-other'}
+    }
+   }catch{ # Diagnostics must never change the fail-closed decision.
+    $stage='verify-client-pid-mismatch-unavailable'
+   }
+   throw 'Unexpected initdb pipe client.'
+  }
   $stage='write-pipe'
   $cancel=[Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds($TimeoutSeconds))
   try{$pipe.WriteAsync($bytes,0,$bytes.Length,$cancel.Token).GetAwaiter().GetResult()}

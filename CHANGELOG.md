@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.220 — 2026-11-24
+
+- Added fixed-category, fail-closed diagnostics for experimental pipe client PID mismatch; matching parent/image remains explicitly insufficient for credential delivery. No production initializer or installer gate was opened.
+
 ## 0.1.219 — 2026-11-24
 
 - Extended the disposable failed-migration experiment to check preservation of deliberately committed partial effects through blocked retry and explicit synthetic reconciliation. Production migration remains disabled.
