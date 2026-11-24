@@ -103,7 +103,48 @@ SELECT session_user='fixture_migrator'
  $checkArgs=@('-X','-w','-h','127.0.0.1','-p',[string]$port,'-U','fixture_migrator','-d','fixture_database','-v','ON_ERROR_STOP=1','-t','-A','-q')
  $check=Invoke-TestChild $psql $checkArgs @{PGPASSWORD='synthetic-migrator-test-73'} ($query+"`n") $true
  if($check.ExitCode -ne 0 -or $check.Output.Trim() -cne 't'){throw 'Disposable migration ownership or repeat check failed.'}
- Write-Host 'Extracted Prisma tooling applied and repeated disposable migrations under the intended schema owner; production migration remains disabled.'
+ # These SQL grants model the existing Linux CI privilege matrix only. They
+ # are never wired to production provisioning and do not establish production
+ # credential handling, account ownership, or service-SID acceptance.
+ $grantSql=@'
+CREATE ROLE fixture_api LOGIN PASSWORD 'synthetic-api-test-74' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+CREATE ROLE fixture_worker LOGIN PASSWORD 'synthetic-worker-test-75' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+REVOKE CONNECT ON DATABASE fixture_database FROM PUBLIC;
+GRANT CONNECT ON DATABASE fixture_database TO fixture_migrator, fixture_api, fixture_worker;
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO fixture_api, fixture_worker;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, fixture_api, fixture_worker;
+GRANT SELECT, INSERT, UPDATE ON public.users, public.sessions, public.branches, public.user_branch_access, public.assets, public.switch_profiles, public.switch_ports, public.discovery_runs TO fixture_api;
+GRANT INSERT ON public.audit_events TO fixture_api;
+GRANT SELECT, INSERT ON public.port_observations TO fixture_api;
+GRANT SELECT, UPDATE ON public.discovery_runs TO fixture_worker;
+'@
+ $stage='create-fixture-runtime-grants'
+ $grantArgs=@('-X','-w','-h','127.0.0.1','-p',[string]$port,'-U','platform_admin','-d','fixture_database','-v','ON_ERROR_STOP=1','-q')
+ $grants=Invoke-TestChild $psql $grantArgs $adminEnv ($grantSql+"`n")
+ if($grants.ExitCode -ne 0){throw 'Disposable runtime grant fixture failed.'}
+ $stage='verify-runtime-grants'
+ $cases=@(
+  @{role='fixture_api';password='synthetic-api-test-74';sql='SELECT * FROM public.users LIMIT 0;';allow=$true},
+  @{role='fixture_api';password='synthetic-api-test-74';sql="INSERT INTO public.audit_events (id, actor_type, action, object_type, outcome) VALUES (gen_random_uuid(), 'SYSTEM', 'PRIVILEGE_TEST', 'test', 'SUCCESS');";allow=$true},
+  @{role='fixture_api';password='synthetic-api-test-74';sql='SELECT * FROM public.recovery_codes LIMIT 0;';allow=$false},
+  @{role='fixture_api';password='synthetic-api-test-74';sql='UPDATE public.audit_events SET action=action;';allow=$false},
+  @{role='fixture_api';password='synthetic-api-test-74';sql='SELECT * FROM public._prisma_migrations LIMIT 0;';allow=$false},
+  @{role='fixture_api';password='synthetic-api-test-74';sql='CREATE TABLE public.fixture_api_forbidden(id integer);';allow=$false},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='SELECT * FROM public.discovery_runs LIMIT 0;';allow=$true},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='UPDATE public.discovery_runs SET heartbeat_at=heartbeat_at WHERE false;';allow=$true},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='SELECT * FROM public.users LIMIT 0;';allow=$false},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='DELETE FROM public.discovery_runs;';allow=$false},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='SELECT * FROM public._prisma_migrations LIMIT 0;';allow=$false},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='CREATE ROLE fixture_forbidden;';allow=$false}
+ )
+ foreach($case in $cases){
+  $roleArgs=@('-X','-w','-h','127.0.0.1','-p',[string]$port,'-U',[string]$case.role,'-d','fixture_database','-v','ON_ERROR_STOP=1','-q')
+  $outcome=Invoke-TestChild $psql $roleArgs @{PGPASSWORD=[string]$case.password} ([string]$case.sql+"`n")
+  if(($outcome.ExitCode -eq 0) -ne [bool]$case.allow){throw 'Disposable runtime privilege assertion failed.'}
+ }
+ Write-Host 'Extracted Prisma tooling applied and repeated disposable migrations with schema ownership and synthetic runtime privilege checks; production migration remains disabled.'
+
 }catch{
  throw "Disposable PostgreSQL migration experiment failed at $stage."
 }finally{

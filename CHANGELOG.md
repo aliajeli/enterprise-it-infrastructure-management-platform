@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.205 — 2026-11-24
+
+- Expanded the disposable Windows PostgreSQL migration experiment with separate synthetic API and Worker roles and positive/negative SQL privilege checks. This does not implement production role provisioning or enable installer/database mutation.
+
 ## 0.1.204 — 2026-11-24
 
 - Removed potential task-result leakage into the experimental stdin return stream and strengthened strict-mode result-count checks in synthetic and disposable migration tests. No production credential or migration gate was opened.
