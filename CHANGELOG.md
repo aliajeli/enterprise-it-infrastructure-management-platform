@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.196 — 2026-11-24
+
+- Closed a no-bootstrap orchestration path that could act on an unverified PostgreSQL cluster; offline installation now stops before staging while initialization and ownership gates remain unresolved. Read-only WhatIf and archive inspection remain available. Added fail-closed regressions.
+
 ## 0.1.195 — 2026-11-24
 
 - Bounded disposable PostgreSQL authentication-test output handling and avoid waiting indefinitely for EOF from inherited pg_ctl descendant handles. Production gates remain disabled.

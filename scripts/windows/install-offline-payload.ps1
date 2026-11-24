@@ -85,6 +85,9 @@ if($MyInvocation.InvocationName -ne '.'){
  try{
  $plan=Get-OfflineInstallerPlan -PayloadArchive $PayloadArchive -ExpectedSha256 $ExpectedSha256 -ArchiveHandle $archiveLock
  if($WhatIfPreference){$plan|ConvertTo-Json -Depth 4;return}
+ # Do not stage an immutable version or invoke orchestration while database
+ # ownership/initialization is unresolved: that would leave partial installs.
+ throw "Offline installation is disabled pending PostgreSQL initialization and ownership verification; no files or services were changed."
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
  if([string]::IsNullOrWhiteSpace($EdgeBindAddress) -or [string]::IsNullOrWhiteSpace($EdgeTlsHostname) -or [string]::IsNullOrWhiteSpace($EdgeCertificateThumbprint)){throw "Edge bind address, TLS hostname and certificate thumbprint are required."}
  . (Join-Path $PSScriptRoot 'installer-preflight.ps1') -MinimumFreeSpaceGB $MinimumFreeSpaceGB

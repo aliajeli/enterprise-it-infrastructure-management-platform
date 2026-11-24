@@ -178,6 +178,10 @@ function Invoke-CredentialVaultProvisioner {
 }
 function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl,[hashtable]$Bootstrap=$null){
  if($null -ne $Bootstrap){throw "PostgreSQL bootstrap is disabled pending secure credential transport and ownership verification; no services were changed."}
+ # Existing PG_VERSION/config files do not prove this cluster belongs to us.
+ # Keep all mutation disabled, including the no-bootstrap path, until secure
+ # ownership verification and the first-install lifecycle are implemented.
+ throw "Service orchestration is disabled pending PostgreSQL cluster ownership verification; no services were changed."
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
   Test-WindowsServiceOrchestrationPayload -Plan $Plan|Out-Null
  $resolved=@([Net.Dns]::GetHostAddresses($Plan.EdgeTlsHostname)|ForEach-Object{$_.IPAddressToString})

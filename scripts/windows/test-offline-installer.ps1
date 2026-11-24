@@ -19,6 +19,13 @@ try{
  . $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash
  $plan=Get-OfflineInstallerPlan -PayloadArchive $valid -ExpectedSha256 $hash
  if($plan.EntryCount -ne 2){throw 'Valid archive entry count was not preserved.'}
+ $dry=& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -WhatIf | ConvertFrom-Json
+ if($dry.EntryCount -ne 2){throw 'Installer WhatIf must remain available for archive inspection.'}
+ $blocked=$false
+ try{& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -Confirm:$false|Out-Null}catch{
+  $blocked=$_.Exception.Message -like '*Offline installation is disabled*no files or services were changed*'
+ }
+ if(-not $blocked){throw 'Installer mutation must be blocked before staging an immutable payload.'}
  $readLock=Open-OfflineArchiveReadLock -ArchivePath $valid
  try{
   # Validation must still work while replacement/write attempts are denied.

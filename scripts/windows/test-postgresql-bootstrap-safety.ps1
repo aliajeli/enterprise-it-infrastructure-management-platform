@@ -32,4 +32,9 @@ try{Invoke-WindowsServiceOrchestration -Plan ([pscustomobject]@{}) -ApiDatabaseU
  $blocked=$_.Exception.Message -like '*PostgreSQL bootstrap is disabled*no services were changed*'
 }
 if(-not $blocked){throw "Orchestration must reject bootstrap before preflight or service mutation."}
+$blocked=$false
+try{Invoke-WindowsServiceOrchestration -Plan ([pscustomobject]@{}) -ApiDatabaseUrl $secret -WorkerDatabaseUrl $secret | Out-Null}catch{
+ $blocked=$_.Exception.Message -like '*Service orchestration is disabled*ownership verification*no services were changed*'
+}
+if(-not $blocked){throw "Orchestration without bootstrap must not adopt an unknown cluster."}
 Write-Host "PostgreSQL bootstrap safety gates passed."
