@@ -28,7 +28,7 @@ internal static class VaultProvisioner
     private const uint ShareRead = 1;
     private const uint ShareWrite = 2;
     private const uint OpenExisting = 3;
-    private const uint CreateNew = 1;
+    private const uint CreateNew = 2; // NT FILE_CREATE, not Win32 CREATE_NEW
     private const uint FileOpen = 1;
     private const uint BackupSemantics = 0x02000000;
     private const uint OpenReparsePoint = 0x00200000;
@@ -46,7 +46,7 @@ internal static class VaultProvisioner
     private const int FileIdInfoClass = 18;
     private const int FileDispositionInformationClass = 13;
     private static readonly Regex ServiceSidPattern = new(
-        @"^S-1-5-80-(?:\d+-){14}\d+$",
+        @"^S-1-5-80-(?:\d+-){4}\d+$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     internal static bool IsProvisioningMode(string[] args) =>
@@ -638,8 +638,7 @@ internal static class VaultProvisioner
             0x00040000 | // WRITE_DAC
             0x00080000 | // WRITE_OWNER
             0x10000000 | // GENERIC_ALL
-            0x40000000 | // GENERIC_WRITE
-            0x001F01FF;  // FILE_ALL_ACCESS
+            0x40000000;  // GENERIC_WRITE
         foreach (GenericAce ace in sd.DiscretionaryAcl)
         {
             if (ace is not CommonAce common) continue;

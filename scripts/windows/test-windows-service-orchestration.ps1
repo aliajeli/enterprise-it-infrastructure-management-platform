@@ -55,6 +55,7 @@ try{
  $junctionTarget=Join-Path $preflightRoot "junction-target"
  New-Item -ItemType Directory -Path $junctionTarget -Force|Out-Null
  [IO.File]::WriteAllText((Join-Path $junctionTarget "keyring.lock"),"")
+ Remove-Item -LiteralPath $keyringLock -Force -ErrorAction Stop
  Remove-Item -LiteralPath $vaultRoot -Force -ErrorAction Stop
  $junctionOutput=& cmd.exe /c "mklink /J `"$vaultRoot`" `"$junctionTarget`""
  if($LASTEXITCODE -ne 0){throw "Could not create the local junction fixture required for the reparse-point security test: $junctionOutput"}

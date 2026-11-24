@@ -1,7 +1,6 @@
 $ErrorActionPreference="Stop"
 # Credential Vault provisioner policy/integration tests.
-# Runs on Windows CI as admin. Uses a synthetic but canonical S-1-5-80 service SID
-# for ACL shape tests; SCM SID resolution is tested separately via orchestrator/API provisioning.
+# Runs on Windows CI as admin. Resolve the actual service SID via SCM for ACL shape tests.
 
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 $helperProject=Join-Path $repoRoot "apps\api\windows\keyring-storage-helper\CredentialVault.KeyringStorageHelper.csproj"
@@ -22,7 +21,11 @@ function Invoke-Provisioner([string[]]$Arguments){
  [pscustomobject]@{ExitCode=$p.ExitCode;StdOut=$outTask.GetAwaiter().GetResult();StdErr=$errTask.GetAwaiter().GetResult()}
 }
 
-$serviceSid="S-1-5-80-1000000000-2000000000-3000000000-4000000000-5000000000-6000000000-7000000000-8000000000-9000000000-1000000001-1000000002-1000000003-1000000004-1000000005-1000000006"
+$sidOutput=(& sc.exe showsid EnterpriseITApi 2>&1|Out-String)
+if($LASTEXITCODE -ne 0){throw "Could not resolve API service SID for test."}
+$sidMatch=[regex]::Match($sidOutput,'S-1-5-80-(?:\d+-){4}\d+')
+if(-not $sidMatch.Success){throw "SCM returned an invalid API service SID for test."}
+$serviceSid=$sidMatch.Value
 $badSid="S-1-5-21-1-2-3-1000"
 
 function New-TestRoot([string]$Name){
@@ -44,7 +47,7 @@ function Get-VaultPaths([string]$ProgramData){
 function Assert-AclExact([string]$Path,[string]$ExpectedServiceSid){
  $item=Get-Item -LiteralPath $Path -Force
  $acl=Get-Acl -LiteralPath $Path
- if($acl.Owner -ne $ExpectedServiceSid){throw "Owner mismatch for $Path: $($acl.Owner)"}
+ if($acl.Owner -ne $ExpectedServiceSid){throw "Owner mismatch for ${Path}: $($acl.Owner)"}
  if($acl.AreAccessRulesProtected -ne $true){throw "DACL not protected for $Path"}
  $rules=@($acl.Access|Where-Object{-not $_.IsInherited})
  if($rules.Count -ne 2){throw "Expected exactly 2 explicit ACEs for $Path, got $($rules.Count)"}

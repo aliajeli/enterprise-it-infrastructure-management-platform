@@ -237,6 +237,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-windows-service-orchestration.ps1
 
+      - name: Test PostgreSQL bootstrap safety gates
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-safety.ps1
+
       - name: Test Windows service host staging plan
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-windows-service-host-staging.ps1

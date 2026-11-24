@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.166 — 2026-11-24
+
+- Security correction: the 0.1.165 PostgreSQL bootstrap prototype embedded role passwords in SQL passed to `psql -c` (process arguments) and could reset existing roles or adopt an unknown database. The earlier claim of no argv secrets was incorrect. Removed the unsafe executable prototype and made bootstrap and migration fail closed; `-WhatIf` remains non-mutating. Orchestration rejects requested bootstrap before changing services. Secure transport, ownership verification and end-to-end database setup remain unimplemented.
+- Added a Windows regression for the fail-closed behavior and updated the offline-package and orchestration test fixtures. Corrected the service SID shape, native `FILE_CREATE` disposition and overbroad ProgramData write-mask check in the unverified Vault prototype. These changes and fixtures do not produce a real installer or prove Vault provisioning works.
+- Local Node 22: typecheck, build and unit test command passed using a dummy Prisma schema-engine path solely for client generation; DB/Windows integration tests were skipped or not run. This does not validate Prisma migrations or supported Node 26/Windows deployment. Exact-head hosted CI and clean Windows Server acceptance remain required.
+
 ## 0.1.165 — 2026-11-24
 
 ### Credential Vault provisioner (Batch A foundation)

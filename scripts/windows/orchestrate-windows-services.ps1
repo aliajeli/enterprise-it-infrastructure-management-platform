@@ -169,6 +169,7 @@ function Invoke-CredentialVaultProvisioner {
  [pscustomobject]@{status="ok";mode=$mode;serviceSid=$ServiceSid}
 }
 function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl,[hashtable]$Bootstrap=$null){
+ if($null -ne $Bootstrap){throw "PostgreSQL bootstrap is disabled pending secure credential transport and ownership verification; no services were changed."}
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
   Test-WindowsServiceOrchestrationPayload -Plan $Plan|Out-Null
  $resolved=@([Net.Dns]::GetHostAddresses($Plan.EdgeTlsHostname)|ForEach-Object{$_.IPAddressToString})
