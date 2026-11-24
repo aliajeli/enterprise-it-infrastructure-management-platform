@@ -27,6 +27,27 @@ try{
  }
  . $scriptPath -SourceRoot $source -OutputArchive $archive
  $plan=Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive $archive
+ # Simulate a checksum collision after the archive promotion. The final
+ # archive must remain and an existing checksum must never be overwritten.
+ $raceArchive=Join-Path $out 'race.zip';$raceChecksum=$raceArchive+'.sha256'
+ $stagedArchive=Join-Path $out 'race.archive.tmp';$stagedChecksum=Join-Path $out 'race.checksum.tmp'
+ [IO.File]::WriteAllText($stagedArchive,'archive-sentinel')
+ [IO.File]::WriteAllText($stagedChecksum,'new-checksum')
+ [IO.File]::WriteAllText($raceChecksum,'existing-checksum')
+ $rejected=$false
+ try{Publish-OfflinePayloadArtifacts -ArchiveTemp $stagedArchive -ChecksumTemp $stagedChecksum -OutputArchive $raceArchive -OutputChecksum $raceChecksum}catch{
+  $rejected=$_.Exception.Message -like '*archive was retained*do not treat it as a completed package*'
+ }
+ if(-not $rejected -or [IO.File]::ReadAllText($raceArchive) -cne 'archive-sentinel' -or [IO.File]::ReadAllText($raceChecksum) -cne 'existing-checksum' -or [IO.File]::ReadAllText($stagedChecksum) -cne 'new-checksum'){throw 'Failed checksum publication did not retain safe evidence.'}
+ # An existing final archive must remain untouched; neither staged file may
+ # be moved when the first promotion fails.
+ $existingArchive=Join-Path $out 'existing.zip';$existingChecksum=$existingArchive+'.sha256'
+ $stagedArchive2=Join-Path $out 'existing.archive.tmp';$stagedChecksum2=Join-Path $out 'existing.checksum.tmp'
+ [IO.File]::WriteAllText($existingArchive,'existing-archive')
+ [IO.File]::WriteAllText($stagedArchive2,'new-archive')
+ [IO.File]::WriteAllText($stagedChecksum2,'new-checksum')
+ $rejected=$false;try{Publish-OfflinePayloadArtifacts -ArchiveTemp $stagedArchive2 -ChecksumTemp $stagedChecksum2 -OutputArchive $existingArchive -OutputChecksum $existingChecksum}catch{$rejected=$true}
+ if(-not $rejected -or [IO.File]::ReadAllText($existingArchive) -cne 'existing-archive' -or [IO.File]::ReadAllText($stagedArchive2) -cne 'new-archive' -or -not(Test-Path -LiteralPath $stagedChecksum2) -or (Test-Path -LiteralPath $existingChecksum)){throw 'Existing final archive was modified or overwritten.'}
  if($plan.ApplicationVersion -ne "0.1.1" -or $plan.RequiredFiles.Count -ne $required.Count){throw "Unexpected offline package plan."}
  # Real monorepo output places server.js under apps/web; packaging must
  # accept exactly one known layout and reject ambiguous layouts.

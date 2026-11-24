@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.221 — 2026-11-24
+
+- Prevented deletion by pathname of a published offline archive when checksum publication fails. Added collision regressions; incomplete archives are retained for inspection, not treated as completed packages.
+
 ## 0.1.220 — 2026-11-24
 
 - Added fixed-category, fail-closed diagnostics for experimental pipe client PID mismatch; matching parent/image remains explicitly insufficient for credential delivery. No production initializer or installer gate was opened.

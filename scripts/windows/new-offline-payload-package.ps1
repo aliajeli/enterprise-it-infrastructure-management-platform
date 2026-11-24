@@ -54,6 +54,23 @@ function Get-OfflinePayloadPackagePlan {
  if((Test-Path -LiteralPath $archive) -or (Test-Path -LiteralPath $hashPath)){throw "Output archive or checksum already exists; refusing to overwrite."}
  [pscustomobject]@{SourceRoot=$source;OutputArchive=$archive;ChecksumPath=$hashPath;ApplicationVersion=$version;RequiredFiles=$required}
 }
+function Publish-OfflinePayloadArtifacts {
+ [CmdletBinding()]
+ param(
+  [Parameter(Mandatory=$true)][string]$ArchiveTemp,
+  [Parameter(Mandatory=$true)][string]$ChecksumTemp,
+  [Parameter(Mandatory=$true)][string]$OutputArchive,
+  [Parameter(Mandatory=$true)][string]$OutputChecksum
+ )
+ # Both moves fail if the destination exists. Once the archive is visible,
+ # do not delete it by pathname in an error handler: another process could
+ # replace that pathname before cleanup. Preserve the orphan for inspection.
+ [IO.File]::Move($ArchiveTemp,$OutputArchive)
+ try{[IO.File]::Move($ChecksumTemp,$OutputChecksum)}catch{
+  throw 'Archive was published but checksum publication failed. The archive was retained for administrator inspection; do not treat it as a completed package.'
+ }
+}
+
 if($MyInvocation.InvocationName -ne "."){
  $plan=Get-OfflinePayloadPackagePlan -SourceRoot $SourceRoot -OutputArchive $OutputArchive
  if($WhatIfPreference){[pscustomobject]@{sourceRoot=$plan.SourceRoot;outputArchive=$plan.OutputArchive;checksumPath=$plan.ChecksumPath;applicationVersion=$plan.ApplicationVersion;requiredComponents=$plan.RequiredFiles.Count;overwrite=$false;dryRun=$true}|ConvertTo-Json -Depth 4;return}
@@ -63,7 +80,6 @@ if($MyInvocation.InvocationName -ne "."){
  $work=Join-Path $parent (".enterpriseit-payload-"+[guid]::NewGuid().ToString("N"))
  $archiveTemp=$plan.OutputArchive+".staging."+[guid]::NewGuid().ToString("N")
  $checksumTemp=$plan.ChecksumPath+".staging."+[guid]::NewGuid().ToString("N")
- $promotedArchive=$false
  try{
   New-Item -ItemType Directory -Path $work -ErrorAction Stop|Out-Null
   foreach($item in Get-ChildItem -LiteralPath $plan.SourceRoot -Force){Copy-Item -LiteralPath $item.FullName -Destination $work -Recurse}
@@ -92,12 +108,8 @@ if($MyInvocation.InvocationName -ne "."){
   $archiveHash=(Get-FileHash -LiteralPath $archiveTemp -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText($checksumTemp,($archiveHash+"  "+[IO.Path]::GetFileName($plan.OutputArchive)+[Environment]::NewLine),[Text.UTF8Encoding]::new($false))
   if((Test-Path -LiteralPath $plan.OutputArchive) -or (Test-Path -LiteralPath $plan.ChecksumPath)){throw "Output destination appeared during packaging; refusing overwrite."}
-  [IO.File]::Move($archiveTemp,$plan.OutputArchive);$promotedArchive=$true
-  [IO.File]::Move($checksumTemp,$plan.ChecksumPath)
+  Publish-OfflinePayloadArtifacts -ArchiveTemp $archiveTemp -ChecksumTemp $checksumTemp -OutputArchive $plan.OutputArchive -OutputChecksum $plan.ChecksumPath
   [pscustomobject]@{status="created";applicationVersion=$plan.ApplicationVersion;archive=$plan.OutputArchive;sha256=$archiveHash;checksumFile=$plan.ChecksumPath;payloadFileCount=$verified.fileCount;payloadBytes=$verified.totalBytes;manifestVerified=$true;signatureIncluded=$false;installerIncluded=$false}|ConvertTo-Json -Depth 4
- }catch{
-  if($promotedArchive -and (Test-Path -LiteralPath $plan.OutputArchive)){Remove-Item -LiteralPath $plan.OutputArchive -Force -ErrorAction SilentlyContinue}
-  throw
  }finally{
   foreach($path in @($work,$archiveTemp,$checksumTemp)){if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue}}
  }
