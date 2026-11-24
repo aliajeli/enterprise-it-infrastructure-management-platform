@@ -1,3 +1,11 @@
+## 2026-11-24 — Add Credential Vault junction rejection regression (0.1.161)
+
+- Rechecked branch HEAD and confirmed the previous exact-head CI run 45197367123 succeeded on 0.1.160. PR #7, #8 and #9 remain Draft/open/unmerged.
+- Added a Windows PowerShell policy-test fixture that creates a same-volume directory junction at the CredentialVault path and asserts orchestration preflight rejects it. The fixture is isolated under the test's temporary ProgramDataRoot and the ordinary directory is restored before later assertions.
+- No production provisioning behavior was changed. The helper still requires the Vault directory and lock file to have the exact service-SID owner and protected two-entry DACL (service SID + LocalSystem), verified by handle. This commit does not create that store or claim owner/DACL acceptance.
+- Exact-head CI is pending. Node Keyring adapter registration, durable credential persistence, parent-directory trust validation, crash-orphan cleanup and clean Windows Server acceptance remain open.
+- No PR was merged. No firewall, router, MikroTik, NAT, DST-NAT or port-mapping changes.
+
 ## 2026-11-23 — Isolate Windows orchestration fixtures (0.1.160)
 
 - Review immediately after 0.1.159 identified that the new test fixture referenced the runner's real `%ProgramData%`. Changed the orchestration test plan to accept an injectable ProgramDataRoot and moved all keyring fixture creation/removal under its temporary test directory.

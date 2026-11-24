@@ -32,6 +32,20 @@ try{
  $missingKeyringRejected=$false
  try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$missingKeyringRejected=$true}
  if(-not $missingKeyringRejected){throw "Missing Credential Vault lock file must fail before service provisioning."}
+
+ # A directory junction at the Vault boundary must be rejected before any service mutation.
+ $vaultRoot=Split-Path -Parent $keyringLock
+ $junctionTarget=Join-Path $preflightRoot "junction-target"
+ New-Item -ItemType Directory -Path $junctionTarget -Force|Out-Null
+ [IO.File]::WriteAllText((Join-Path $junctionTarget "keyring.lock"),"")
+ Remove-Item -LiteralPath $vaultRoot -Force -ErrorAction Stop
+ $junctionOutput=& cmd.exe /c "mklink /J `"$vaultRoot`" `"$junctionTarget`""
+ if($LASTEXITCODE -ne 0){throw "Could not create the local junction fixture required for the reparse-point security test: $junctionOutput"}
+ $junctionRejected=$false
+ try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$junctionRejected=$true}
+ if(-not $junctionRejected){throw "Credential Vault directory junction must be rejected during preflight."}
+ Remove-Item -LiteralPath $vaultRoot -Force -ErrorAction Stop
+ New-Item -ItemType Directory -Path $vaultRoot -Force|Out-Null
  [IO.File]::WriteAllText($keyringLock,"")
  $edgeHost=Join-Path $fixturePlan.InstallRoot "EnterpriseIT.EdgeServiceHost.exe"
  Remove-Item -LiteralPath $edgeHost -Force

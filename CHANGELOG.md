@@ -1,3 +1,9 @@
+## 0.1.161 — Exercise Credential Vault junction rejection in orchestration preflight
+
+- Extended the Windows orchestration policy test with a real same-volume directory-junction fixture at the CredentialVault boundary.
+- The test proves a reparse-point Vault directory is rejected before orchestration can provision or start services; the fixture is removed and the ordinary temporary directory is restored before subsequent checks.
+- This is regression coverage for the existing fail-closed guard only. It does not provision the Vault, validate owner/DACL, or enable credential persistence. Exact-head Windows CI is required.
+
 ## 0.1.160 — Isolate Credential Vault preflight fixtures from host ProgramData
 
 - Corrected the 0.1.159 orchestration regression test so its ProgramData root is injected from a temporary fixture directory instead of writing under the Windows runner's real `%ProgramData%`.
