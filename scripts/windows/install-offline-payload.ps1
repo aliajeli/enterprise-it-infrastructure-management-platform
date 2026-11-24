@@ -15,15 +15,20 @@ $ErrorActionPreference="Stop"
 
 function Test-OfflineInstallerArchive {
  [CmdletBinding()]
- param([Parameter(Mandatory=$true)][string]$ArchivePath,[Parameter(Mandatory=$true)][string]$ExpectedSha256)
+ param([Parameter(Mandatory=$true)][string]$ArchivePath,[Parameter(Mandatory=$true)][string]$ExpectedSha256,[IO.FileStream]$ArchiveHandle)
  $archive=[IO.Path]::GetFullPath($ArchivePath)
- if(-not(Test-Path -LiteralPath $archive -PathType Leaf)){throw "Offline payload archive does not exist."}
  if($ExpectedSha256 -notmatch '^[A-Fa-f0-9]{64}$'){throw "An independently obtained SHA-256 digest is required."}
- $actual=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash
- if(-not [string]::Equals($actual,$ExpectedSha256,[StringComparison]::OrdinalIgnoreCase)){throw "Offline payload archive digest does not match the trusted expected SHA-256 value."}
- Add-Type -AssemblyName System.IO.Compression.FileSystem
- $zip=[IO.Compression.ZipFile]::OpenRead($archive)
+ $ownsHandle=$null -eq $ArchiveHandle
+ if($ownsHandle){$ArchiveHandle=Open-OfflineArchiveReadLock -ArchivePath $archive}
  try{
+  $ArchiveHandle.Position=0
+  $sha=[Security.Cryptography.SHA256]::Create()
+  try{$actual=[Convert]::ToHexString($sha.ComputeHash($ArchiveHandle))}finally{$sha.Dispose()}
+  if(-not [string]::Equals($actual,$ExpectedSha256,[StringComparison]::OrdinalIgnoreCase)){throw "Offline payload archive digest does not match the trusted expected SHA-256 value."}
+  $ArchiveHandle.Position=0
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $zip=[IO.Compression.ZipArchive]::new($ArchiveHandle,[IO.Compression.ZipArchiveMode]::Read,$true)
+  try{
   $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
   $hasPackage=$false;$hasManifest=$false
   [int64]$totalExpanded=0
@@ -50,21 +55,35 @@ function Test-OfflineInstallerArchive {
    }
   }
   if(-not $hasPackage -or -not $hasManifest){throw "ZIP root must contain package.json and payload.manifest.json."}
-  [pscustomobject]@{archive=$archive;sha256=$actual;entryCount=$zip.Entries.Count;expandedBytes=$totalExpanded}
- }finally{$zip.Dispose()}
+   [pscustomobject]@{archive=$archive;sha256=$actual;entryCount=$zip.Entries.Count;expandedBytes=$totalExpanded}
+  }finally{$zip.Dispose()}
+ }finally{
+  if($ownsHandle){$ArchiveHandle.Dispose()}else{$ArchiveHandle.Position=0}
+ }
 }
 
 function Get-OfflineInstallerPlan {
  [CmdletBinding()]
- param([string]$PayloadArchive,[string]$ExpectedSha256)
- $archivePlan=Test-OfflineInstallerArchive -ArchivePath $PayloadArchive -ExpectedSha256 $ExpectedSha256
+ param([string]$PayloadArchive,[string]$ExpectedSha256,[IO.FileStream]$ArchiveHandle)
+ $archivePlan=Test-OfflineInstallerArchive -ArchivePath $PayloadArchive -ExpectedSha256 $ExpectedSha256 -ArchiveHandle $ArchiveHandle
  $programFiles=[IO.Path]::GetFullPath([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles))
  $base=Join-Path $programFiles 'EnterpriseIT'
  [pscustomobject]@{Archive=$archivePlan.archive;Sha256=$archivePlan.sha256;EntryCount=$archivePlan.entryCount;ExpandedBytes=$archivePlan.expandedBytes;BaseDirectory=$base}
 }
 
+function Open-OfflineArchiveReadLock {
+ [CmdletBinding()]
+ param([Parameter(Mandatory=$true)][string]$ArchivePath)
+ $full=[IO.Path]::GetFullPath($ArchivePath)
+ # Keep one non-write-sharing handle for digest validation, ZIP inspection and
+ # extraction; all content reads use this handle even if an ancestor is renamed.
+ return [IO.File]::Open($full,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+}
+
 if($MyInvocation.InvocationName -ne '.'){
- $plan=Get-OfflineInstallerPlan -PayloadArchive $PayloadArchive -ExpectedSha256 $ExpectedSha256
+ $archiveLock=Open-OfflineArchiveReadLock -ArchivePath $PayloadArchive
+ try{
+ $plan=Get-OfflineInstallerPlan -PayloadArchive $PayloadArchive -ExpectedSha256 $ExpectedSha256 -ArchiveHandle $archiveLock
  if($WhatIfPreference){$plan|ConvertTo-Json -Depth 4;return}
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
  if([string]::IsNullOrWhiteSpace($EdgeBindAddress) -or [string]::IsNullOrWhiteSpace($EdgeTlsHostname) -or [string]::IsNullOrWhiteSpace($EdgeCertificateThumbprint)){throw "Edge bind address, TLS hostname and certificate thumbprint are required."}
@@ -77,7 +96,8 @@ if($MyInvocation.InvocationName -ne '.'){
  if($null -eq $programFilesLocation -or [int64]$programFilesLocation.FreeBytes -lt $requiredFreeBytes){throw "Program Files volume lacks space for the expanded payload plus the configured free-space reserve."}
  if($PSCmdlet.ShouldProcess($plan.BaseDirectory,"Verify, stage and install the offline Enterprise IT payload")){
   if(-not(Test-Path -LiteralPath $plan.BaseDirectory -PathType Container)){New-Item -ItemType Directory -Path $plan.BaseDirectory -Force|Out-Null}
-  $manifestZip=[IO.Compression.ZipFile]::OpenRead($plan.Archive)
+  $archiveLock.Position=0
+  $manifestZip=[IO.Compression.ZipArchive]::new($archiveLock,[IO.Compression.ZipArchiveMode]::Read,$true)
   try{
    $manifestEntry=$manifestZip.GetEntry('payload.manifest.json')
    $packageEntry=$manifestZip.GetEntry('package.json')
@@ -93,7 +113,9 @@ if($MyInvocation.InvocationName -ne '.'){
   $staging=Join-Path $plan.BaseDirectory ('.staging-'+[guid]::NewGuid().ToString('N'))
   try{
    New-Item -ItemType Directory -Path $staging -ErrorAction Stop|Out-Null
-   [IO.Compression.ZipFile]::ExtractToDirectory($plan.Archive,$staging)
+   $archiveLock.Position=0
+   $zipForExtraction=[IO.Compression.ZipArchive]::new($archiveLock,[IO.Compression.ZipArchiveMode]::Read,$true)
+   try{[IO.Compression.ZipFileExtensions]::ExtractToDirectory($zipForExtraction,$staging)}finally{$zipForExtraction.Dispose()}
    . (Join-Path $PSScriptRoot 'new-offline-payload-manifest.ps1') -PayloadRoot $staging
    $verified=Test-OfflinePayloadManifest -PayloadRoot $staging -ExpectedApplicationVersion $version
    if(-not $verified.valid){throw "Extracted payload manifest verification failed."}
@@ -106,4 +128,5 @@ if($MyInvocation.InvocationName -ne '.'){
    throw "Payload $version was staged at '$installRoot', but service orchestration failed. The immutable payload was retained for diagnosis. $($_.Exception.Message)"
   }
  }
+ }finally{$archiveLock.Dispose()}
 }

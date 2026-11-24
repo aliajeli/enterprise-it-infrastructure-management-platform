@@ -19,6 +19,23 @@ try{
  . $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash
  $plan=Get-OfflineInstallerPlan -PayloadArchive $valid -ExpectedSha256 $hash
  if($plan.EntryCount -ne 2){throw 'Valid archive entry count was not preserved.'}
+ $readLock=Open-OfflineArchiveReadLock -ArchivePath $valid
+ try{
+  # Validation must still work while replacement/write attempts are denied.
+  $lockedPlan=Get-OfflineInstallerPlan -PayloadArchive $valid -ExpectedSha256 $hash -ArchiveHandle $readLock
+  if($lockedPlan.EntryCount -ne 2){throw 'Locked archive validation failed.'}
+  # A path replacement or renamed ancestor must not change what is hashed or
+  # inspected: the verified content comes only from the retained file handle.
+  $missingPath=Join-Path $root 'does-not-exist.zip'
+  $sameHandlePlan=Get-OfflineInstallerPlan -PayloadArchive $missingPath -ExpectedSha256 $hash -ArchiveHandle $readLock
+  if($sameHandlePlan.EntryCount -ne 2){throw 'Archive verification unexpectedly reopened its path.'}
+  $writeRejected=$false
+  try{$writer=[IO.File]::Open($valid,[IO.FileMode]::Open,[IO.FileAccess]::Write,[IO.FileShare]::Read);$writer.Dispose()}catch{$writeRejected=$true}
+  if(-not $writeRejected){throw 'Archive write was accepted while validation held its lock.'}
+  $deleteRejected=$false
+  try{[IO.File]::Move($valid,(Join-Path $root 'moved.zip'))}catch{$deleteRejected=$true}
+  if(-not $deleteRejected){throw 'Archive replacement was accepted while validation held its lock.'}
+ }finally{$readLock.Dispose()}
  $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $valid -ExpectedSha256 ('0'*64)|Out-Null}catch{$rejected=$true}
  if(-not $rejected){throw 'Archive with an incorrect trusted digest was accepted.'}
  $unsafe=Join-Path $root 'unsafe.zip'

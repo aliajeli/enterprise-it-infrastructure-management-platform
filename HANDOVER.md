@@ -1,3 +1,7 @@
+## 0.1.186 archive handle and PostgreSQL evidence — 2026-11-24
+
+Windows run 45388522058 on 13ef9e6dd95e2be20dfada75f5e8636d3ce82422 reported `child-exited-before-client-1-pwfile-open-permission` for real PostgreSQL before secret transmission; restricted token and pipe access remain unresolved and production initialization/bootstrap/migration remain disabled. Hardened offline installer foundation to hash, inspect, read manifest and extract via one retained read-only archive handle, with Windows write/rename and no-path-reopen tests. Exact-head CI and independent security review required; this does not complete installer assembly/signing or clean Windows Server acceptance.
+
 ## 0.1.185 PostgreSQL pipe-open classification — 2026-11-24
 
 Hosted run 45387588398 on bbe527ffb5ef0205da39e91ef3f4166ebbe82c9a passed Windows reproducible archive fixtures, six self-contained executable publications, existing Windows validation and Linux Node 26/PostgreSQL 18. The actual Windows initdb pipe experiment failed before the secret was sent: `child-exited-before-client-1-pwfile-open`. Added fixed error-type subcategories, never raw child output. PostgreSQL's Windows restricted-token re-exec and the pipe's current-user/elevation checks must be resolved while preserving exact client authentication and avoiding privilege bypass; production initialization, bootstrap and migration remain disabled. No full installer or clean Windows Server VM acceptance. Exact-head CI required.

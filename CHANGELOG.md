@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.186 — 2026-11-24
+
+- Hardened the offline installer foundation against archive substitution: SHA-256 validation, ZIP entry inspection, manifest reading and extraction now all use a single retained read-only file handle rather than reopening a path after validation. Added Windows tests for denied writes/renames and handle-based verification independent of the original path. Exact-head CI and independent security review required; this is not a completed installer.
+- Hosted real Windows PostgreSQL experiment run 45388522058 on 0.1.185 failed with permission denied opening the named pipe before any secret was sent. The restricted-token/pipe-client issue remains open; production initialization/bootstrap/migration remain disabled. No Windows Server VM acceptance or installer artifact.
+
 ## 0.1.185 — 2026-11-24
 
 - Hosted run 45387588398 on 0.1.184 passed reproducible offline archive fixture tests, six actual self-contained Windows executable publications, existing Windows validation and Linux Node 26/PostgreSQL 18; real Windows initdb failed opening the protected named pipe before any secret was sent. Added fixed error-type subcategories without logging child output or secrets. Exact-head CI required.
