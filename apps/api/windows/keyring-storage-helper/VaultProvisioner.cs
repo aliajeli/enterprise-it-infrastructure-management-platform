@@ -25,7 +25,6 @@ internal static class VaultProvisioner
     private const uint DeleteAccess = 0x10000;
     private const uint FileAddFile = 0x2;
     private const uint FileAddSubdirectory = 0x4;
-    private const uint FileDeleteChild = 0x40;
     private const uint ShareRead = 1;
     private const uint ShareWrite = 2;
     private const uint OpenExisting = 3;
@@ -361,7 +360,11 @@ internal static class VaultProvisioner
         bool verifyOnly, string sddl,
         Action<SafeFileHandle, SecurityIdentifier> verifyAcl, string label)
     {
-        var access = FileReadAttributes | ReadControl | Synchronize | (verifyOnly ? 0u : (FileAddFile | FileAddSubdirectory | FileDeleteChild));
+        // Request only the right required to create the next fixed child. In
+        // particular FILE_DELETE_CHILD is neither needed nor granted by the
+        // narrowly scoped backup/restore privilege for the protected Vault.
+        var access = FileReadAttributes | ReadControl | Synchronize |
+            (verifyOnly ? 0u : name == "EnterpriseIT" ? FileAddSubdirectory : FileAddFile);
         try
         {
             var existing = OpenRelativeDirectory(parent, name, access, FileOpen);

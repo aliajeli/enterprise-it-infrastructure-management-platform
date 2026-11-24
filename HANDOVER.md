@@ -1,3 +1,7 @@
+## 0.1.176 least-rights Vault retry fix — 2026-11-24
+
+Windows run 45375850378 on 753e03da1463edbf185031ed8252f07a03a0f4f0: elevated admin fresh provision and verify succeeded, third (retry) attempt failed `credential-vault:win32-5`; Linux Node 26/PostgreSQL 18 passed. Candidate fix requests only FILE_ADD_SUBDIRECTORY on EnterpriseIT and FILE_ADD_FILE on Vault, not FILE_DELETE_CHILD. Verify exact-head CI, SYSTEM adversarial fixtures and full security/Windows Server acceptance. First-install DB bootstrap remains disabled and no installer has been built.
+
 ## 0.1.175 Vault smoke diagnostics — 2026-11-24
 
 Windows run 45375347730 on 4103750bb9fc632c028b0cb7b04e2e5a355dbb45 passed Linux Node 26/PostgreSQL 18, compiled the Vault helper, but failed the elevated non-SYSTEM smoke with `path-validation-failed` during a provision attempt. Added safe fixed-component/native error code and attempt diagnostics; run exact-head Windows CI. The independent SYSTEM fixture tests did not run in this CI. No installer; PostgreSQL bootstrap remains disabled.

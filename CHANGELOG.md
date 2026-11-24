@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.176 — 2026-11-24
+
+- Windows run 45375850378 showed the elevated admin could provision and verify a Vault but repeat provisioning failed opening the protected Vault with Win32 access denied. Reduced parent-handle access to the exact child-creation right needed at each level; removed unnecessary FILE_DELETE_CHILD and unrelated add-subdirectory rights on the Vault. ACL/owner checks remain unchanged. Exact-head Windows CI and independent security/Windows Server acceptance remain required. Linux Node 26/PostgreSQL 18 passed. No installer.
+
 ## 0.1.175 — 2026-11-24
 
 - Windows run 45375347730 compiled the Vault helper but the independent elevated-admin provision/verify/retry smoke failed with a generic path error. Added safe fixed-component/numeric Windows error diagnostics and attempt numbering; no ACL, owner or security checks were relaxed. Linux Node 26/PostgreSQL 18 passed. Exact-head CI and Windows Server/security acceptance remain pending; no installer exists.
