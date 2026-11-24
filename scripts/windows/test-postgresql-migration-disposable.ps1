@@ -119,7 +119,16 @@ SELECT session_user='fixture_migrator'
  $fixtureDir=Join-Path $scratchMigrations $fixtureName
  New-Item -ItemType Directory -Path $fixtureDir -ErrorAction Stop|Out-Null
  $fixtureSql=Join-Path $fixtureDir 'migration.sql'
- [IO.File]::WriteAllText($fixtureSql,"SELECT 1 / 0;`n",[Text.UTF8Encoding]::new($false))
+ # Explicit COMMIT leaves a deliberately partial effect before the error;
+ # never assume all PostgreSQL migration scripts are transactionally atomic.
+ $brokenSql=@'
+BEGIN;
+CREATE TABLE public.fixture_partial (id integer PRIMARY KEY);
+INSERT INTO public.fixture_partial VALUES (42);
+COMMIT;
+SELECT 1 / 0;
+'@
+ [IO.File]::WriteAllText($fixtureSql,($brokenSql+"`n"),[Text.UTF8Encoding]::new($false))
  $scratchConfig=Join-Path $scratch 'prisma.config.ts'
  $schemaJson=([string](Join-Path $payload 'packages\database\prisma\schema.prisma')).Replace('\','/') | ConvertTo-Json -Compress
  $migrationsJson=([string]$scratchMigrations).Replace('\','/') | ConvertTo-Json -Compress
@@ -136,7 +145,9 @@ SELECT session_user='fixture_migrator'
  $verifyFailed=@"
 SELECT (SELECT count(*) FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL)=$count
  AND (SELECT count(*) FROM public._prisma_migrations WHERE migration_name='$fixtureName' AND finished_at IS NULL AND rolled_back_at IS NULL)=1
- AND (SELECT count(*) FROM public.fixture_preserve WHERE id=41)=1;
+ AND (SELECT count(*) FROM public.fixture_preserve WHERE id=41)=1
+ AND (SELECT count(*) FROM public.fixture_partial WHERE id=42)=1
+ AND (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='public.fixture_partial'::regclass)='fixture_owner';
 "@
  $failedState=Invoke-TestChild $psql $checkArgs @{PGPASSWORD='synthetic-migrator-test-73'} ($verifyFailed+"`n") $true
  if($failedState.ExitCode -ne 0 -or $failedState.Output.Trim() -cne 't'){throw 'Failed migration did not preserve expected evidence and data.'}
@@ -147,6 +158,9 @@ SELECT (SELECT count(*) FROM public._prisma_migrations WHERE finished_at IS NOT 
  $resolveArgs=@($prisma,'migrate','resolve','--rolled-back',$fixtureName,'--config',$scratchConfig)
  $resolve=Invoke-TestChild $node $resolveArgs $migrationEnv $null $true
  if($resolve.ExitCode -ne 0){throw 'Explicit synthetic migration rollback resolution failed.'}
+ # This modified scratch migration represents explicit operator-reviewed
+ # reconciliation after the partial effects above have been inspected. It is
+ # not an automatic repair strategy for a real migration or production data.
  [IO.File]::WriteAllText($fixtureSql,"CREATE TABLE public.fixture_recovered (id integer PRIMARY KEY);`n",[Text.UTF8Encoding]::new($false))
  $stage='verify-explicit-migration-recovery'
  foreach($attempt in 1..2){
@@ -157,6 +171,8 @@ SELECT (SELECT count(*) FROM public._prisma_migrations WHERE finished_at IS NOT 
 SELECT (SELECT count(*) FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL)=($count+1)
  AND (SELECT count(*) FROM public._prisma_migrations WHERE migration_name='$fixtureName' AND rolled_back_at IS NOT NULL)=1
  AND (SELECT count(*) FROM public.fixture_preserve WHERE id=41)=1
+ AND (SELECT count(*) FROM public.fixture_partial WHERE id=42)=1
+ AND (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='public.fixture_partial'::regclass)='fixture_owner'
  AND (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='public.fixture_recovered'::regclass)='fixture_owner';
 "@
  $recovered=Invoke-TestChild $psql $checkArgs @{PGPASSWORD='synthetic-migrator-test-73'} ($verifyRecovered+"`n") $true

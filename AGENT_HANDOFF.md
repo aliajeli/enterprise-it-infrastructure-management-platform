@@ -5,7 +5,7 @@
 **Snapshot:** 2026-11-24  
 **Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
 **HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
-**Root package version:** `0.1.218`
+**Root package version:** `0.1.219`
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
 
@@ -70,12 +70,12 @@ Project is **not production-ready**.
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
 Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
 Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
-Current version: `0.1.218`
+Current version: `0.1.219`
 
-Latest completed validation before 0.1.218:
+Latest completed validation before 0.1.219:
 - Run [45450355828](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45450355828) on `5acb70bae1d40ced4135725531ee46866d360730` (0.1.214) failed overall: synthetic same-user stdin interception, real initdb named-pipe PID mismatch and same-user PROCESS_DUP_HANDLE access to real initdb re-exec. No credential was sent in the latter probe.
 - Windows installer/archive and preflight fixture tests, Windows runtime, Web, disposable fast and assembled/extracted PostgreSQL migration experiments, Linux validation and self-contained publish passed. These are fixtures, not secure production credential transport or supported Windows Server acceptance.
-- 0.1.211 changed Vault handle retention/rollback; 0.1.214 Windows CI passed pre/post-identity fault and nondeterministic concurrent fixture tests. On 0.1.217 an elevated runner obtained PROCESS_DUP_HANDLE on a separate non-admin fixture process, so a simple separate user does not solve credential custody. 0.1.218 adds a disposable failed-migration/recovery experiment. Exact-head Windows CI and independent security review are required. See HANDOVER.md for current detail.
+- 0.1.211 changed Vault handle retention/rollback; 0.1.214 Windows CI passed pre/post-identity fault and nondeterministic concurrent fixture tests. On 0.1.217 an elevated runner obtained PROCESS_DUP_HANDLE on a separate non-admin fixture process, so a simple separate user does not solve credential custody. 0.1.218 fast CI passed a disposable failed-migration/recovery experiment; 0.1.219 extends it to deliberately committed partial effects. Exact-head Windows CI and independent security review are required. See HANDOVER.md for current detail.
 
 Current open PR constraints:
 - PR #7: Draft/open/unmerged — do not merge.

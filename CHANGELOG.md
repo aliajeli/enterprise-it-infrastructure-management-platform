@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.219 — 2026-11-24
+
+- Extended the disposable failed-migration experiment to check preservation of deliberately committed partial effects through blocked retry and explicit synthetic reconciliation. Production migration remains disabled.
+
 ## 0.1.218 — 2026-11-24
 
 - Added disposable Windows Prisma failed-migration, blocked-retry, explicit resolution and data/ownership preservation checks using a scratch migration tree. Production migration and installer remain disabled.

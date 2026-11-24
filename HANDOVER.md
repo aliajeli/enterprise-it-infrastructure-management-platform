@@ -1,3 +1,11 @@
+## 0.1.219 disposable partial-migration recovery experiment — 2026-11-24
+
+Extended the disposable failed migration fixture so it explicitly commits a table and sentinel before triggering an error. The test checks failed-migration evidence, schema ownership and preserved partial data, automatic retry refusal, and explicit synthetic operator-style reconciliation without deleting the partial or baseline data. Modifications are confined to a scratch migration tree, never the extracted payload. This simulates a SQL failure with partial committed effects, not a process crash or a production recovery runbook. Exact-head Windows CI required. Credential transport, real bootstrap/migration/installer, independent review and clean Windows Server acceptance remain outstanding. No merge/release authorized.
+
+## CI in progress — 2026-11-24
+
+[CI 45456258878](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45456258878) on `31a0807928d0b7c01a63b52c0a8c8e78f510add7` (0.1.218) passed the fast Windows disposable failed-migration/retry-block/explicit-resolution experiment; the full extracted assembly remained running at recording time. The four credential/process-access/pipe diagnostic jobs failed. No production credentials or database mutation were involved.
+
 ## 0.1.218 disposable migration recovery experiment — 2026-11-24
 
 Expanded the disposable Windows migration experiment with a scratch copy of the extracted migration tree and an intentionally failing SQL-only fixture. The experiment checks Prisma P3018, preserved migration history/data, P3009 blocking a retry, an explicit synthetic resolve, a corrected scratch migration, repeat deploy and schema-owner/data preservation. It never modifies the immutable payload and implements no production repair/rollback logic. Exact-head Windows CI is required. Isolated-user experiment on 0.1.217 showed the elevated runner still obtained PROCESS_DUP_HANDLE on the separate non-admin fixture, so it does not solve secure credential custody; actual initdb child and synthetic same-user probes and pipe PID checks still fail. Production init/bootstrap/migration/orchestration/installer remain closed; independent review and Windows Server acceptance outstanding. No merge/release authorized.
