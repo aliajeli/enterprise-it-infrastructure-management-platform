@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.199 — 2026-11-24
+
+- Added a disposable Windows CI experiment assembling real Node, API/Worker, Next.js, service hosts, PostgreSQL and deployment scripts into an archive, checking extraction and manifest while confirming installation remains disabled. No release or installable artifact is produced.
+
 ## 0.1.198 — 2026-11-24
 
 - Fixed staging and package validation for the actual monorepo Next.js standalone layout, retaining flat layout support and rejecting ambiguity. The Web service now loads its built standalone configuration so API rewrites and disabled powered-by headers are preserved. Added synthetic and real-build Windows tests.

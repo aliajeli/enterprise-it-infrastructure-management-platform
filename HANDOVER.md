@@ -1,3 +1,9 @@
+## 0.1.199 disposable full payload assembly — 2026-11-24
+
+CI 45403586835 on 0.1.198 passed the real Windows Next.js build/staging/readiness/API rewrite test, synthetic and real initdb stdin/SCRAM experiment, Linux validation, Windows API runtime and self-contained publication. The same-user synthetic stdin handle attack and real named-pipe PID mismatch failed as designed/observed; the overall run failed. Neither stdin nor named pipe is cleared for production.
+
+Added an independent disposable Windows assembly experiment combining built Node/API/Worker, real Next.js, six published hosts/helpers, downloaded PostgreSQL and deployment scripts, then creating and extracting an archive, verifying its manifest, and confirming the installer remains fail-closed. Exact-head CI is required and this is not a downloadable installer, signed release, independent security review or clean Windows Server acceptance. Never adopt an existing version directory or unverified database. No PR merge/release authorized.
+
 ## 0.1.198 real Web standalone layout and security evidence — 2026-11-24
 
 CI 45402284691 on 0.1.197 confirmed a same-user attacker can open a synthetic directly-started victim process with PROCESS_DUP_HANDLE, duplicate its disclosed stdin handle and intercept the synthetic marker. The CI diagnostic intentionally fails. This models worst-case known handle value for an ordinary same-user child; it does not establish the behavior of an actual restricted PostgreSQL child. Do not promote experimental stdin to production. The disposable real initdb/SCRAM stdin job passed; named-pipe job still failed at PID mismatch; see CI for other jobs. Initialization, orchestration and installer mutation remain blocked.
