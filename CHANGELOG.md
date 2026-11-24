@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.189 — 2026-11-24
+
+- Narrowed experimental pipe creation diagnostics to a fixed whitelist of exception categories and selected OS error codes, without exposing exception messages, pipe names or secret values.
+
 ## 0.1.188 — 2026-11-24
 
 - Added fixed, non-secret pipe creation substage diagnostics after CI 45391948797 failed at pipe creation before starting a child. Exact ACL and PID checks remain mandatory; production PostgreSQL initialization remains disabled.

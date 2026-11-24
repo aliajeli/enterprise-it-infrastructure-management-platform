@@ -40,7 +40,24 @@ function Invoke-ExperimentalInitDbPipe {
   $rule=[IO.Pipes.PipeAccessRule]::new($userSid,[IO.Pipes.PipeAccessRights]::FullControl,[Security.AccessControl.AccessControlType]::Allow)
   $security.AddAccessRule($rule)
   $stage='pipe-create'
-  $pipe=[IO.Pipes.NamedPipeServerStreamAcl]::Create($name,[IO.Pipes.PipeDirection]::Out,1,[IO.Pipes.PipeTransmissionMode]::Byte,[IO.Pipes.PipeOptions]::Asynchronous,0,0,$security,[IO.HandleInheritability]::None,[IO.Pipes.PipeAccessRights]::ReadPermissions)
+  try{
+   $pipe=[IO.Pipes.NamedPipeServerStreamAcl]::Create($name,[IO.Pipes.PipeDirection]::Out,1,[IO.Pipes.PipeTransmissionMode]::Byte,[IO.Pipes.PipeOptions]::Asynchronous,0,0,$security,[IO.HandleInheritability]::None,[IO.Pipes.PipeAccessRights]::ReadPermissions)
+  }catch{
+   # Classify by a fixed whitelist only; never emit the exception or pipe name.
+   $e=$_.Exception
+   while($e){
+    if($e -is [System.Management.Automation.MethodException]){$stage+='-method'}
+    elseif($e -is [System.TypeLoadException]){$stage+='-type-load'}
+    elseif($e -is [System.UnauthorizedAccessException]){$stage+='-access'}
+    elseif($e -is [System.ArgumentException]){$stage+='-argument'}
+    elseif($e -is [System.IO.IOException]){
+     $code=$e.HResult -band 0xffff
+     if($code -in @(5,87,183,231)){$stage+='-io-'+$code}else{$stage+='-io-other'}
+    }
+    $e=$e.InnerException
+   }
+   throw
+  }
   $stage='pipe-read-security'
   $actual=[IO.Pipes.PipesAclExtensions]::GetAccessControl($pipe)
   $rules=@($actual.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]))

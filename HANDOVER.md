@@ -1,3 +1,7 @@
+## 0.1.189 experimental diagnostics — 2026-11-24
+
+CI 45392401399 on 0.1.188 narrowed both synthetic and real experiment failures to `pipe-create`, before process launch. Linux and Windows self-contained publish succeeded. Exception messages are suppressed; whitelisted category/OS error diagnostics were added for the next exact-head CI. Original permission hypothesis and any solution to restricted-child PID remain unverified. Production initialization/bootstrap/migration remain disabled and clean Windows Server acceptance remains outstanding.
+
 ## 0.1.188 diagnostic follow-up — 2026-11-24
 
 CI 45391948797 on 0.1.187 failed at `create-pipe` for both synthetic and real experiments, before launching the child; Linux validation and six-executable publish succeeded. No conclusion on the original PostgreSQL permission hypothesis is possible yet. Narrowed the failure stage to identify whether SID, security construction, pipe creation, reading ACL, or verification fails. Diagnostics expose no exception content or secret. CI and clean Windows Server acceptance remain outstanding; no production PostgreSQL gate was opened.
