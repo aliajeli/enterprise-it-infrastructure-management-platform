@@ -37,17 +37,23 @@ function Invoke-TestChild([string]$Executable,[string[]]$Arguments,[hashtable]$E
   return [pscustomobject]@{ExitCode=$child.ExitCode;Output=$output}
  }finally{$child.Dispose()}
 }
-$stage='initialize';$started=$false
+$stage='prepare-synthetic-secret';$started=$false
 try{
  $secret=ConvertTo-SecureString 'synthetic-admin-migration-test-72' -AsPlainText -Force
+ $stage='invoke-initdb'
  try{
   $result=Invoke-ExperimentalInitDbStdin -Executable $initdb -DataPath $data -Password $secret -TimeoutSeconds 90
  }catch{
   # Preserve only fixed experiment substages, never child output or exceptions.
   if($_.Exception.Message -match '^Experimental initdb stdin operation failed at (credential-preparation|start-child|write-stdin|wait-child|restricted-reexec-error|child-exit-[0-9]+)\.$'){$stage='initialize-'+$Matches[1]}
+  elseif($_.Exception -is [Management.Automation.CommandNotFoundException]){$stage='initialize-command-not-found'}
+  elseif($_.Exception -is [Management.Automation.ParameterBindingException]){$stage='initialize-parameter-binding'}
+  else{$stage='initialize-other'}
   throw
  }
+ $stage='check-initdb-result'
  if($result.status -ne 'ok'){throw 'Disposable initdb failed.'}
+ $stage='allocate-loopback-port'
  $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0)
  try{$listener.Start();$port=([Net.IPEndPoint]$listener.LocalEndpoint).Port}finally{$listener.Stop()}
  $stage='start-loopback'

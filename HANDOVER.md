@@ -1,3 +1,7 @@
+## 0.1.203 fast disposable migration diagnosis — 2026-11-24
+
+CI 45415729223 on 0.1.202 again failed the assembled migration experiment at generic `initialize`; no initializer substage was reported, so the cause and whether initdb launched are unknown. Isolated Prisma staging, Web, runtime, Linux and synthetic initdb/SCRAM passed; same-user synthetic stdin and pipe PID tests failed. Added finer fixed-only stages around secret preparation, initdb invocation/result and loopback port allocation, and an independent faster CI experiment with the same PostgreSQL and migration code for quicker iteration. Exact-head CI required. All production database/installer gates remain closed; same-user handle risk, independent security review and clean Windows Server acceptance still outstanding. No release or PR merge.
+
 ## 0.1.202 packaged initdb diagnostics — 2026-11-24
 
 CI 45413283664 on 0.1.201: isolated migration tooling staging and offline schema validation, Windows Web/runtime, Linux, self-contained publication and earlier disposable stdin/SCRAM tests passed. The full assembled-payload job failed in the new migration experiment at `initialize`, before migration. Exact cause unknown; added fixed whitelist substage propagation without raw child output, paths or secrets. Same-user synthetic stdin isolation failed and named-pipe PID mismatch remains. Exact-head CI needed; production init/bootstrap/migration/install remain disabled, independent review and clean Windows Server acceptance outstanding; no merge/release.

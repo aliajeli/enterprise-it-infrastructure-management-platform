@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.203 — 2026-11-24
+
+- Added independent fast disposable migration CI and narrowed synthetic initializer failure stages without emitting credentials or raw child diagnostics. Production database/installer gates remain disabled.
+
 ## 0.1.202 — 2026-11-24
 
 - Added fixed, non-secret initdb substage diagnostics to the disposable packaged migration experiment after Windows CI failed before migration. Production initialization and migration remain disabled.

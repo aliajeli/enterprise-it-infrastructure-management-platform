@@ -443,6 +443,28 @@ jobs:
             exit 1
           }
 
+  windows-disposable-migration-fast:
+    name: Windows disposable migration fast experiment
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+      - name: Run synthetic PostgreSQL migration experiment
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-migration-disposable-fast.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Disposable migration experiment failed::$message"
+            exit 1
+          }
+
   windows-real-payload-assembly:
     name: Windows disposable full payload assembly
     runs-on: windows-latest
