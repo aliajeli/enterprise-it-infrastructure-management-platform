@@ -38,7 +38,7 @@ try{
  foreach($invalidSid in @("S-1-5-80-1-2-3-4", "S-1-5-80-1-2-3-4-5-6", "S-1-5-80-4294967296-2-3-4-5", "S-1-5-21-1-2-3-4")){
   $rejected=$false
   try{Invoke-CredentialVaultProvisioner -Plan $fixturePlan -ServiceSid $invalidSid -WhatIf|Out-Null}catch{$rejected=$true}
-  if(-not $rejected){throw "Invalid service SID must be rejected before launching the helper."}
+  if(-not $rejected){throw "Invalid synthetic service SID $invalidSid must be rejected before launching the helper."}
  }
 
  # ProgramData itself is part of the trusted path and must not be a junction.

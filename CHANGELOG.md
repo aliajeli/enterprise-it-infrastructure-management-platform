@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.172 — 2026-11-24
+
+- Windows run 45372539798 found a synthetic invalid service SID was accepted by the orchestration regression. Explicitly require five ASCII decimal 32-bit unsigned SID components in the orchestrator and Vault helper; test now identifies which synthetic SID was accepted if this still fails. Exact-head Windows CI remains required.
+- Linux Node 26/PostgreSQL 18 passed in that run. Vault owner assignment (error 1307), security review, PostgreSQL bootstrap and installer remain open.
+
 ## 0.1.171 — 2026-11-24
 
 - Run 45372111100 (0.1.170) passed Linux/Node 26/PostgreSQL 18 but failed the Windows five-service orchestration policy test after new SID/WhatIf cases were added. Emit the synthetic test failure as an Actions annotation to diagnose it when log download is unavailable. No Windows acceptance or installer is claimed. Vault owner error 1307 and secure bootstrap remain unresolved.

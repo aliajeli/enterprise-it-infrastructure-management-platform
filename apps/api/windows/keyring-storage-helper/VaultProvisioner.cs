@@ -47,7 +47,7 @@ internal static class VaultProvisioner
     private const int FileIdInfoClass = 18;
     private const int FileDispositionInformationClass = 13;
     private static readonly Regex ServiceSidPattern = new(
-        @"^S-1-5-80-(?:\d+-){4}\d+$",
+        @"^S-1-5-80-(?:[0-9]+-){4}[0-9]+$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     internal static bool IsProvisioningMode(string[] args) =>
@@ -148,7 +148,10 @@ internal static class VaultProvisioner
 
     private static SecurityIdentifier ValidateServiceSid(string sidText)
     {
-        if (!ServiceSidPattern.IsMatch(sidText))
+        if (!ServiceSidPattern.IsMatch(sidText) ||
+            sidText["S-1-5-80-".Length..].Split('-').Any(part =>
+                !uint.TryParse(part, System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture, out _)))
             throw new ProvisioningException("invalid-service-sid", 2);
         try
         {

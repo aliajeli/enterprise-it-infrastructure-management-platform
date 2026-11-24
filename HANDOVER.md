@@ -1,3 +1,7 @@
+## 0.1.172 service SID range check — 2026-11-24
+
+Windows run 45372539798 on cfca62d516be1576748d5b8a5206fe99b8071746 reported an invalid synthetic service SID was accepted by the orchestration regression; Linux Node 26/PostgreSQL 18 passed. Added explicit ASCII/uint32 subauthority checks in orchestrator and Vault helper, and identify the invalid synthetic value in the CI test failure. These changes require exact-head Windows CI. Vault owner error 1307 still requires a bounded, reviewed privilege approach; first-install PostgreSQL bootstrap is disabled; no installer has been built.
+
 ## 0.1.171 CI diagnostic — 2026-11-24
 
 Exact-head CI 45372111100 on 157c7ab103212ef65915b9b71dd1c4a2e322821e passed Linux/Node 26/PostgreSQL 18 but failed the Windows five-service orchestration policy test with the new SID/WhatIf cases. Since Actions logs cannot be downloaded, capture synthetic test exceptions as Actions annotations to identify the failure. Re-run exact-head CI; do not claim SID fix validated. Vault owner failure 1307, secure database bootstrap, and installer remain unresolved.
