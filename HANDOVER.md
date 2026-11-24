@@ -1,3 +1,7 @@
+## 0.1.169 Vault failure diagnosis — 2026-11-24
+
+Run 45369417895 on e35067a00a27d6c2d1ac75f8f0c4839174ce1d5f: Linux Node 26/PostgreSQL 18 passed; Windows build and policy tests passed up to fresh Vault provisioning, which still failed with `provisioning-failed`. The added directory creation access did not fix it. Added bounded stage and numeric OS error reporting (never paths/SIDs/ACLs/secrets) to identify the failure on exact-head Windows CI. No installer; database bootstrap disabled pending secure implementation.
+
 ## 0.1.168 Vault handle access correction — 2026-11-24
 
 Exact-head run 45368923642 on b7086eb06d03b4a20802754ca721f71324bc186c: Linux job passed; Windows passed orchestration, PostgreSQL safety, staging, offline packaging and keyring build but fresh Vault provisioning failed with generic `provisioning-failed`. Added missing FILE_ADD_SUBDIRECTORY access on ProgramData and created parent handles for provisioning only; this is a candidate fix, unverified until next exact-head CI. Remaining SID/owner/ACL/handle semantics, race and rollback need security review and Windows Server testing. No installer has been built; database bootstrap remains blocked.

@@ -219,18 +219,22 @@ internal static class VaultProvisioner
 
             SafeFileHandle? volume = null, pd = null, enterprise = null, vault = null;
             bool createdEnterprise = false, createdVault = false, createdLock = false;
+            // A fixed operation name and numeric OS error are safe diagnostics; never emit paths or ACLs.
+            string stage = "open-volume";
             DirectoryIdentity vaultIdentity = default;
             VaultFileIdentity? lockIdentity = null;
             try
             {
                 volume = OpenAbsoluteDirectory(volumePath);
                 var volumeIdentity = ReadAndVerifyDirectory(volume, "programdata-root");
+                stage = "open-programdata";
                 pd = OpenAbsoluteDirectory(programDataPath, verifyOnly ? 0u : FileAddSubdirectory);
                 var pdIdentity = ReadAndVerifyDirectory(pd, "programdata");
                 if (pdIdentity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
                     throw new ProvisioningException("volume-mismatch");
                 VerifyProgramDataAcl(pd);
 
+                stage = "open-or-create-enterprise";
                 (enterprise, createdEnterprise) = OpenOrCreateChildDirectory(
                     pd, "EnterpriseIT", volumeIdentity, verifyOnly, EnterpriseSddl(),
                     VerifyEnterpriseAcl, "enterprise-root");
@@ -238,6 +242,7 @@ internal static class VaultProvisioner
                 if (enterpriseIdentity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
                     throw new ProvisioningException("volume-mismatch");
 
+                stage = "open-or-create-vault";
                 (vault, createdVault) = OpenOrCreateChildDirectory(
                     enterprise, "CredentialVault", volumeIdentity, verifyOnly,
                     ServiceSddl(serviceSid), (h, _) => VerifyVaultAcl(h, serviceSid), "credential-vault");
@@ -246,6 +251,7 @@ internal static class VaultProvisioner
                     throw new ProvisioningException("volume-mismatch");
                 VerifyVaultAcl(vault, serviceSid);
 
+                stage = "open-or-create-lock";
                 (var lockHandle, createdLock) = OpenOrCreateLockFile(vault, serviceSid, verifyOnly);
                 using (lockHandle)
                 {
@@ -258,12 +264,16 @@ internal static class VaultProvisioner
                 volume = pd = enterprise = vault = null;
                 return chain;
             }
-            catch
+            catch (Exception ex)
             {
                 // Roll back only objects created by this exact invocation.
                 try { Rollback(vault, enterprise, createdLock, createdVault, createdEnterprise, vaultIdentity, lockIdentity); }
                 catch { /* fail closed: leave objects and report original failure */ }
                 vault?.Dispose(); enterprise?.Dispose(); pd?.Dispose(); volume?.Dispose();
+                if (ex is Win32Exception nativeError)
+                    throw new ProvisioningException($"{stage}:win32-{nativeError.NativeErrorCode}");
+                if (ex is not ProvisioningException)
+                    throw new ProvisioningException($"{stage}:unexpected-error");
                 throw;
             }
         }

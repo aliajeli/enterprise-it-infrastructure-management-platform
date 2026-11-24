@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.169 — 2026-11-24
+
+- Add fixed-stage and numeric OS error diagnostics for unexpected Vault provisioning failures without exposing paths, SIDs, ACLs or secrets. Windows run 45369417895 on 0.1.168 still failed fresh provisioning; the previous access change was not sufficient. Windows exact-head CI and clean Windows Server acceptance remain required. PostgreSQL bootstrap stays disabled; no installer has been produced.
+
 ## 0.1.168 — 2026-11-24
 
 - The Windows Vault test in run 45368923642 failed on fresh provisioning with generic `provisioning-failed`. Corrected a candidate cause: provisioning parent directory handles lacked `FILE_ADD_SUBDIRECTORY`; verify-only does not request it. This change is not a demonstrated fix until Windows CI and adversarial acceptance pass.
