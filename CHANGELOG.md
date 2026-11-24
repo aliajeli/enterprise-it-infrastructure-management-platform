@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.192 — 2026-11-24
+
+- Added isolated, synthetic-only PostgreSQL initdb anonymous-stdin experiment using `--pwprompt`, with inherited re-exec environment sanitized, output suppressed and timeout tests. It is not connected to production and does not establish security against same-user handle attacks.
+
 ## 0.1.191 — 2026-11-24
 
 - Split pipe client verification into fixed query-failure and PID-mismatch categories, and made the synthetic wrong-client test require the PID-mismatch guard. No credential is sent on either failure.
