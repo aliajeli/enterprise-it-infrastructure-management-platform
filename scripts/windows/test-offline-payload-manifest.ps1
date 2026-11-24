@@ -8,6 +8,13 @@ try{
  New-Item -ItemType Directory -Path $api,$worker -Force|Out-Null
  [IO.File]::WriteAllText((Join-Path $api "server.js"),"console.log('api');")
  [IO.File]::WriteAllText((Join-Path $worker "main.js"),"console.log('worker');")
+ # Exercise the final write primitive directly, as if a competing creator
+ # appeared after the caller's preliminary existence check.
+ $collision=Join-Path $tempRoot 'collision.json'
+ [IO.File]::WriteAllText($collision,'existing-sentinel')
+ $rejected=$false;try{Write-NewOfflinePayloadManifestFile -Path $collision -Content 'replacement'}catch{$rejected=$true}
+ if(-not $rejected -or [IO.File]::ReadAllText($collision) -cne 'existing-sentinel'){throw 'Existing manifest destination was overwritten.'}
+ Remove-Item -LiteralPath $collision -Force
  $created=New-OfflinePayloadManifest -PayloadRoot $tempRoot -ApplicationVersion "0.1.109"
  if($created.fileCount -ne 2){throw "Manifest did not inventory both payload files."}
  $verified=Test-OfflinePayloadManifest -PayloadRoot $tempRoot -ExpectedApplicationVersion "0.1.109"

@@ -29,6 +29,16 @@ function Get-OfflinePayloadInventory {
  [Array]::Sort($paths,[StringComparer]::Ordinal)
  foreach($path in $paths){$byPath[$path]}
 }
+function Write-NewOfflinePayloadManifestFile {
+ [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$Path,[Parameter(Mandatory=$true)][string]$Content)
+ # A preliminary existence check does not prevent a concurrent creator from
+ # placing a file here; CreateNew makes the no-overwrite rule atomic at open.
+ $stream=[IO.File]::Open($Path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+ try{
+  $writer=[IO.StreamWriter]::new($stream,[Text.UTF8Encoding]::new($false))
+  try{$writer.Write($Content)}finally{$writer.Dispose()}
+ }finally{$stream.Dispose()}
+}
 function New-OfflinePayloadManifest {
  [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$PayloadRoot,[Parameter(Mandatory=$true)][string]$ApplicationVersion,[switch]$Reproducible)
  if($ApplicationVersion -notmatch '^\d+\.\d+\.\d+$'){throw "Application version must use major.minor.patch format."}
@@ -41,7 +51,7 @@ function New-OfflinePayloadManifest {
  # archive timestamp is metadata normalization, not a claim about build time.
  if($Reproducible){$manifest['archiveTimestampUtc']='2000-01-01T00:00:00Z'}else{$manifest['createdUtc']=[DateTime]::UtcNow.ToString("o")}
  $manifest['hashAlgorithm']='SHA-256';$manifest['files']=$inventory
- [IO.File]::WriteAllText($manifestPath,(($manifest|ConvertTo-Json -Depth 8)+[Environment]::NewLine),[Text.UTF8Encoding]::new($false))
+ Write-NewOfflinePayloadManifestFile -Path $manifestPath -Content (($manifest|ConvertTo-Json -Depth 8)+[Environment]::NewLine)
  [pscustomobject]@{manifestPath=$manifestPath;applicationVersion=$ApplicationVersion;fileCount=$inventory.Count;totalBytes=[int64](($inventory|Measure-Object -Property size -Sum).Sum);created=$true}
 }
 function Test-OfflinePayloadManifest {

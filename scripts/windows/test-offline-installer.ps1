@@ -123,7 +123,7 @@ try{
  $windowsUnsafeHash=(Get-FileHash -LiteralPath $windowsUnsafe -Algorithm SHA256).Hash
  $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $windowsUnsafe -ExpectedSha256 $windowsUnsafeHash|Out-Null}catch{$rejected=$true}
  if(-not $rejected){throw 'ZIP alternate-data-stream path was accepted.'}
- foreach($unsafeName in @('CON.txt','folder/trailing.','folder/trailing ')){
+ foreach($unsafeName in @('CON.txt','folder/trailing.','folder/trailing ',('COM'+[char]0x00b9+'.txt'),('folder/LPT'+[char]0x00b2),('com'+[char]0x00b3))){
   $casePath=Join-Path $root ('unsafe-'+[guid]::NewGuid().ToString('N')+'.zip')
   $stream=[IO.File]::Open($casePath,[IO.FileMode]::CreateNew)
   try{
@@ -139,5 +139,34 @@ try{
   $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $casePath -ExpectedSha256 $caseHash|Out-Null}catch{$rejected=$true}
   if(-not $rejected){throw "ZIP Windows-invalid path was accepted: $unsafeName"}
  }
+ # Reject file/directory prefix collisions in either archive order and with
+ # Windows case folding. Explicit parent directories remain valid.
+ foreach($case in @(
+  @{Names=@('A','a/child.txt')},
+  @{Names=@('a/child.txt','A')},
+  @{Names=@('folder/child/grandchild','FOLDER/CHILD')}
+ )){
+  $casePath=Join-Path $root ('prefix-'+[guid]::NewGuid().ToString('N')+'.zip')
+  $stream=[IO.File]::Open($casePath,[IO.FileMode]::CreateNew)
+  try{
+   $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
+   try{foreach($name in (@('package.json','payload.manifest.json')+$case.Names)){$entry=$zip.CreateEntry($name);$writer=[IO.StreamWriter]::new($entry.Open());try{$writer.Write('{}')}finally{$writer.Dispose()}}}finally{$zip.Dispose()}
+  }finally{$stream.Dispose()}
+  $caseHash=(Get-FileHash -LiteralPath $casePath -Algorithm SHA256).Hash
+  $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $casePath -ExpectedSha256 $caseHash|Out-Null}catch{$rejected=$_.Exception.Message -like '*ancestor directory*'}
+  if(-not $rejected){throw 'ZIP file/directory prefix collision was accepted or rejected for an unrelated reason.'}
+ }
+ $directoryCase=Join-Path $root 'explicit-directory.zip'
+ $stream=[IO.File]::Open($directoryCase,[IO.FileMode]::CreateNew)
+ try{
+  $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
+  try{
+   [void]$zip.CreateEntry('folder/')
+   foreach($name in @('package.json','payload.manifest.json','folder/child.txt')){$entry=$zip.CreateEntry($name);$writer=[IO.StreamWriter]::new($entry.Open());try{$writer.Write('{}')}finally{$writer.Dispose()}}
+  }finally{$zip.Dispose()}
+ }finally{$stream.Dispose()}
+ $caseHash=(Get-FileHash -LiteralPath $directoryCase -Algorithm SHA256).Hash
+ $casePlan=Test-OfflineInstallerArchive -ArchivePath $directoryCase -ExpectedSha256 $caseHash
+ if($casePlan.entryCount -ne 4){throw 'Valid explicit parent directory was rejected.'}
  Write-Output 'Offline installer archive validation tests passed.'
 }finally{if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue}}

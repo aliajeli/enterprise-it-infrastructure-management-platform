@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.222 — 2026-11-24
+
+- Made manifest file creation no-overwrite at the file open and hardened ZIP inspection against file/ancestor conflicts and superscript Windows device names. Added regression fixtures.
+
 ## 0.1.221 — 2026-11-24
 
 - Prevented deletion by pathname of a published offline archive when checksum publication fails. Added collision regressions; incomplete archives are retained for inspection, not treated as completed packages.

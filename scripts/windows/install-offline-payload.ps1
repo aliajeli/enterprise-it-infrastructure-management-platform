@@ -33,6 +33,7 @@ function Test-OfflineInstallerArchive {
   # subsequent processing, not allocations during the initial ZIP parse.
   if($zip.Entries.Count -gt 250000){throw "Offline payload has too many ZIP entries."}
   $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+  $files=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
   $hasPackage=$false;$hasManifest=$false
   [int64]$totalExpanded=0
   foreach($entry in $zip.Entries){
@@ -44,9 +45,10 @@ function Test-OfflineInstallerArchive {
    if(@($segments|Where-Object{$_ -eq '.' -or $_ -eq '..' -or $_ -eq ''}).Count -gt 0){throw "ZIP entry contains an unsafe path segment: $name"}
    foreach($segment in $segments){
     if($segment -match '[\x00-\x1F<>:"|?*]' -or $segment.EndsWith('.') -or $segment.EndsWith(' ')){throw "ZIP entry contains a Windows-invalid path segment: $name"}
-    if($segment -match '^(?i:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$'){throw "ZIP entry uses a reserved Windows device name: $name"}
+    if($segment -match '^(?i:CON|PRN|AUX|NUL|COM[1-9\u00b9\u00b2\u00b3]|LPT[1-9\u00b9\u00b2\u00b3])(?:\..*)?$'){throw "ZIP entry uses a reserved Windows device name: $name"}
    }
    if(-not $names.Add($trimmed)){throw "Duplicate ZIP entry path is not allowed: $name"}
+   if(-not $name.EndsWith('/')){[void]$files.Add($trimmed)}
    $unixType=($entry.ExternalAttributes -shr 16) -band 0xF000
    $dosAttributes=$entry.ExternalAttributes -band 0xFFFF
    if($unixType -eq 0xA000 -or ($dosAttributes -band 0x400) -ne 0){throw "Symbolic-link or reparse-point ZIP entries are not allowed: $name"}
@@ -61,6 +63,16 @@ function Test-OfflineInstallerArchive {
      if($trimmed -cne 'payload.manifest.json' -or $entry.Length -gt 64MB){throw "Offline payload manifest is incorrectly named or too large."}
      $hasManifest=$true
     }
+   }
+  }
+  # Check after enumeration so input order cannot hide a file/directory
+  # conflict. Do not accumulate a second set of implicit directories.
+  foreach($name in $names){
+   $slash=$name.IndexOf('/')
+   while($slash -ge 0){
+    $parent=$name.Substring(0,$slash)
+    if($files.Contains($parent)){throw "ZIP entry is both a file and an ancestor directory: $parent"}
+    $slash=$name.IndexOf('/',$slash+1)
    }
   }
   if(-not $hasPackage -or -not $hasManifest){throw "ZIP root must contain package.json and payload.manifest.json."}
