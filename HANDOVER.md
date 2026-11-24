@@ -1,3 +1,7 @@
+## 0.1.183 real initdb early-failure diagnosis — 2026-11-24
+
+Run 45386231171 on 4e2c800c5d6c242c5ab57aeff0ba8d7565393713 reported `child-exited-before-client-1` in the real Windows PostgreSQL experiment; host publication and Linux validation passed. Added only whitelisted early-error categories and no raw child output. PostgreSQL REL_18_STABLE `src/common/restricted_token.c` shows initdb re-executes under a restricted token before opening the pwfile, so direct-child PID pinning cannot simply be relaxed; any redesign must authenticate the exact legitimate restricted process and resist same-user parent/PID spoofing. No production init/bootstrap/migration, no installer, no clean Windows Server acceptance. Re-run exact-head CI.
+
 ## 0.1.182 real initdb diagnostics — 2026-11-24
 
 Hosted run 45385493840 on 97505ab5fff3815ba1d3bd988d3e81fee4081a06 passed Linux Node 26/PostgreSQL 18, the existing Windows runtime/policy job, and actual self-contained publication/immutable overwrite checks for all six Windows hosts/helpers. The real Windows PostgreSQL initdb named-pipe experiment failed generically; bounded stage/exit-code diagnostics were added without emitting child output, paths or secrets. Exact-head CI is needed to identify the failure. Initialization/bootstrap/migration remain disabled, no assembled/signed installer exists, and no Windows Server VM acceptance has been performed.

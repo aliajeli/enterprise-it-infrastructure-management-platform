@@ -46,7 +46,18 @@ function Invoke-ExperimentalInitDbPipe {
   $stage='await-client'
   $winner=[Threading.Tasks.Task]::WhenAny([Threading.Tasks.Task[]]@($connect,$exit,$timer)).GetAwaiter().GetResult()
   if(-not [object]::ReferenceEquals($winner,$connect)){
-   if($process.HasExited){$stage='child-exited-before-client-'+$process.ExitCode}else{$stage='client-timeout'}
+   if($process.HasExited){
+    $stage='child-exited-before-client-'+$process.ExitCode
+    # Emit only fixed categories, never the child output itself. No password
+    # bytes have been sent at this point.
+    $diagnostic=$stderr.GetAwaiter().GetResult()
+    if($diagnostic -match '(?i)could not open file.+for reading'){$stage+='-pwfile-open'}
+    elseif($diagnostic -match '(?i)restricted token|re-execute'){$stage+='-restricted-token'}
+    elseif($diagnostic -match '(?i)not the same version|not found in the same directory'){$stage+='-backend-binary'}
+    elseif($diagnostic -match '(?i)permission denied|access is denied'){$stage+='-permission'}
+    elseif($diagnostic -match '(?i)could not find|could not access'){$stage+='-missing-input'}
+    else{$stage+='-other'}
+   }else{$stage='client-timeout'}
    throw 'Initdb pipe connection failed or timed out.'
   }
   $connect.GetAwaiter().GetResult()

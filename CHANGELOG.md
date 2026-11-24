@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.183 — 2026-11-24
+
+- Hosted Windows real initdb run 45386231171 for 0.1.182 exited before connecting to the experimental pipe. Added fixed, whitelisted early-failure categories; child output, paths and secrets remain suppressed. PostgreSQL source review also shows Windows initdb re-executes itself with a restricted token, so the synthetic direct-child PID assumption needs careful redesign rather than relaxed authentication. Production initialization/bootstrap/migration remain disabled. Exact-head CI required.
+- Hosted six-executable publication and Linux validation passed; this does not create an installer or prove Windows Server acceptance.
+
 ## 0.1.182 — 2026-11-24
 
 - Hosted run 45385493840 on 0.1.181 passed Windows self-contained publication of all six hosts/helpers, Windows existing policy/runtime tests and Linux Node 26/PostgreSQL 18 validation; the independent real Windows PostgreSQL initdb pipe experiment failed with a generic error. Added bounded operation-stage/exit-code diagnostics without child output, paths or secrets to identify the failure on exact-head CI. No production initialization or bootstrap is enabled.
