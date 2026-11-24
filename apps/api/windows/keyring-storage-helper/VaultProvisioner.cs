@@ -390,6 +390,7 @@ internal static class VaultProvisioner
             }
         }
         catch (ProvisioningException) { throw; }
+        catch (Win32Exception ex) { throw new ProvisioningException($"{label}:win32-{ex.NativeErrorCode}"); }
         catch { throw new ProvisioningException("path-validation-failed"); }
     }
 
@@ -422,6 +423,7 @@ internal static class VaultProvisioner
             }
         }
         catch (ProvisioningException) { throw; }
+        catch (Win32Exception ex) { throw new ProvisioningException($"keyring-lock:win32-{ex.NativeErrorCode}"); }
         catch { throw new ProvisioningException("path-validation-failed"); }
     }
 

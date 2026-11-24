@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.175 — 2026-11-24
+
+- Windows run 45375347730 compiled the Vault helper but the independent elevated-admin provision/verify/retry smoke failed with a generic path error. Added safe fixed-component/numeric Windows error diagnostics and attempt numbering; no ACL, owner or security checks were relaxed. Linux Node 26/PostgreSQL 18 passed. Exact-head CI and Windows Server/security acceptance remain pending; no installer exists.
+
 ## 0.1.174 — 2026-11-24
 
 - Windows run 45374694960 on 0.1.173 compiled the Vault helper and moved past fresh provisioning, but the prior test attempted to read the protected lock file as the interactive admin and got access denied. Added an explicit elevated non-SYSTEM provision/verify/retry smoke test and isolated LocalSystem-only CI fixtures for independent exact ACL and adversarial inspection; SYSTEM is an ACL principal only for fixture tests and is not a production runtime fallback. Added deterministic test parent ACL and SID translation. Exact-head Windows CI remains necessary.

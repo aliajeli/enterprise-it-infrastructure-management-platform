@@ -1,3 +1,7 @@
+## 0.1.175 Vault smoke diagnostics — 2026-11-24
+
+Windows run 45375347730 on 4103750bb9fc632c028b0cb7b04e2e5a355dbb45 passed Linux Node 26/PostgreSQL 18, compiled the Vault helper, but failed the elevated non-SYSTEM smoke with `path-validation-failed` during a provision attempt. Added safe fixed-component/native error code and attempt diagnostics; run exact-head Windows CI. The independent SYSTEM fixture tests did not run in this CI. No installer; PostgreSQL bootstrap remains disabled.
+
 ## 0.1.174 independent Vault fixture tests — 2026-11-24
 
 Windows run 45374694960 on a32d906014495bc5ce88e2953fcd4fa94dfaac4b compiled helper and proceeded past fresh provisioning, but test inspection of keyring.lock failed with admin access denied, consistent with the protected ACL. Added separate elevated non-SYSTEM provision/verify/retry smoke and isolated SYSTEM-only scheduled-task fixture tests to inspect exact ACL/adversarial cases without opening ACLs; SYSTEM is not a runtime fallback. CI fixtures use explicitly protected parent ACL and cleanup. Exact-head Windows CI must validate this design and the candidate privilege scope; independent security review, real service SID, parent trust and rollback/race tests remain required. Linux Node 26/PostgreSQL 18 passed. Database bootstrap disabled, no installer built.
