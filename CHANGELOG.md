@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.202 — 2026-11-24
+
+- Added fixed, non-secret initdb substage diagnostics to the disposable packaged migration experiment after Windows CI failed before migration. Production initialization and migration remain disabled.
+
 ## 0.1.201 — 2026-11-24
 
 - Added a disposable Windows CI experiment that uses the extracted archive Prisma tool and PostgreSQL to deploy migrations twice under a distinct synthetic login/effective schema owner, then verifies migration count and object ownership. Production bootstrap, migration and installer remain disabled.
