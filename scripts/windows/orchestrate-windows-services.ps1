@@ -80,6 +80,7 @@ function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
   (Join-Path $Plan.InstallRoot "EnterpriseIT.WorkerServiceHost.exe"),
   (Join-Path $Plan.InstallRoot "EnterpriseIT.EdgeServiceHost.exe"),
   (Join-Path $Plan.InstallRoot "CredentialVault.KeyringStorageHelper.exe"),
+  (Join-Path $Plan.InstallRoot "CredentialVault.DpapiHelper.exe"),
   (Join-Path $Plan.InstallRoot "runtime\node.exe"),
   (Join-Path $Plan.InstallRoot "apps\api\dist\server.js"),
   (Join-Path $Plan.InstallRoot "apps\worker\dist\main.js"),

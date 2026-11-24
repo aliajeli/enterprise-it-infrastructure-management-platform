@@ -9,12 +9,15 @@ try{
  $package|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $source "package.json") -Encoding utf8
  $required=@(
   "runtime\node.exe","runtime\npm.cmd","EnterpriseIT.ApiServiceHost.exe","EnterpriseIT.WebServiceHost.exe","EnterpriseIT.WorkerServiceHost.exe","EnterpriseIT.EdgeServiceHost.exe",
-  "CredentialVault.KeyringStorageHelper.exe",
+  "CredentialVault.KeyringStorageHelper.exe","CredentialVault.DpapiHelper.exe",
   "apps\api\dist\server.js","apps\worker\dist\main.js","packages\database\dist\index.js","packages\database\prisma\schema.prisma","packages\database\prisma\migrations",
   "node_modules\@platform\api\package.json","node_modules\@platform\worker\package.json","node_modules\@platform\database\package.json","node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json",
   "apps\web\.next\standalone\server.js","apps\web\.next\standalone\node_modules\next\package.json",
   "postgresql\pgsql\bin\postgres.exe","postgresql\pgsql\bin\pg_ctl.exe","postgresql\pgsql\bin\initdb.exe","postgresql\pgsql\share\postgresql.conf.sample",
-  "scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1"
+  "scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1",
+  "scripts\windows\provision-postgresql-service.ps1","scripts\windows\provision-api-service.ps1","scripts\windows\provision-worker-service.ps1",
+  "scripts\windows\provision-web-service.ps1","scripts\windows\provision-edge-service.ps1",
+  "scripts\windows\installer-preflight.ps1","scripts\windows\new-offline-payload-manifest.ps1","scripts\windows\install-offline-payload.ps1"
  )
  foreach($relative in $required){
   $path=Join-Path $source $relative
@@ -24,6 +27,16 @@ try{
  . $scriptPath -SourceRoot $source -OutputArchive $archive
  $plan=Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive $archive
  if($plan.ApplicationVersion -ne "0.1.1" -or $plan.RequiredFiles.Count -ne $required.Count){throw "Unexpected offline package plan."}
+ # Every native security helper and downstream installer/provisioning script
+ # must independently block packaging when it is absent.
+ foreach($relative in @($required|Where-Object{$_ -like 'scripts\windows\*' -or $_ -like 'CredentialVault.*'})){
+  $path=Join-Path $source $relative
+  Remove-Item -LiteralPath $path -Force
+  $missingRejected=$false
+  try{Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive $archive|Out-Null}catch{$missingRejected=$true}
+  if(-not $missingRejected){throw "Package accepted without required component: $relative"}
+  [IO.File]::WriteAllText($path,'fixture')
+ }
  $dry=& $scriptPath -SourceRoot $source -OutputArchive $archive -WhatIf|ConvertFrom-Json
  if(-not $dry.dryRun -or (Test-Path -LiteralPath $archive)){throw "WhatIf created an archive or failed to report dry-run."}
  & $scriptPath -SourceRoot $source -OutputArchive $archive -Confirm:$false|Out-Null

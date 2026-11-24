@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.181 — 2026-11-24
+
+- Added an isolated Windows CI experiment that downloads and SHA-256-verifies the pinned PostgreSQL 18.7 binary archive and exercises real `initdb` with a synthetic password over the experimental pipe; no service is started and production initialization remains disabled. Exact-head result and actual Windows Server security/installation acceptance remain pending.
+- Added the DPAPI helper to the self-contained host publication plan and offline payload prerequisites; packaging now rejects missing service-provisioning and installer scripts independently. Added a hosted Windows job to actually publish the six executables and verify overwrite protection. No discovery, credential persistence or service identity fallback is enabled.
+- This is an incremental test/build foundation, not a complete offline package, signed installer, PostgreSQL bootstrap, or clean-VM acceptance. Hosted CI run 45382731557 on 0.1.180 passed Linux and Windows synthetic tests.
+
 ## 0.1.180 — 2026-11-24
 
 - Security correction: the prior PostgreSQL cluster initializer created a temporary plaintext password file even with a restricted ACL, violating the owner prohibition. Disabled initialization before any filesystem/SCM/database mutation; retained read-only WhatIf and added a regression for this gate. Existing bootstrap and migration remain disabled.

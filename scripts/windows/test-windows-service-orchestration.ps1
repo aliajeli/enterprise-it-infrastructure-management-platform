@@ -26,7 +26,7 @@ try{
   [IO.File]::WriteAllText($file,$content)
  }
  $payloadCheck=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
- if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 15){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
+ if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 16){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
 
  # SCM service SIDs contain exactly five unsigned subauthorities after S-1-5-80.
  # WhatIf must validate them without executing the placeholder helper.
