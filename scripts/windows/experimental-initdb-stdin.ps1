@@ -37,6 +37,7 @@ function Invoke-ExperimentalInitDbStdin {
   # process was launched without one, so exercise that documented branch.
   # This override is process-local, contains no secret, and is experimental.
   $psi.Environment['OSTYPE']='msys'
+  $psi.Environment['LC_ALL']='C'
   $stage='start-child'
   $process=[Diagnostics.Process]::Start($psi)
   # Consume but never forward either stream; an untrusted child may echo input.
@@ -47,7 +48,9 @@ function Invoke-ExperimentalInitDbStdin {
   finally{$cancel.Dispose();$process.StandardInput.Close()}
   $stage='wait-child'
   if(-not $process.WaitForExit($TimeoutSeconds*1000)){throw 'Initdb process timed out.'}
-  $null=$stdout.GetAwaiter().GetResult();$null=$stderr.GetAwaiter().GetResult()
+  $null=$stdout.GetAwaiter().GetResult();$diagnostic=$stderr.GetAwaiter().GetResult()
+  # Diagnostic defense only, NOT proof that the actual child token is safe.
+  if($diagnostic -match '(?i)could not (?:create restricted token|re-execute with restricted token|start process for command)'){$stage='restricted-reexec-error';throw 'Restricted re-exec reported an error.'}
   if($process.ExitCode -ne 0){$stage='child-exit-'+$process.ExitCode;throw 'Initdb process failed.'}
   [pscustomobject]@{status='ok';transport='inherited-anonymous-stdin';plaintextFileCreated=$false}
  }catch{

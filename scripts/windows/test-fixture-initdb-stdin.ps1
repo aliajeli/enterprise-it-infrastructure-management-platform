@@ -10,4 +10,5 @@ $first=[Console]::In.ReadLine();$second=[Console]::In.ReadLine()
 if($first -cne $expected -or $second -cne $expected){exit 15}
 # Both streams deliberately contain the synthetic value; the parent must suppress them.
 [Console]::Out.Write($first);[Console]::Error.Write($second)
+if($args -contains '--fixture-restrict-failure'){[Console]::Error.Write('could not create restricted token: synthetic');exit 0}
 exit 0

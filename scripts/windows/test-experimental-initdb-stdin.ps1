@@ -16,6 +16,9 @@ try{
   $blocked=$_.Exception.Message -like '*wait-child*'
  }
  if(-not $blocked -or (Test-Path -LiteralPath $fakeData)){throw 'Nonterminating child must time out without data mutation.'}
+ $blocked=$false
+ try{Invoke-ExperimentalInitDbStdin -Executable $pwsh -TestPrefixArguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$fixture,'--fixture-restrict-failure') -DataPath $fakeData -Password $secret -TimeoutSeconds 20|Out-Null}catch{$blocked=$_.Exception.Message -like '*restricted-reexec-error*'}
+ if(-not $blocked){throw 'Reported restricted re-exec failure must not be treated as success.'}
  $bad=ConvertTo-SecureString "invalid-password-with`nnewline" -AsPlainText -Force
  $blocked=$false
  try{Invoke-ExperimentalInitDbStdin -Executable $pwsh -TestPrefixArguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$fixture) -DataPath $fakeData -Password $bad -TimeoutSeconds 2|Out-Null}catch{$blocked=$true}

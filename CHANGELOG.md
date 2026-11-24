@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.194 — 2026-11-24
+
+- Extended disposable real-PostgreSQL stdin experiment to check successful and rejected SCRAM logins on loopback and added a synthetic restricted-re-exec-error regression. These tests do not establish safe production handle custody or Windows Server acceptance.
+
 ## 0.1.193 — 2026-11-24
 
 - Updated disposable stdin experiment to exercise PostgreSQL simple_prompt stdin fallback with process-local `OSTYPE=msys`. Production gates remain closed; this does not bypass or prove restricted-token re-execution.
