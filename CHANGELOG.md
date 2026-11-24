@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.218 — 2026-11-24
+
+- Added disposable Windows Prisma failed-migration, blocked-retry, explicit resolution and data/ownership preservation checks using a scratch migration tree. Production migration and installer remain disabled.
+
 ## 0.1.217 — 2026-11-24
 
 - Shortened the no-secret isolated-account fixture command to fit the Windows credentialed process command-line constraint; exact-head CI required.

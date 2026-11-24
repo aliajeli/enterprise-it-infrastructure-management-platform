@@ -106,6 +106,61 @@ SELECT session_user='fixture_migrator'
  $checkArgs=@('-X','-w','-h','127.0.0.1','-p',[string]$port,'-U','fixture_migrator','-d','fixture_database','-v','ON_ERROR_STOP=1','-t','-A','-q')
  $check=Invoke-TestChild $psql $checkArgs @{PGPASSWORD='synthetic-migrator-test-73'} ($query+"`n") $true
  if($check.ExitCode -ne 0 -or $check.Output.Trim() -cne 't'){throw 'Disposable migration ownership or repeat check failed.'}
+ # Simulate a failed migration against this disposable database only. The
+ # migration tree below is a scratch copy; the immutable extracted payload is
+ # never changed. Recovery is explicit operator-like resolve, never automatic
+ # production repair or schema destruction.
+ $stage='prepare-failed-migration-fixture'
+ $scratch=Join-Path $work 'migration-failure-fixture'
+ New-Item -ItemType Directory -Path $scratch -ErrorAction Stop|Out-Null
+ $scratchMigrations=Join-Path $scratch 'migrations'
+ Copy-Item -LiteralPath (Join-Path $payload 'packages\database\prisma\migrations') -Destination $scratchMigrations -Recurse
+ $fixtureName='99990101000000_synthetic_failure'
+ $fixtureDir=Join-Path $scratchMigrations $fixtureName
+ New-Item -ItemType Directory -Path $fixtureDir -ErrorAction Stop|Out-Null
+ $fixtureSql=Join-Path $fixtureDir 'migration.sql'
+ [IO.File]::WriteAllText($fixtureSql,"SELECT 1 / 0;`n",[Text.UTF8Encoding]::new($false))
+ $scratchConfig=Join-Path $scratch 'prisma.config.ts'
+ $schemaJson=([string](Join-Path $payload 'packages\database\prisma\schema.prisma')).Replace('\','/') | ConvertTo-Json -Compress
+ $migrationsJson=([string]$scratchMigrations).Replace('\','/') | ConvertTo-Json -Compress
+ # The config contains only paths and reads the synthetic URL from the child
+ # process environment. It does not embed a database URL or credential.
+ [IO.File]::WriteAllText($scratchConfig,("export default { schema: $schemaJson, migrations: { path: $migrationsJson }, datasource: { url: process.env.DATABASE_URL } };`n"),[Text.UTF8Encoding]::new($false))
+ $preserveSql="CREATE TABLE public.fixture_preserve (id integer PRIMARY KEY); INSERT INTO public.fixture_preserve VALUES (41);"
+ $preserve=Invoke-TestChild $psql $checkArgs @{PGPASSWORD='synthetic-migrator-test-73'} ($preserveSql+"`n") $true
+ if($preserve.ExitCode -ne 0){throw 'Could not prepare disposable migration preservation fixture.'}
+ $stage='verify-failed-migration'
+ $fixtureArgs=@($prisma,'migrate','deploy','--config',$scratchConfig)
+ $failure=Invoke-TestChild $node $fixtureArgs $migrationEnv $null $true
+ if($failure.ExitCode -eq 0 -or (($failure.Output+$failure.Diagnostic) -notmatch 'P3018')){throw 'Expected Prisma migration failure was not observed.'}
+ $verifyFailed=@"
+SELECT (SELECT count(*) FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL)=$count
+ AND (SELECT count(*) FROM public._prisma_migrations WHERE migration_name='$fixtureName' AND finished_at IS NULL AND rolled_back_at IS NULL)=1
+ AND (SELECT count(*) FROM public.fixture_preserve WHERE id=41)=1;
+"@
+ $failedState=Invoke-TestChild $psql $checkArgs @{PGPASSWORD='synthetic-migrator-test-73'} ($verifyFailed+"`n") $true
+ if($failedState.ExitCode -ne 0 -or $failedState.Output.Trim() -cne 't'){throw 'Failed migration did not preserve expected evidence and data.'}
+ $stage='verify-failed-migration-blocks-retry'
+ $retry=Invoke-TestChild $node $fixtureArgs $migrationEnv $null $true
+ if($retry.ExitCode -eq 0 -or (($retry.Output+$retry.Diagnostic) -notmatch 'P3009')){throw 'Prisma did not refuse a retry with a failed migration.'}
+ $stage='resolve-synthetic-failure-explicitly'
+ $resolveArgs=@($prisma,'migrate','resolve','--rolled-back',$fixtureName,'--config',$scratchConfig)
+ $resolve=Invoke-TestChild $node $resolveArgs $migrationEnv $null $true
+ if($resolve.ExitCode -ne 0){throw 'Explicit synthetic migration rollback resolution failed.'}
+ [IO.File]::WriteAllText($fixtureSql,"CREATE TABLE public.fixture_recovered (id integer PRIMARY KEY);`n",[Text.UTF8Encoding]::new($false))
+ $stage='verify-explicit-migration-recovery'
+ foreach($attempt in 1..2){
+  $resumed=Invoke-TestChild $node $fixtureArgs $migrationEnv $null $true
+  if($resumed.ExitCode -ne 0){throw 'Explicit disposable migration recovery failed.'}
+ }
+ $verifyRecovered=@"
+SELECT (SELECT count(*) FROM public._prisma_migrations WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL)=($count+1)
+ AND (SELECT count(*) FROM public._prisma_migrations WHERE migration_name='$fixtureName' AND rolled_back_at IS NOT NULL)=1
+ AND (SELECT count(*) FROM public.fixture_preserve WHERE id=41)=1
+ AND (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='public.fixture_recovered'::regclass)='fixture_owner';
+"@
+ $recovered=Invoke-TestChild $psql $checkArgs @{PGPASSWORD='synthetic-migrator-test-73'} ($verifyRecovered+"`n") $true
+ if($recovered.ExitCode -ne 0 -or $recovered.Output.Trim() -cne 't'){throw 'Explicit recovery did not preserve fixture data and migration ownership.'}
  # These SQL grants model the existing Linux CI privilege matrix only. They
  # are never wired to production provisioning and do not establish production
  # credential handling, account ownership, or service-SID acceptance.
@@ -156,7 +211,7 @@ GRANT SELECT, UPDATE ON public.discovery_runs TO fixture_worker;
   # Diagnostics stay in memory and are never printed.
   if(-not [bool]$case.allow -and $outcome.Diagnostic -notmatch 'ERROR:\s+42501:'){throw 'Disposable runtime denial had an unexpected SQLSTATE.'}
  }
- Write-Host 'Extracted Prisma tooling applied and repeated disposable migrations with schema ownership and synthetic runtime privilege checks; production migration remains disabled.'
+ Write-Host 'Disposable migrations passed ownership, failure/retry blocking, explicit synthetic resolution and runtime privilege checks; production migration remains disabled.'
 
 }catch{
  throw "Disposable PostgreSQL migration experiment failed at $stage."
