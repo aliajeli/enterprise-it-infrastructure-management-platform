@@ -12,7 +12,7 @@ try{
   "CredentialVault.KeyringStorageHelper.exe","CredentialVault.DpapiHelper.exe",
   "apps\api\dist\server.js","apps\worker\dist\main.js","packages\database\dist\index.js","packages\database\prisma\schema.prisma","packages\database\prisma\migrations",
   "node_modules\@platform\api\package.json","node_modules\@platform\worker\package.json","node_modules\@platform\database\package.json","node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json",
-  "apps\web\.next\standalone\server.js","apps\web\.next\standalone\node_modules\next\package.json",
+  "apps\web\.next\standalone\server.js","apps\web\.next\standalone\.next\required-server-files.json","apps\web\.next\standalone\node_modules\next\package.json","apps\web\.next\standalone\service-entry.cjs",
   "postgresql\pgsql\bin\postgres.exe","postgresql\pgsql\bin\pg_ctl.exe","postgresql\pgsql\bin\initdb.exe","postgresql\pgsql\share\postgresql.conf.sample",
   "scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1",
   "scripts\windows\provision-postgresql-service.ps1","scripts\windows\provision-api-service.ps1","scripts\windows\provision-worker-service.ps1",
@@ -27,9 +27,27 @@ try{
  . $scriptPath -SourceRoot $source -OutputArchive $archive
  $plan=Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive $archive
  if($plan.ApplicationVersion -ne "0.1.1" -or $plan.RequiredFiles.Count -ne $required.Count){throw "Unexpected offline package plan."}
+ # Real monorepo output places server.js under apps/web; packaging must
+ # accept exactly one known layout and reject ambiguous layouts.
+ $flatWeb=Join-Path $source 'apps\web\.next\standalone\server.js'
+ $nestedWeb=Join-Path $source 'apps\web\.next\standalone\apps\web\server.js'
+ New-Item -ItemType Directory -Path (Split-Path $nestedWeb -Parent) -Force|Out-Null
+ [IO.File]::Move($flatWeb,$nestedWeb)
+ $flatWebConfig=Join-Path $source 'apps\web\.next\standalone\.next\required-server-files.json'
+ $nestedWebConfig=Join-Path $source 'apps\web\.next\standalone\apps\web\.next\required-server-files.json'
+ New-Item -ItemType Directory -Path (Split-Path $nestedWebConfig -Parent) -Force|Out-Null
+ [IO.File]::Move($flatWebConfig,$nestedWebConfig)
+ $nestedPlan=Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive $archive
+ if($nestedPlan.RequiredFiles -notcontains 'apps\web\.next\standalone\apps\web\server.js'){throw 'Monorepo Web entry was not selected.'}
+ [IO.File]::Copy($nestedWeb,$flatWeb)
+ $ambiguousRejected=$false
+ try{Get-OfflinePayloadPackagePlan -SourceRoot $source -OutputArchive $archive|Out-Null}catch{$ambiguousRejected=$true}
+ if(-not $ambiguousRejected){throw 'Ambiguous Web standalone layouts must be rejected.'}
+ Remove-Item -LiteralPath $nestedWeb -Force
+ [IO.File]::Move($nestedWebConfig,$flatWebConfig)
  # Every native security helper and downstream installer/provisioning script
  # must independently block packaging when it is absent.
- foreach($relative in @($required|Where-Object{$_ -like 'scripts\windows\*' -or $_ -like 'CredentialVault.*'})){
+ foreach($relative in @($required|Where-Object{$_ -like 'scripts\windows\*' -or $_ -like 'CredentialVault.*' -or $_ -like '*service-entry.cjs' -or $_ -like '*required-server-files.json'})){
   $path=Join-Path $source $relative
   Remove-Item -LiteralPath $path -Force
   $missingRejected=$false

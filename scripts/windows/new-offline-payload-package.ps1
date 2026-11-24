@@ -29,7 +29,7 @@ function Get-OfflinePayloadPackagePlan {
   "packages\database\prisma\schema.prisma","packages\database\prisma\migrations",
   "node_modules\@platform\api\package.json","node_modules\@platform\worker\package.json","node_modules\@platform\database\package.json",
   "node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json",
-  "apps\web\.next\standalone\server.js","apps\web\.next\standalone\node_modules\next\package.json",
+  "apps\web\.next\standalone\node_modules\next\package.json","apps\web\.next\standalone\service-entry.cjs",
   "postgresql\pgsql\bin\postgres.exe","postgresql\pgsql\bin\pg_ctl.exe","postgresql\pgsql\bin\initdb.exe",
   "postgresql\pgsql\share\postgresql.conf.sample",
   "scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1",
@@ -37,6 +37,14 @@ function Get-OfflinePayloadPackagePlan {
   "scripts\windows\provision-web-service.ps1","scripts\windows\provision-edge-service.ps1",
   "scripts\windows\installer-preflight.ps1","scripts\windows\new-offline-payload-manifest.ps1","scripts\windows\install-offline-payload.ps1"
  )
+ $webFlat="apps\web\.next\standalone\server.js"
+ $webMonorepo="apps\web\.next\standalone\apps\web\server.js"
+ $flatExists=Test-Path -LiteralPath (Join-Path $source $webFlat) -PathType Leaf
+ $monorepoExists=Test-Path -LiteralPath (Join-Path $source $webMonorepo) -PathType Leaf
+ if($flatExists -eq $monorepoExists){throw "Offline payload must contain exactly one supported Web standalone layout."}
+ $webEntry=if($monorepoExists){$webMonorepo}else{$webFlat}
+ $webConfig=if($monorepoExists){'apps\web\.next\standalone\apps\web\.next\required-server-files.json'}else{'apps\web\.next\standalone\.next\required-server-files.json'}
+ $required+=@($webEntry,$webConfig)
  foreach($relative in $required){if(-not(Test-Path -LiteralPath (Join-Path $source $relative))){throw "Required offline payload component is missing: $relative"}}
  $archive=[IO.Path]::GetFullPath($OutputArchive)
  if([IO.Path]::GetExtension($archive) -ine ".zip"){throw "Output archive must use the .zip extension."}

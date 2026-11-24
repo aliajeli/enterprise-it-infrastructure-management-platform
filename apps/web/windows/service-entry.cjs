@@ -10,10 +10,23 @@ async function shutdown(reason) { shutdownTask ??= (async () => {
 })(); return shutdownTask; }
 async function main() {
   const { createServer } = await import("node:http");
+  const { existsSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const flat = existsSync(join(__dirname, "server.js"));
+  const monorepo = existsSync(join(__dirname, "apps", "web", "server.js"));
+  if (flat === monorepo) throw new Error("Invalid or ambiguous standalone Web layout");
+  const appDir = monorepo ? join(__dirname, "apps", "web") : __dirname;
+  // Next's generated standalone server injects the build-time config before
+  // loading Next. A custom graceful-shutdown host must do the same: reading
+  // defaults instead would discard rewrites and poweredByHeader settings.
+  const { readFile } = await import("node:fs/promises");
+  const required = JSON.parse(await readFile(join(appDir, ".next", "required-server-files.json"), "utf8"));
+  if (!required.config || typeof required.config !== "object" || Array.isArray(required.config)) throw new Error("Invalid standalone build configuration");
+  process.env.__NEXT_PRIVATE_STANDALONE_CONFIG = JSON.stringify(required.config);
   const nextModule = await import("next");
   const next = nextModule.default ?? nextModule;
   const host = "127.0.0.1"; const port = 13000;
-  app = next({ dev: false, dir: __dirname, hostname: host, port });
+  app = next({ dev: false, dir: appDir, hostname: host, port });
   const handle = app.getRequestHandler();
   await app.prepare();
   server = createServer((req,res) => {

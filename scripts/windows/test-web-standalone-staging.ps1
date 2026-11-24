@@ -6,6 +6,8 @@ $source = Join-Path $tempRoot "build\.next\standalone"
 $installRoot = Join-Path $tempRoot "install"
 try {
     New-Item -ItemType Directory -Path (Join-Path $source "node_modules\next"), (Join-Path $tempRoot "build\.next\static"), (Join-Path $tempRoot "build\public"), $installRoot -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $source ".next") -Force|Out-Null
+    [IO.File]::WriteAllText((Join-Path $source ".next\required-server-files.json"), '{"config":{}}')
     [IO.File]::WriteAllText((Join-Path $source "server.js"), "console.log('next');")
     [IO.File]::WriteAllText((Join-Path $source "node_modules\next\index.js"), "module.exports = {};")
     [IO.File]::WriteAllText((Join-Path $tempRoot "build\.next\static\asset.txt"), "static")
@@ -31,6 +33,27 @@ try {
     $rejected = $false
     try { Get-WebStandaloneStagePlan -StandaloneDirectory $source -InstallRoot $installRoot | Out-Null } catch { $rejected = $true }
     if (-not $rejected) { throw "Existing destination was accepted by the stage plan." }
+    # Next.js monorepo output keeps the app under apps/web while shared
+    # dependencies stay at the standalone root. Static/public belong to app.
+    $nestedSource = Join-Path $tempRoot "nested-build\.next\standalone"
+    $nestedInstall = Join-Path $tempRoot "nested-install"
+    New-Item -ItemType Directory -Path (Join-Path $nestedSource "apps\web"), (Join-Path $nestedSource "node_modules\next"), (Join-Path $tempRoot "nested-build\.next\static"), (Join-Path $tempRoot "nested-build\public"), $nestedInstall -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $nestedSource "apps\web\.next") -Force|Out-Null
+    [IO.File]::WriteAllText((Join-Path $nestedSource "apps\web\.next\required-server-files.json"), '{"config":{}}')
+    [IO.File]::WriteAllText((Join-Path $nestedSource "apps\web\server.js"), "fixture")
+    [IO.File]::WriteAllText((Join-Path $nestedSource "node_modules\next\index.js"), "fixture")
+    [IO.File]::WriteAllText((Join-Path $tempRoot "nested-build\.next\static\asset.txt"), "static")
+    [IO.File]::WriteAllText((Join-Path $tempRoot "nested-build\public\logo.txt"), "public")
+    $nestedResult=& $stageScript -StandaloneDirectory $nestedSource -InstallRoot $nestedInstall -Confirm:$false | ConvertFrom-Json
+    $nestedDestination=Join-Path $nestedInstall "apps\web\.next\standalone"
+    if($nestedResult.layout -ne 'monorepo'){throw 'Monorepo layout was not selected.'}
+    foreach($required in @('apps\web\server.js','apps\web\.next\static\asset.txt','apps\web\public\logo.txt','node_modules\next\index.js','service-entry.cjs')){
+        if(-not (Test-Path -LiteralPath (Join-Path $nestedDestination $required) -PathType Leaf)){throw "Monorepo Web payload is missing: $required"}
+    }
+    [IO.File]::WriteAllText((Join-Path $nestedSource 'server.js'),'ambiguous')
+    $ambiguous=$false
+    try{& $stageScript -StandaloneDirectory $nestedSource -InstallRoot (Join-Path $tempRoot 'ambiguous-install') -WhatIf|Out-Null}catch{$ambiguous=$true}
+    if(-not $ambiguous){throw 'Ambiguous Web standalone layout was accepted.'}
     Write-Host "Web standalone staging policy tests passed."
 }
 finally {

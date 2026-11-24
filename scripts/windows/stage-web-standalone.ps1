@@ -17,8 +17,17 @@ function Get-WebStandaloneStagePlan {
     if (-not (Test-Path -LiteralPath $source -PathType Container)) {
         throw "Next.js standalone source directory does not exist."
     }
-    if (-not (Test-Path -LiteralPath (Join-Path $source "server.js") -PathType Leaf)) {
-        throw "Next.js standalone server.js is missing."
+    # Next.js traces this monorepo from the repository root. Its actual
+    # standalone entry is apps/web/server.js, not always root/server.js.
+    $flatEntry = Join-Path $source "server.js"
+    $monorepoEntry = Join-Path $source "apps\web\server.js"
+    $flat = Test-Path -LiteralPath $flatEntry -PathType Leaf
+    $monorepo = Test-Path -LiteralPath $monorepoEntry -PathType Leaf
+    if ($flat -eq $monorepo) { throw "Standalone payload must have exactly one supported Web entry point." }
+    $appRelative = if ($monorepo) { "apps\web" } else { "" }
+    $appSource = if ($appRelative) { Join-Path $source $appRelative } else { $source }
+    if (-not (Test-Path -LiteralPath (Join-Path $appSource ".next\required-server-files.json") -PathType Leaf)) {
+        throw "Standalone build-time server configuration is missing."
     }
     if (-not (Test-Path -LiteralPath (Join-Path $source "node_modules\next") -PathType Container)) {
         throw "Standalone Next.js dependencies are incomplete."
@@ -38,6 +47,8 @@ function Get-WebStandaloneStagePlan {
         SourceDirectory = $source
         InstallRoot = $root
         Destination = $destination
+        AppRelative = $appRelative
+        Layout = if ($monorepo) { "monorepo" } else { "flat" }
         StaticSource = Join-Path (Split-Path $source -Parent) "static"
         PublicSource = Join-Path (Split-Path (Split-Path $source -Parent) -Parent) "public"
         ServiceEntrySource = Join-Path $PSScriptRoot "..\..\apps\web\windows\service-entry.cjs"
@@ -54,6 +65,7 @@ if ($MyInvocation.InvocationName -ne ".") {
             installRoot = $plan.InstallRoot
             destination = $plan.Destination
             sourceDirectory = $plan.SourceDirectory
+            layout = $plan.Layout
             overwrite = $false
             atomicPromotion = $true
             dryRun = $true
@@ -68,21 +80,22 @@ if ($MyInvocation.InvocationName -ne ".") {
     try {
         New-Item -ItemType Directory -Path $staging -ErrorAction Stop | Out-Null
         Get-ChildItem -LiteralPath $plan.SourceDirectory -Force | Copy-Item -Destination $staging -Recurse
+        $stagedApp = if ($plan.AppRelative) { Join-Path $staging $plan.AppRelative } else { $staging }
         if (Test-Path -LiteralPath $plan.StaticSource -PathType Container) {
-            $staticTarget = Join-Path $staging ".next\static"
+            $staticTarget = Join-Path $stagedApp ".next\static"
             New-Item -ItemType Directory -Path $staticTarget -Force | Out-Null
             Get-ChildItem -LiteralPath $plan.StaticSource -Force | Copy-Item -Destination $staticTarget -Recurse
         }
         if (Test-Path -LiteralPath $plan.PublicSource -PathType Container) {
-            $publicTarget = Join-Path $staging "public"
+            $publicTarget = Join-Path $stagedApp "public"
             New-Item -ItemType Directory -Path $publicTarget -Force | Out-Null
             Get-ChildItem -LiteralPath $plan.PublicSource -Force | Copy-Item -Destination $publicTarget -Recurse
         }
         Copy-Item -LiteralPath $plan.ServiceEntrySource -Destination (Join-Path $staging "service-entry.cjs")
-        foreach ($required in @("server.js", "node_modules\next", "service-entry.cjs")) {
-            if (-not (Test-Path -LiteralPath (Join-Path $staging $required))) {
-                throw "Staged Web payload is incomplete: $required"
-            }
+        if (-not (Test-Path -LiteralPath (Join-Path $stagedApp "server.js") -PathType Leaf) -or
+            -not (Test-Path -LiteralPath (Join-Path $staging "node_modules\next") -PathType Container) -or
+            -not (Test-Path -LiteralPath (Join-Path $staging "service-entry.cjs") -PathType Leaf)) {
+            throw "Staged Web payload is incomplete."
         }
         if (Test-Path -LiteralPath $plan.Destination) {
             throw "Web standalone destination appeared during staging; refusing to overwrite."
@@ -92,6 +105,7 @@ if ($MyInvocation.InvocationName -ne ".") {
             installRoot = $plan.InstallRoot
             destination = $plan.Destination
             staged = $true
+            layout = $plan.Layout
             immutable = $true
             atomicPromotion = $true
         } | ConvertTo-Json -Depth 4

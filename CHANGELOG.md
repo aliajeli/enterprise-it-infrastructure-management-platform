@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.198 — 2026-11-24
+
+- Fixed staging and package validation for the actual monorepo Next.js standalone layout, retaining flat layout support and rejecting ambiguity. The Web service now loads its built standalone configuration so API rewrites and disabled powered-by headers are preserved. Added synthetic and real-build Windows tests.
+- A same-user synthetic child-handle attack succeeded in CI; inherited stdin remains experimental and production initialization and installation remain disabled.
+
 ## 0.1.197 — 2026-11-24
 
 - Added an isolated Windows adversarial diagnostic for same-user duplication of a synthetic child stdin handle. Interception fails the probe; the model does not establish the behavior of PostgreSQL restricted children. Production database and installer gates remain closed.
