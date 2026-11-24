@@ -1,3 +1,11 @@
+## 2026-11-24 — Define Credential Vault provisioning contract (0.1.162)
+
+- Verified 0.1.161 exact-head CI run 45334177790 completed successfully: Windows API runtime smoke, Platform validation (Node.js 26/PostgreSQL 18), and npm lockfile refresh all succeeded.
+- Reconfirmed PR #7/#8/#9 are Draft, open and unmerged.
+- Added WINDOWS_CREDENTIAL_VAULT_PROVISIONING_DESIGN.md to make the next security-sensitive implementation bounded and testable. It specifies exact service-SID ownership and protected two-ACE DACL compatibility with the existing helper, elevated installer ordering, create-new/idempotent behavior, parent-chain trust validation, handle-based verification, and safe failure cleanup.
+- This is a design artifact only. No production provisioner, parent ACL validation, runtime Node keyring registration, durable credential persistence, installer/release, or Windows Server acceptance is claimed.
+- No firewall/router/MikroTik/NAT/DST-NAT/port-mapping changes. No PR merge.
+
 ## 2026-11-24 — Add Credential Vault junction rejection regression (0.1.161)
 
 - Rechecked branch HEAD and confirmed the previous exact-head CI run 45197367123 succeeded on 0.1.160. PR #7, #8 and #9 remain Draft/open/unmerged.

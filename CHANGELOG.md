@@ -1,3 +1,8 @@
+## 0.1.162 — Specify fail-closed Credential Vault provisioning contract
+
+- Added a dedicated Windows provisioning design that records the exact runtime-helper owner/DACL contract, required service-creation ordering, native create-new semantics, retained-handle validation, parent trust checks, rollback limits, and acceptance tests.
+- The design explicitly records that elevated Vault provisioning and parent-chain security validation are not implemented. Existing preflight remains a presence/reparse guard; no installer readiness or credential persistence claim is made.
+
 ## 0.1.161 — Exercise Credential Vault junction rejection in orchestration preflight
 
 - Extended the Windows orchestration policy test with a real same-volume directory-junction fixture at the CredentialVault boundary.
