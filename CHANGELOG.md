@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.195 — 2026-11-24
+
+- Bounded disposable PostgreSQL authentication-test output handling and avoid waiting indefinitely for EOF from inherited pg_ctl descendant handles. Production gates remain disabled.
+
 ## 0.1.194 — 2026-11-24
 
 - Extended disposable real-PostgreSQL stdin experiment to check successful and rejected SCRAM logins on loopback and added a synthetic restricted-re-exec-error regression. These tests do not establish safe production handle custody or Windows Server acceptance.

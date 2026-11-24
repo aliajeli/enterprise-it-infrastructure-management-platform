@@ -36,7 +36,7 @@ try{
  $bindir=Split-Path $initdb -Parent
  $pgctl=Join-Path $bindir 'pg_ctl.exe';$psql=Join-Path $bindir 'psql.exe'
  $log=Join-Path $root 'postgres-test.log';$started=$false
- function Invoke-SyntheticTestProgram([string]$file,[string[]]$arguments,[string]$password){
+ function Invoke-SyntheticTestProgram([string]$file,[string[]]$arguments,[string]$password,[bool]$needOutput=$false){
   $start=[Diagnostics.ProcessStartInfo]::new();$start.FileName=$file
   foreach($a in $arguments){$start.ArgumentList.Add($a)}
   $start.UseShellExecute=$false;$start.CreateNoWindow=$true
@@ -46,21 +46,30 @@ try{
   try{
    $out=$child.StandardOutput.ReadToEndAsync();$err=$child.StandardError.ReadToEndAsync()
    if(-not $child.WaitForExit(60000)){try{$child.Kill($true)}catch{};throw 'Disposable PostgreSQL test process timed out.'}
-   $output=$out.GetAwaiter().GetResult();$null=$err.GetAwaiter().GetResult()
+   # pg_ctl descendants can retain its redirected handles. Do not wait for
+   # EOF from those descendants after pg_ctl has exited. Only psql output is
+   # required, and even that wait is bounded.
+   $output=''
+   if($needOutput){
+    if(-not $out.Wait(5000)){throw 'Disposable test output did not close.'}
+    $output=$out.GetAwaiter().GetResult()
+   }
    return [pscustomobject]@{ExitCode=$child.ExitCode;Output=$output}
   }finally{$child.Dispose()}
  }
  try{
+  Write-Output '::notice title=PostgreSQL stdin test::Starting disposable loopback server.'
   $server=Invoke-SyntheticTestProgram $pgctl @('-D',$data,'-l',$log,'-o',("-h 127.0.0.1 -p "+$port),'-w','start') $null
   if($server.ExitCode -ne 0){throw 'Disposable loopback PostgreSQL did not start.'}
   $started=$true
   $query=@('-X','-w','-h','127.0.0.1','-p',[string]$port,'-U','platform_admin','-d','postgres','-tAc','SELECT current_user')
-  $accepted=Invoke-SyntheticTestProgram $psql $query 'synthetic-real-initdb-stdin-password-48'
+  Write-Output '::notice title=PostgreSQL stdin test::Checking synthetic SCRAM authentication.'
+  $accepted=Invoke-SyntheticTestProgram $psql $query 'synthetic-real-initdb-stdin-password-48' $true
   if($accepted.ExitCode -ne 0 -or $accepted.Output.Trim() -cne 'platform_admin'){throw 'Synthetic SCRAM authentication with the chosen password failed.'}
   $rejected=Invoke-SyntheticTestProgram $psql $query 'synthetic-incorrect-password-49'
   if($rejected.ExitCode -eq 0){throw 'Disposable cluster accepted an incorrect password.'}
  }finally{
-  if($started){
+  if($started -or (Test-Path -LiteralPath (Join-Path $data 'postmaster.pid'))){
    $stopped=Invoke-SyntheticTestProgram $pgctl @('-D',$data,'-m','immediate','-w','stop') $null
    if($stopped.ExitCode -ne 0){throw 'Disposable PostgreSQL did not stop.'}
   }

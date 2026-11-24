@@ -1,3 +1,7 @@
+## 0.1.195 disposable authentication test cleanup — 2026-11-24
+
+CI 45397235295 on 0.1.194 passed synthetic stdin, Linux validation, Windows runtime and self-contained publication; the named-pipe experiment failed as expected. The real stdin plus SCRAM job remained stuck and the run was cancelled. A possible cause is pg_ctl descendants retaining redirected handles; output EOF handling is now bounded and pg_ctl does not wait for descendant EOF. Added non-secret stage notices and best-effort stopping even if pg_ctl start did not return normally. Exact-head CI required. This remains a disposable experiment, not secure production transport or installer acceptance.
+
 ## 0.1.194 stdin authentication experiment — 2026-11-24
 
 CI 45396568626 on 0.1.193 passed both synthetic stdin and actual PostgreSQL 18.7 disposable initialization via process-local OSTYPE=msys stdin fallback; it checked PG_VERSION and SCRAM config. Linux and self-contained publish passed; named-pipe experiment still failed closed at client PID mismatch and therefore whole CI failed. Added disposable loopback SCRAM correct/incorrect password checks and fixed-category rejection if initdb reports a restricted re-exec failure, with synthetic regression. Exact-head CI required. Log text is not proof of the actual token state; inherited handle custody and same-user duplication/spoofing require independent security analysis and adversarial tests. No production initializer/bootstrap/migration or installer release enabled. Clean Windows Server acceptance outstanding.
