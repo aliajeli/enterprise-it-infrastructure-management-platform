@@ -29,6 +29,9 @@ function Test-OfflineInstallerArchive {
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $zip=[IO.Compression.ZipArchive]::new($ArchiveHandle,[IO.Compression.ZipArchiveMode]::Read,$true)
   try{
+  # ZipArchive has already parsed its central directory here: this limit bounds
+  # subsequent processing, not allocations during the initial ZIP parse.
+  if($zip.Entries.Count -gt 250000){throw "Offline payload has too many ZIP entries."}
   $names=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
   $hasPackage=$false;$hasManifest=$false
   [int64]$totalExpanded=0
@@ -50,8 +53,14 @@ function Test-OfflineInstallerArchive {
    if(-not $name.EndsWith('/')){
     $totalExpanded += [int64]$entry.Length
     if($totalExpanded -gt 100GB){throw "Offline payload expands beyond the 100 GB safety limit."}
-    if($trimmed -eq 'package.json'){$hasPackage=$true}
-    if($trimmed -eq 'payload.manifest.json'){$hasManifest=$true}
+    if($trimmed -ieq 'package.json'){
+     if($trimmed -cne 'package.json' -or $entry.Length -gt 1MB){throw "Offline package metadata is incorrectly named or too large."}
+     $hasPackage=$true
+    }
+    if($trimmed -ieq 'payload.manifest.json'){
+     if($trimmed -cne 'payload.manifest.json' -or $entry.Length -gt 64MB){throw "Offline payload manifest is incorrectly named or too large."}
+     $hasManifest=$true
+    }
    }
   }
   if(-not $hasPackage -or -not $hasManifest){throw "ZIP root must contain package.json and payload.manifest.json."}
@@ -60,6 +69,30 @@ function Test-OfflineInstallerArchive {
  }finally{
   if($ownsHandle){$ArchiveHandle.Dispose()}else{$ArchiveHandle.Position=0}
  }
+}
+
+# Bound actual decompressed bytes as well as ZIP directory metadata. ZIP
+# headers are untrusted and must not be the only memory-allocation limit.
+function Read-BoundedOfflineUtf8Stream {
+ [CmdletBinding()]
+ param([Parameter(Mandatory=$true)][IO.Stream]$InputStream,[Parameter(Mandatory=$true)][ValidateRange(1,67108864)][int]$MaximumBytes)
+ $buffer=[byte[]]::new(65536);$memory=[IO.MemoryStream]::new()
+ try{
+  while(($read=$InputStream.Read($buffer,0,$buffer.Length)) -gt 0){
+   if($memory.Length+$read -gt $MaximumBytes){throw 'Offline metadata exceeds its byte limit.'}
+   $memory.Write($buffer,0,$read)
+  }
+  $bytes=$memory.ToArray()
+  $offset=if($bytes.Length -ge 3 -and $bytes[0] -eq 0xef -and $bytes[1] -eq 0xbb -and $bytes[2] -eq 0xbf){3}else{0}
+  return [Text.UTF8Encoding]::new($false,$true).GetString($bytes,$offset,$bytes.Length-$offset)
+ }finally{$memory.Dispose()}
+}
+function Read-BoundedOfflineZipText {
+ [CmdletBinding()]
+ param([Parameter(Mandatory=$true)][IO.Compression.ZipArchiveEntry]$Entry,[Parameter(Mandatory=$true)][int]$MaximumBytes)
+ if($Entry.Length -gt $MaximumBytes){throw 'Offline metadata exceeds its declared byte limit.'}
+ $stream=$Entry.Open()
+ try{return (Read-BoundedOfflineUtf8Stream -InputStream $stream -MaximumBytes $MaximumBytes)}finally{$stream.Dispose()}
 }
 
 function Get-OfflineInstallerPlan {
@@ -104,10 +137,8 @@ if($MyInvocation.InvocationName -ne '.'){
   try{
    $manifestEntry=$manifestZip.GetEntry('payload.manifest.json')
    $packageEntry=$manifestZip.GetEntry('package.json')
-   $manifestReader=[IO.StreamReader]::new($manifestEntry.Open())
-   try{$manifest=$manifestReader.ReadToEnd()|ConvertFrom-Json -ErrorAction Stop}finally{$manifestReader.Dispose()}
-   $packageReader=[IO.StreamReader]::new($packageEntry.Open())
-   try{$package=$packageReader.ReadToEnd()|ConvertFrom-Json -ErrorAction Stop}finally{$packageReader.Dispose()}
+   $manifest=(Read-BoundedOfflineZipText -Entry $manifestEntry -MaximumBytes 64MB)|ConvertFrom-Json -ErrorAction Stop
+   $package=(Read-BoundedOfflineZipText -Entry $packageEntry -MaximumBytes 1MB)|ConvertFrom-Json -ErrorAction Stop
   }finally{$manifestZip.Dispose()}
   $version=[string]$package.version
   if($version -notmatch '^\d+\.\d+\.\d+$' -or $manifest.applicationVersion -ne $version){throw "Archive package and manifest versions are invalid or inconsistent."}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.207 — 2026-11-24
+
+- Bound offline installer ZIP metadata reads and entry processing, with regression tests; installation remains disabled and these limits do not prevent allocations while ZipArchive first parses its central directory.
+
 ## 0.1.206 — 2026-11-24
 
 - Made installer preflight distinguish host baseline from actual installation readiness, which remains false while security and acceptance gates are open. It now rejects non-Server and ARM64/unknown architectures; no Windows Server version is claimed as accepted.

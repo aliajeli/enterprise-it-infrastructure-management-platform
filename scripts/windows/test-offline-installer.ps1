@@ -43,6 +43,56 @@ try{
   try{[IO.File]::Move($valid,(Join-Path $root 'moved.zip'))}catch{$deleteRejected=$true}
   if(-not $deleteRejected){throw 'Archive replacement was accepted while validation held its lock.'}
  }finally{$readLock.Dispose()}
+ # Exercise ZIP-entry reading independently; the mutating installer path remains disabled.
+ $file=[IO.File]::OpenRead($valid)
+ try{
+  $zip=[IO.Compression.ZipArchive]::new($file,[IO.Compression.ZipArchiveMode]::Read,$true)
+  try{
+   $metadata=Read-BoundedOfflineZipText -Entry ($zip.GetEntry('package.json')) -MaximumBytes 1024 | ConvertFrom-Json
+   if($metadata.version -ne '0.1.128'){throw 'Bounded ZIP metadata read failed.'}
+   $bounded=$false;try{Read-BoundedOfflineZipText -Entry ($zip.GetEntry('package.json')) -MaximumBytes 1|Out-Null}catch{$bounded=$true}
+   if(-not $bounded){throw 'Oversized declared ZIP entry was accepted.'}
+  }finally{$zip.Dispose()}
+ }finally{$file.Dispose()}
+ # Actual decompressed bytes are bounded independently of ZIP metadata.
+ $testInput=[IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes('01234567890'))
+ try{
+  $bounded=$false
+  try{Read-BoundedOfflineUtf8Stream -InputStream $testInput -MaximumBytes 10|Out-Null}catch{$bounded=$true}
+  if(-not $bounded){throw 'Metadata stream exceeding the actual byte limit was accepted.'}
+ }finally{$testInput.Dispose()}
+ $testInput=[IO.MemoryStream]::new([byte[]](0xef,0xbb,0xbf,0x6f,0x6b))
+ try{if((Read-BoundedOfflineUtf8Stream -InputStream $testInput -MaximumBytes 5) -cne 'ok'){throw 'UTF-8 BOM handling failed.'}}finally{$testInput.Dispose()}
+ $testInput=[IO.MemoryStream]::new([byte[]](0xff))
+ try{
+  $invalid=$false;try{Read-BoundedOfflineUtf8Stream -InputStream $testInput -MaximumBytes 1|Out-Null}catch{$invalid=$true}
+  if(-not $invalid){throw 'Invalid UTF-8 metadata was accepted.'}
+ }finally{$testInput.Dispose()}
+ # A highly compressed metadata entry is still rejected based on expanded size.
+ $oversized=Join-Path $root 'oversized-package.zip'
+ $stream=[IO.File]::Open($oversized,[IO.FileMode]::CreateNew)
+ try{
+  $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
+  try{
+   $entry=$zip.CreateEntry('package.json');$data=$entry.Open()
+   try{$chunk=[byte[]]::new(65536);for($i=0;$i -lt 16;$i++){$data.Write($chunk,0,$chunk.Length)};$data.WriteByte(0)}finally{$data.Dispose()}
+   $entry=$zip.CreateEntry('payload.manifest.json');$writer=[IO.StreamWriter]::new($entry.Open())
+   try{$writer.Write('{}')}finally{$writer.Dispose()}
+  }finally{$zip.Dispose()}
+ }finally{$stream.Dispose()}
+ $oversizedHash=(Get-FileHash -LiteralPath $oversized -Algorithm SHA256).Hash
+ $bounded=$false;try{Test-OfflineInstallerArchive -ArchivePath $oversized -ExpectedSha256 $oversizedHash|Out-Null}catch{$bounded=$true}
+ if(-not $bounded){throw 'Oversized compressed package metadata was accepted.'}
+ # Metadata names are canonical because ZipArchive.GetEntry is case-sensitive.
+ $noncanonical=Join-Path $root 'noncanonical.zip'
+ $stream=[IO.File]::Open($noncanonical,[IO.FileMode]::CreateNew)
+ try{
+  $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
+  try{foreach($name in @('PACKAGE.JSON','payload.manifest.json')){$entry=$zip.CreateEntry($name);$writer=[IO.StreamWriter]::new($entry.Open());try{$writer.Write('{}')}finally{$writer.Dispose()}}}finally{$zip.Dispose()}
+ }finally{$stream.Dispose()}
+ $noncanonicalHash=(Get-FileHash -LiteralPath $noncanonical -Algorithm SHA256).Hash
+ $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $noncanonical -ExpectedSha256 $noncanonicalHash|Out-Null}catch{$rejected=$true}
+ if(-not $rejected){throw 'Noncanonical metadata name was accepted.'}
  $rejected=$false;try{Test-OfflineInstallerArchive -ArchivePath $valid -ExpectedSha256 ('0'*64)|Out-Null}catch{$rejected=$true}
  if(-not $rejected){throw 'Archive with an incorrect trusted digest was accepted.'}
  $unsafe=Join-Path $root 'unsafe.zip'
