@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.217 — 2026-11-24
+
+- Shortened the no-secret isolated-account fixture command to fit the Windows credentialed process command-line constraint; exact-head CI required.
+
 ## 0.1.216 — 2026-11-24
 
 - Added sanitized, fixed-category diagnostics for the disposable isolated-account process probe after its positive control failed; no deployment or credential gate was opened.

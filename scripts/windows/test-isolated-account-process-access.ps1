@@ -23,8 +23,11 @@ $accountSid=$null;$created=$false;$victim=$null;$attacker=$null;$peer=$null;$sta
 function Start-FixtureProcess([string]$Code,[bool]$UseIsolatedAccount){
  $start=[Diagnostics.ProcessStartInfo]::new()
  $start.FileName=Join-Path $PSHOME 'pwsh.exe'
- $encoded=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Code))
- foreach($arg in @('-NoLogo','-NoProfile','-NonInteractive','-EncodedCommand',$encoded)){$start.ArgumentList.Add($arg)}
+ # ProcessStartInfo with credentials uses CreateProcessWithLogonW, which
+ # imposes a short command-line limit. The fixture code contains only public
+ # test logic, a PID and SIDs: never pass a password or real credential here.
+ if($Code.Length -gt 850){throw 'Fixture command exceeds its conservative length limit.'}
+ foreach($arg in @('-NoLogo','-NoProfile','-NonInteractive','-Command',$Code)){$start.ArgumentList.Add($arg)}
  $start.UseShellExecute=$false;$start.CreateNoWindow=$true
  $start.RedirectStandardInput=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
  if($UseIsolatedAccount){$start.Domain=$env:COMPUTERNAME;$start.UserName=$name;$start.Password=$password;$start.LoadUserProfile=$false}
