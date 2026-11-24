@@ -56,8 +56,11 @@ function Get-VaultPaths([string]$ProgramData){
 function Assert-AclExact([string]$Path,[string]$ExpectedServiceSid){
  $item=Get-Item -LiteralPath $Path -Force
  $acl=Get-Acl -LiteralPath $Path
- $owner=try{([Security.Principal.NTAccount]::new($acl.Owner)).Translate([Security.Principal.SecurityIdentifier]).Value}catch{$acl.Owner}
- if($owner -ne $ExpectedServiceSid){throw "Vault owner SID does not match the expected service SID."}
+ $owner=$acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+ if($owner -ne $ExpectedServiceSid){
+  $kind=if($owner -eq 'S-1-5-18'){'system'}elseif($owner -eq 'S-1-5-32-544'){'administrators'}else{'other'}
+  throw "Vault owner SID does not match the expected service SID (observed category: $kind)."
+ }
  if($acl.AreAccessRulesProtected -ne $true){throw "DACL not protected for $Path"}
  $rules=@($acl.Access|Where-Object{-not $_.IsInherited})
  if($rules.Count -ne 2){throw "Expected exactly 2 explicit ACEs for $Path, got $($rules.Count)"}

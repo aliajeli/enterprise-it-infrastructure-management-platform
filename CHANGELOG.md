@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.177 — 2026-11-24
+
+- Windows run 45376364739 on 0.1.176 passed elevated non-SYSTEM Vault fresh provision, verification and retry; independent SYSTEM ACL fixture reported an owner mismatch. Compare owner using the ACL API directly as a SecurityIdentifier instead of converting its displayed account name; if still failing, report only a bounded owner category. The owner mismatch remains unverified until exact-head CI, and no owner/ACL policy was changed. Linux Node 26/PostgreSQL 18 passed. No installer.
+
 ## 0.1.176 — 2026-11-24
 
 - Windows run 45375850378 showed the elevated admin could provision and verify a Vault but repeat provisioning failed opening the protected Vault with Win32 access denied. Reduced parent-handle access to the exact child-creation right needed at each level; removed unnecessary FILE_DELETE_CHILD and unrelated add-subdirectory rights on the Vault. ACL/owner checks remain unchanged. Exact-head Windows CI and independent security/Windows Server acceptance remain required. Linux Node 26/PostgreSQL 18 passed. No installer.

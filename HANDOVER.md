@@ -1,3 +1,7 @@
+## 0.1.177 independent owner check — 2026-11-24
+
+Windows run 45376364739 on 0fe6f458f4be387939e4cf7b20d408c9126379bb passed elevated non-SYSTEM Vault provision, verify and retry; the separate SYSTEM fixture stopped at owner SID comparison. ACL owner comparison now uses GetOwner(SecurityIdentifier) directly, with bounded category reporting on mismatch. Re-run exact-head CI; do not claim Vault accepted. Linux Node 26/PostgreSQL 18 passed. Bootstrap disabled; no installer built.
+
 ## 0.1.176 least-rights Vault retry fix — 2026-11-24
 
 Windows run 45375850378 on 753e03da1463edbf185031ed8252f07a03a0f4f0: elevated admin fresh provision and verify succeeded, third (retry) attempt failed `credential-vault:win32-5`; Linux Node 26/PostgreSQL 18 passed. Candidate fix requests only FILE_ADD_SUBDIRECTORY on EnterpriseIT and FILE_ADD_FILE on Vault, not FILE_DELETE_CHILD. Verify exact-head CI, SYSTEM adversarial fixtures and full security/Windows Server acceptance. First-install DB bootstrap remains disabled and no installer has been built.
