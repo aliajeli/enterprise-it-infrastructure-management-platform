@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.197 — 2026-11-24
+
+- Added an isolated Windows adversarial diagnostic for same-user duplication of a synthetic child stdin handle. Interception fails the probe; the model does not establish the behavior of PostgreSQL restricted children. Production database and installer gates remain closed.
+
 ## 0.1.196 — 2026-11-24
 
 - Closed a no-bootstrap orchestration path that could act on an unverified PostgreSQL cluster; offline installation now stops before staging while initialization and ownership gates remain unresolved. Read-only WhatIf and archive inspection remain available. Added fail-closed regressions.

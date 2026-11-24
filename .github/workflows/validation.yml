@@ -421,6 +421,24 @@ jobs:
             exit 1
           }
 
+  windows-stdin-handle-isolation:
+    name: Windows synthetic stdin handle isolation probe
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Probe same-user handle duplication
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-experimental-stdin-handle-isolation.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Experimental stdin isolation probe failed::$message"
+            exit 1
+          }
+
   windows-postgres-initdb-stdin:
     name: Windows disposable PostgreSQL initdb stdin experiment
     runs-on: windows-latest
