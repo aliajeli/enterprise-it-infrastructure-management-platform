@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.170 — 2026-11-24
+
+- Fixed the orchestrator to accept the actual five-subauthority Windows service SID shape and reject malformed or out-of-range SIDs before helper launch. Added provision/verify `-WhatIf` regression cases for valid and invalid SIDs; Windows CI must confirm them.
+- Run 45371445342 identified the remaining Vault fresh-creation failure as Windows error 1307 (`ERROR_INVALID_OWNER`) at creation: the elevated token cannot assign the requested service SID as owner without appropriate privilege handling. Do not weaken the two-ACE ACL or replace the service SID owner; narrowly scoped privilege handling needs implementation, security review, and adversarial Windows testing. PostgreSQL bootstrap remains disabled; no test installer exists.
+
 ## 0.1.169 — 2026-11-24
 
 - Add fixed-stage and numeric OS error diagnostics for unexpected Vault provisioning failures without exposing paths, SIDs, ACLs or secrets. Windows run 45369417895 on 0.1.168 still failed fresh provisioning; the previous access change was not sufficient. Windows exact-head CI and clean Windows Server acceptance remain required. PostgreSQL bootstrap stays disabled; no installer has been produced.

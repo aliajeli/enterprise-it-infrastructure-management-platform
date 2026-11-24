@@ -137,7 +137,8 @@ function Invoke-CredentialVaultProvisioner {
   [Parameter(Mandatory=$true)][string]$ServiceSid,
   [switch]$VerifyOnly
  )
- if($ServiceSid -notmatch '^S-1-5-80-(?:\d+-){14}\d+$'){throw "Invalid API service SID format."}
+ if($ServiceSid -notmatch '^S-1-5-80-(?:\d+-){4}\d+$'){throw "Invalid API service SID format."}
+ try{[void][Security.Principal.SecurityIdentifier]::new($ServiceSid)}catch{throw "Invalid API service SID format."}
  $helperPath=Join-Path $Plan.InstallRoot "CredentialVault.KeyringStorageHelper.exe"
  if(-not(Test-Path -LiteralPath $helperPath -PathType Leaf)){throw "Credential Vault helper is missing from the staged payload."}
  $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{$env:ProgramData}

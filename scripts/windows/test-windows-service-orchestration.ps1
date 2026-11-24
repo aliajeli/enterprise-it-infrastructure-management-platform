@@ -28,6 +28,19 @@ try{
  $payloadCheck=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
  if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 15){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
 
+ # SCM service SIDs contain exactly five unsigned subauthorities after S-1-5-80.
+ # WhatIf must validate them without executing the placeholder helper.
+ $sid="S-1-5-80-1-2-3-4-5"
+ foreach($verify in @($false,$true)){
+  $dry=Invoke-CredentialVaultProvisioner -Plan $fixturePlan -ServiceSid $sid -VerifyOnly:$verify -WhatIf
+  if($dry.status -ne "whatif" -or -not $dry.serviceSidValidated){throw "Valid service SID must be accepted in Vault WhatIf."}
+ }
+ foreach($invalidSid in @("S-1-5-80-1-2-3-4", "S-1-5-80-1-2-3-4-5-6", "S-1-5-80-4294967296-2-3-4-5", "S-1-5-21-1-2-3-4")){
+  $rejected=$false
+  try{Invoke-CredentialVaultProvisioner -Plan $fixturePlan -ServiceSid $invalidSid -WhatIf|Out-Null}catch{$rejected=$true}
+  if(-not $rejected){throw "Invalid service SID must be rejected before launching the helper."}
+ }
+
  # ProgramData itself is part of the trusted path and must not be a junction.
  $programDataJunctionTarget=Join-Path $preflightRoot "programdata-junction-target"
  Copy-Item -LiteralPath $preflightProgramData -Destination $programDataJunctionTarget -Recurse

@@ -1,3 +1,7 @@
+## 0.1.170 Vault SID and owner diagnosis — 2026-11-24
+
+Exact-head run 45371445342 on 9d1aa056e9675bfe8434b3714323b6aec1d05796: Linux Node 26/PostgreSQL 18 job passed. Windows passed orchestration, bootstrap safety, staging, package tests and keyring compilation; fresh Vault provision failed at `open-or-create-vault:win32-1307` (invalid owner). The API service SID is not a valid assignable owner for the elevated process token without appropriate privilege handling. Next: design bounded privilege acquisition/reversion and handle access against exact owner/DACL contract, reject when privilege unavailable, test under elevated Windows token, ensure no mutations to unexpected stores and validate parent trust/rollback; no permissive fallback. Also fixed an independent orchestrator SID regex (was 15 instead of five subauthorities) with non-mutating WhatIf regression cases. Those changes need exact-head Windows CI. PostgreSQL bootstrap is disabled and no installer has been built.
+
 ## 0.1.169 Vault failure diagnosis — 2026-11-24
 
 Run 45369417895 on e35067a00a27d6c2d1ac75f8f0c4839174ce1d5f: Linux Node 26/PostgreSQL 18 passed; Windows build and policy tests passed up to fresh Vault provisioning, which still failed with `provisioning-failed`. The added directory creation access did not fix it. Added bounded stage and numeric OS error reporting (never paths/SIDs/ACLs/secrets) to identify the failure on exact-head Windows CI. No installer; database bootstrap disabled pending secure implementation.
