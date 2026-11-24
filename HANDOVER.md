@@ -1,3 +1,7 @@
+## 0.1.173 Vault privilege candidate — 2026-11-24
+
+Windows CI run 45372992938 on 7c95f3d54ae79c87669ec0e367d1a0ffd646c450 passed the SID/orchestration regression and failed fresh Vault provisioning with error 1307; Linux Node 26/PostgreSQL 18 passed. Added candidate bounded backup/restore privilege scope for native fixed Vault/lock leaf operations in the dedicated provisioning process; restores prior privilege state and fails closed if unavailable. This is source only until exact-head Windows CI. Requires independent security review of privilege scope, trust chain, rollback and adversarial races, plus clean Windows Server acceptance. Database bootstrap remains disabled. No installer built.
+
 ## 0.1.172 service SID range check — 2026-11-24
 
 Windows run 45372539798 on cfca62d516be1576748d5b8a5206fe99b8071746 reported an invalid synthetic service SID was accepted by the orchestration regression; Linux Node 26/PostgreSQL 18 passed. Added explicit ASCII/uint32 subauthority checks in orchestrator and Vault helper, and identify the invalid synthetic value in the CI test failure. These changes require exact-head Windows CI. Vault owner error 1307 still requires a bounded, reviewed privilege approach; first-install PostgreSQL bootstrap is disabled; no installer has been built.

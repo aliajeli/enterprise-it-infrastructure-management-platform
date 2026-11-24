@@ -5,9 +5,11 @@
 **Snapshot:** 2026-11-24  
 **Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
 **HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
-**Root package version:** `0.1.172`
+**Root package version:** `0.1.173`
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
+
+**0.1.173 Vault candidate:** Privileges are temporarily enabled only around native opens/creation of the fixed Vault and lock leaf in the dedicated provisioner, with restoration and fail-closed behavior. This security-sensitive source change requires exact-head Windows CI, independent security review, and clean Windows Server adversarial tests. No ACL/owner fallback is allowed.
 
 **0.1.170 Vault finding:** Hosted Windows run 45371445342 failed fresh Vault creation with `open-or-create-vault:win32-1307` (invalid owner). Correct service-SID ownership requires a narrowly scoped reviewed privilege solution; do not loosen ACLs or assign an alternate owner. Orchestrator SID validation fixed; exact-head CI and Windows Server acceptance remain pending.
 
@@ -64,7 +66,7 @@ Project is **not production-ready**.
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
 Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
 Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
-Current version: `0.1.172`
+Current version: `0.1.173`
 
 Most recent exact-head Push validation:
 - Run ID: `45359423721`

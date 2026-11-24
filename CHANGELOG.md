@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.173 — 2026-11-24
+
+- Candidate fix for Windows Vault owner error 1307: the dedicated elevated provisioning process temporarily enables backup and restore privileges only around native opens/CREATE_NEW for fixed Vault and lock leaves, then restores their prior state. Both privileges must be assigned; no alternate owner or broader ACL fallback. Existing object verification remains mandatory. Requires exact-head Windows compilation/CI and independent security, race and Windows Server acceptance; not a release claim.
+- Exact-head Windows run 45372992938 on 0.1.172 passed the orchestration SID regression, then failed fresh Vault provisioning with error 1307; Linux/Node 26/PostgreSQL 18 passed. Secure PostgreSQL first-install bootstrap and test installer remain incomplete.
+
 ## 0.1.172 — 2026-11-24
 
 - Windows run 45372539798 found a synthetic invalid service SID was accepted by the orchestration regression. Explicitly require five ASCII decimal 32-bit unsigned SID components in the orchestrator and Vault helper; test now identifies which synthetic SID was accepted if this still fails. Exact-head Windows CI remains required.

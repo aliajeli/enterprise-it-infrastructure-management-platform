@@ -39,6 +39,7 @@ internal static class VaultProvisioner
     private const uint FileNonDirectoryFile = 0x40;
     private const uint FileOpenReparsePoint = 0x00200000;
     private const uint FileSynchronousIoNonAlert = 0x20;
+    private const uint FileOpenForBackupIntent = 0x4000;
     private const uint ObjectCaseInsensitive = 0x40;
     private const uint OwnerSecurityInformation = 1;
     private const uint DaclSecurityInformation = 4;
@@ -487,8 +488,17 @@ internal static class VaultProvisioner
             };
             var ioStatus = new IoStatusBlock();
             parent.DangerousAddRef(ref addedRef);
-            var status = NtCreateFile(out handle, desiredAccess | Synchronize, ref attributes, ref ioStatus,
-                IntPtr.Zero, fileAttributes, shareAccess, disposition, createOptions, IntPtr.Zero, 0);
+            // Only these fixed leaf components need privileged access: their exact DACL
+            // intentionally excludes the interactive administrator. Their parents are
+            // opened and validated before this call. CREATE_NEW still prevents adoption.
+            var needsVaultPrivileges = component is "CredentialVault" or "keyring.lock";
+            int status;
+            using (needsVaultPrivileges ? PrivilegeScope.EnableVaultPrivileges() : null)
+            {
+                status = NtCreateFile(out handle, desiredAccess | Synchronize, ref attributes, ref ioStatus,
+                    IntPtr.Zero, fileAttributes, shareAccess, disposition,
+                    createOptions | (needsVaultPrivileges ? FileOpenForBackupIntent : 0), IntPtr.Zero, 0);
+            }
             if (status < 0)
             {
                 handle?.Dispose();
@@ -685,6 +695,91 @@ internal static class VaultProvisioner
             LocalFree(sdPtr);
         }
     }
+
+    // The provisioning command is a separate, single-purpose process. Privileges are
+    // enabled only for a native leaf open/create, then restored to their prior state.
+    // No permissive ACL or owner fallback is permitted when either privilege is absent.
+    private sealed class PrivilegeScope : IDisposable
+    {
+        private readonly SafeAccessTokenHandle token;
+        private TokenPrivileges previous;
+        private bool restored;
+
+        private PrivilegeScope(SafeAccessTokenHandle token, TokenPrivileges previous)
+        {
+            this.token = token;
+            this.previous = previous;
+        }
+
+        internal static PrivilegeScope EnableVaultPrivileges()
+        {
+            if (!OpenProcessToken(GetCurrentProcess(), 0x28 /* QUERY | ADJUST_PRIVILEGES */, out var token))
+                throw new ProvisioningException("vault-privilege-unavailable");
+            try
+            {
+                if (!LookupPrivilegeValue(null, "SeBackupPrivilege", out var backup) ||
+                    !LookupPrivilegeValue(null, "SeRestorePrivilege", out var restore))
+                    throw new ProvisioningException("vault-privilege-unavailable");
+                var requested = new TokenPrivileges
+                {
+                    Count = 2,
+                    First = new LuidAndAttributes { Luid = backup, Attributes = 2 },
+                    Second = new LuidAndAttributes { Luid = restore, Attributes = 2 }
+                };
+                var success = AdjustTokenPrivileges(token, false, ref requested,
+                    (uint)Marshal.SizeOf<TokenPrivileges>(), out var previous, out _);
+                var error = Marshal.GetLastWin32Error();
+                if (!success || error != 0)
+                {
+                    // ERROR_NOT_ALL_ASSIGNED may have enabled a subset; restore it.
+                    if (success && previous.Count != 0 &&
+                        !RestoreTokenPrivileges(token, false, ref previous, 0, IntPtr.Zero, IntPtr.Zero))
+                        throw new ProvisioningException("vault-privilege-restore-failed");
+                    throw new ProvisioningException("vault-privilege-unavailable");
+                }
+                return new PrivilegeScope(token, previous);
+            }
+            catch
+            {
+                token.Dispose();
+                throw;
+            }
+        }
+
+        public void Dispose()
+        {
+            if (restored) return;
+            restored = true;
+            try
+            {
+                if (previous.Count != 0 &&
+                    !RestoreTokenPrivileges(token, false, ref previous, 0, IntPtr.Zero, IntPtr.Zero))
+                    throw new ProvisioningException("vault-privilege-restore-failed");
+            }
+            finally { token.Dispose(); }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)] private struct Luid { internal uint LowPart; internal int HighPart; }
+    [StructLayout(LayoutKind.Sequential)] private struct LuidAndAttributes { internal Luid Luid; internal uint Attributes; }
+    [StructLayout(LayoutKind.Sequential)] private struct TokenPrivileges
+    { internal uint Count; internal LuidAndAttributes First, Second; }
+
+    [DllImport("kernel32.dll")] private static extern IntPtr GetCurrentProcess();
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool OpenProcessToken(IntPtr process, uint desiredAccess, out SafeAccessTokenHandle token);
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "LookupPrivilegeValueW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool LookupPrivilegeValue(string? systemName, string name, out Luid luid);
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool AdjustTokenPrivileges(SafeAccessTokenHandle token, bool disableAll,
+        ref TokenPrivileges newState, uint bufferLength, out TokenPrivileges previousState, out uint returnLength);
+    [DllImport("advapi32.dll", SetLastError = true, EntryPoint = "AdjustTokenPrivileges")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool RestoreTokenPrivileges(SafeAccessTokenHandle token, bool disableAll,
+        ref TokenPrivileges newState, uint bufferLength, IntPtr previousState, IntPtr returnLength);
 
     private readonly record struct DirectoryIdentity(ulong VolumeSerialNumber, ulong FileIdLow, ulong FileIdHigh);
     private readonly record struct VaultFileIdentity(ulong VolumeSerialNumber, ulong FileIdLow, ulong FileIdHigh);
