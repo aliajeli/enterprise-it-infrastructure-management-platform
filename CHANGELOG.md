@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.180 — 2026-11-24
+
+- Security correction: the prior PostgreSQL cluster initializer created a temporary plaintext password file even with a restricted ACL, violating the owner prohibition. Disabled initialization before any filesystem/SCM/database mutation; retained read-only WhatIf and added a regression for this gate. Existing bootstrap and migration remain disabled.
+- Added an isolated experimental current-user named-pipe credential transport and synthetic fake-initdb tests for process arguments, suppressed child output, invalid password, timeout, and rejecting another same-user connecting process by PID. The candidate is deliberately not integrated with initialization or deployment. Real PostgreSQL on Windows, logging/custody review, unauthorized-user access, failure/crash behavior and supported Windows Server acceptance are still required. No installer.
+- Exact-head hosted CI run 45378870531 for 0.1.179 passed Linux Node 26/PostgreSQL 18 and full Windows validation; it is not clean-VM acceptance. Exact-head CI for this revision is pending.
+
 ## 0.1.179 — 2026-11-24
 
 - Hosted CI run 45377990138 on 0.1.178 passed Linux Node 26/PostgreSQL 18 and full Windows validation including the new ancestor-junction rejection. This does not establish clean Windows Server/security acceptance.

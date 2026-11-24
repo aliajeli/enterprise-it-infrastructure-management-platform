@@ -233,6 +233,17 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-postgresql-cluster-initialization.ps1
 
+      - name: Test experimental initdb named-pipe transport
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-experimental-initdb-pipe.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Initdb transport test failure::$message"
+            exit 1
+          }
+
       - name: Test five-service orchestration policy
         shell: pwsh
         run: |

@@ -5,9 +5,11 @@
 **Snapshot:** 2026-11-24  
 **Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
 **HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
-**Root package version:** `0.1.179`
+**Root package version:** `0.1.180`
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
+
+**0.1.180 PostgreSQL safety correction:** The prior cluster initializer wrote a plaintext temporary password file and has been disabled before mutation. Experimental same-user/PID-checked named-pipe transport is synthetic-test-only and not approved, integrated or accepted with real initdb. Database bootstrap and migrations remain disabled. No installer.
 
 **0.1.173 Vault candidate:** Privileges are temporarily enabled only around native opens/creation of the fixed Vault and lock leaf in the dedicated provisioner, with restoration and fail-closed behavior. This security-sensitive source change requires exact-head Windows CI, independent security review, and clean Windows Server adversarial tests. No ACL/owner fallback is allowed.
 
@@ -66,7 +68,7 @@ Project is **not production-ready**.
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
 Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
 Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
-Current version: `0.1.179`
+Current version: `0.1.180`
 
 Most recent exact-head Push validation:
 - Run ID: `45359423721`
@@ -212,7 +214,7 @@ Relevant files:
 
 Current state:
 - PostgreSQL 18.7-1 staging and service provisioning foundations exist.
-- Cluster initializer accepts a bootstrap SecureString and protects its temporary workspace, but Orchestrator does not invoke it.
+- Cluster initializer mutation is disabled: the previous SecureString flow wrote a prohibited temporary plaintext file. The experimental named-pipe transport is not yet approved or integrated.
 - Orchestrator expects a pre-initialized cluster and separate API/Worker DB URLs; it stores them using service-specific DPAPI config.
 - No integrated role/database bootstrap or migration runner exists.
 - API readiness checks DB connectivity and presence of `public.users`; it does not run migrations or prove all grants.

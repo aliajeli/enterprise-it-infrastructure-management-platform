@@ -1,3 +1,7 @@
+## 0.1.180 PostgreSQL initializer security correction — 2026-11-24
+
+Hosted CI run 45378870531 on 653853c85eb714cd0732afa968596da9ca325846 passed Linux Node 26/PostgreSQL 18 and full Windows validation. The older cluster initializer wrote a temporary plaintext bootstrap password file, contrary to the explicit owner prohibition, despite its ACL. Its mutation path now fails closed before any filesystem/SCM/database mutation. Added an isolated experimental current-user named-pipe transport, exact spawned-client PID check, synthetic success/timeout/wrong-client/secret-output tests. It is NOT wired to real initdb or production and requires exact-head Windows CI, Windows Server real-PostgreSQL acceptance, credential custody/transport security review, logging and crash tests. Bootstrap/migration remain disabled. No test installer has been built.
+
 ## 0.1.179 Vault rollback correction — 2026-11-24
 
 Hosted exact-head CI 45377990138 on 39736214f2c586f77f5894f45af247642de81e72 passed Linux Node 26/PostgreSQL 18 and full Windows validation, including elevated non-SYSTEM provisioning and intermediate-junction regression. Added best-effort identity-checked rollback on post-create verification errors using the retained created Vault handle (rather than reopening an exclusive handle). New code requires exact-head Windows CI, fault injection, concurrency, parent trust and independent security review. CI is not Windows Server acceptance. PostgreSQL bootstrap remains disabled and no installer built.

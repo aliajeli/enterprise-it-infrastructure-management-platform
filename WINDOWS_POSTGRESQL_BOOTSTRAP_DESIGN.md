@@ -2,10 +2,12 @@
 
 Status: design/acceptance contract for the five-service Windows deployment workstream. This document does not claim that first-install database bootstrap or migrations are implemented.
 
+**Safety correction (0.1.180):** The prior initializer wrote a temporary plaintext password file despite an ACL; this contradicts the owner instruction prohibiting such files. Its mutation path is now disabled. `experimental-initdb-pipe.ps1` is an isolated, synthetic-test-only candidate, not a reviewed or approved production credential channel; it is not integrated into the initializer or orchestration. Real Windows PostgreSQL, unauthorized-client, logging, crash and secure-custody acceptance remain mandatory.
+
 ## Verified current behavior
 
 - `initialize-postgresql-cluster.ps1` initializes PostgreSQL 18 with SCRAM-SHA-256, creates the initial `platform_admin` superuser, limits the listener to `127.0.0.1:5432`, and refuses an existing or non-empty data directory.
-- The initializer accepts the bootstrap password as a PowerShell `SecureString`, writes it temporarily to a workspace whose protected ACL is checked before the password file is created, and removes the workspace in its cleanup path.
+- Historical initializer accepted a `SecureString` but wrote a temporary plaintext password file. That violated owner policy and its mutation path is disabled in 0.1.180; no claim is made that initialization is currently functional.
 - `provision-postgresql-service.ps1` registers PostgreSQL under `NT SERVICE\\EnterpriseITPostgreSQL`, applies a dedicated service SID and data ACL, and deliberately does not start the service.
 - `orchestrate-windows-services.ps1` requires an already initialized cluster during preflight. It provisions PostgreSQL and application services, accepts separate API and Worker database URLs, stores them through service-specific DPAPI configuration paths, and starts PostgreSQL, API, Worker, Web and Edge in dependency order.
 - The orchestrator does not invoke cluster initialization, create database roles, create the application database, execute Prisma migrations, or validate that the supplied API/Worker credentials exist and have the intended grants.

@@ -20,6 +20,11 @@ try{
  [IO.File]::WriteAllText($initdb,"fixture")
  $dry=& $scriptPath -InstallRoot $installRoot -DataRoot $data -SuperuserPassword $secret -WhatIf|ConvertFrom-Json
  if(-not $dry.dryRun -or $dry.serviceStarted -or (Test-Path $data)){throw "Bootstrap WhatIf must be read-only and must not create the data directory."}
+ $disabled=$false
+ try{& $scriptPath -InstallRoot $installRoot -DataRoot $data -SuperuserPassword $secret -Confirm:$false|Out-Null}catch{
+  $disabled=$_.Exception.Message -like '*disabled pending approved non-file credential transport*'
+ }
+ if(-not $disabled -or (Test-Path $data)){throw "Unreviewed initialization must fail before any filesystem mutation."}
  New-Item -ItemType Directory -Path $data -Force|Out-Null
  $testDataCreated=$true
  [IO.File]::WriteAllText((Join-Path $data "PG_VERSION"),"18")
