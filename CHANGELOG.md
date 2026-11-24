@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.206 — 2026-11-24
+
+- Made installer preflight distinguish host baseline from actual installation readiness, which remains false while security and acceptance gates are open. It now rejects non-Server and ARM64/unknown architectures; no Windows Server version is claimed as accepted.
+
 ## 0.1.205 — 2026-11-24
 
 - Expanded the disposable Windows PostgreSQL migration experiment with separate synthetic API and Worker roles and positive/negative SQL privilege checks. This does not implement production role provisioning or enable installer/database mutation.

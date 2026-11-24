@@ -25,11 +25,22 @@ function Test-InstallerPreflightFacts {
         passed = [bool]$Facts.IsWindows
         detail = if ($Facts.IsWindows) { "Windows operating system detected." } else { "This preflight is supported only on Windows." }
     })
+    # This is a baseline OS-family check, not an approved support matrix.
+    # Treat missing facts as false, never as implicit support.
+    $isServer = $null -ne $Facts.PSObject.Properties['IsWindowsServer'] -and [bool]$Facts.IsWindowsServer
+    $architecture = if ($null -ne $Facts.PSObject.Properties['OSArchitecture']) { [string]$Facts.OSArchitecture } else { 'Unknown' }
+    $isX64 = [bool]$Facts.Is64BitOS -and $architecture -ceq 'X64'
+    $checks.Add([pscustomobject]@{
+        id = "windows-server"
+        required = $true
+        passed = $isServer
+        detail = if ($isServer) { "Windows Server family detected; version support is not yet established." } else { "A Windows Server operating system is required." }
+    })
     $checks.Add([pscustomobject]@{
         id = "architecture"
         required = $true
-        passed = [bool]$Facts.Is64BitOS
-        detail = if ($Facts.Is64BitOS) { "64-bit operating system detected." } else { "A 64-bit operating system is required." }
+        passed = $isX64
+        detail = if ($isX64) { "x64 operating system detected." } else { "An x64 operating system is required; x86 and ARM64 are not supported by this payload." }
     })
     $checks.Add([pscustomobject]@{
         id = "elevation"
@@ -72,8 +83,17 @@ function Test-InstallerPreflightFacts {
 
     $failed = @($checks | Where-Object { $_.required -and -not $_.passed })
     return [pscustomobject]@{
-        schemaVersion = 1
-        ready = ($failed.Count -eq 0)
+        schemaVersion = 2
+        # Host checks are necessary but not sufficient. Never report the
+        # product as install-ready while required deployment gates are closed.
+        hostReady = ($failed.Count -eq 0)
+        ready = $false
+        readinessScope = "host-baseline-only"
+        installationBlockers = @(
+            "PostgreSQL credential transport and cluster ownership are not approved.",
+            "Bootstrap, migration, orchestration and offline installation are disabled.",
+            "Security review and supported Windows Server acceptance are incomplete."
+        )
         minimumFreeSpaceGB = $MinimumFreeSpaceGB
         checks = @($checks.ToArray())
     }
@@ -107,6 +127,8 @@ function Get-InstallerPreflightFacts {
     return [pscustomobject]@{
         IsWindows = ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT)
         Is64BitOS = [Environment]::Is64BitOperatingSystem
+        OSArchitecture = [string][Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+        IsWindowsServer = ([int]$os.ProductType -in @(2,3))
         IsElevated = $isElevated
         OsCaption = [string]$os.Caption
         OsVersion = [string]$os.Version
@@ -122,6 +144,8 @@ if ($MyInvocation.InvocationName -ne ".") {
     $report | Add-Member -NotePropertyName osVersion -NotePropertyValue $facts.OsVersion
     $report | Add-Member -NotePropertyName osBuild -NotePropertyValue $facts.OsBuild
     $report | ConvertTo-Json -Depth 6
+    # A valid host baseline is not installer readiness. Keep the exit status
+    # fail-closed while the installation blockers remain open.
     if (-not $report.ready) {
         exit 2
     }
