@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.193 — 2026-11-24
+
+- Updated disposable stdin experiment to exercise PostgreSQL simple_prompt stdin fallback with process-local `OSTYPE=msys`. Production gates remain closed; this does not bypass or prove restricted-token re-execution.
+
 ## 0.1.192 — 2026-11-24
 
 - Added isolated, synthetic-only PostgreSQL initdb anonymous-stdin experiment using `--pwprompt`, with inherited re-exec environment sanitized, output suppressed and timeout tests. It is not connected to production and does not establish security against same-user handle attacks.

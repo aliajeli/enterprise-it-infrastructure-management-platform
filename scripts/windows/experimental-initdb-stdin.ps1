@@ -32,6 +32,11 @@ function Invoke-ExperimentalInitDbStdin {
   $psi.RedirectStandardInput=$true;$psi.RedirectStandardOutput=$true;$psi.RedirectStandardError=$true
   # Never permit an inherited environment value to skip PostgreSQL re-exec.
   $null=$psi.Environment.Remove('PG_RESTRICT_EXEC')
+  # PostgreSQL 18 simple_prompt deliberately falls back to stdin for msys.
+  # Its restricted re-exec may acquire a console even when the initial
+  # process was launched without one, so exercise that documented branch.
+  # This override is process-local, contains no secret, and is experimental.
+  $psi.Environment['OSTYPE']='msys'
   $stage='start-child'
   $process=[Diagnostics.Process]::Start($psi)
   # Consume but never forward either stream; an untrusted child may echo input.

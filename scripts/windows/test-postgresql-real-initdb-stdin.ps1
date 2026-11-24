@@ -22,7 +22,7 @@ try{
  $version=(& $initdb --version 2>&1|Out-String).Trim()
  if($LASTEXITCODE -ne 0 -or $version -notmatch '^initdb \(PostgreSQL\) 18\.7(?:\s|$)'){throw 'Unexpected PostgreSQL initdb version.'}
  $secret=ConvertTo-SecureString 'synthetic-real-initdb-stdin-password-48' -AsPlainText -Force
- $result=Invoke-ExperimentalInitDbStdin -Executable $initdb -DataPath $data -Password $secret -TimeoutSeconds 240
+ $result=Invoke-ExperimentalInitDbStdin -Executable $initdb -DataPath $data -Password $secret -TimeoutSeconds 90
  if($result.status -ne 'ok' -or $result.plaintextFileCreated){throw 'Real initdb stdin experiment failed.'}
  if(-not(Test-Path -LiteralPath (Join-Path $data 'PG_VERSION') -PathType Leaf) -or (Get-Content -LiteralPath (Join-Path $data 'PG_VERSION') -Raw).Trim() -ne '18'){throw 'Disposable PostgreSQL 18 cluster was not initialized.'}
  $hba=Get-Content -LiteralPath (Join-Path $data 'pg_hba.conf') -Raw
