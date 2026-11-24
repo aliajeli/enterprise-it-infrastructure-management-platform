@@ -23,6 +23,7 @@ try{
  $runtime=Split-Path (Get-Command node.exe -ErrorAction Stop).Source -Parent
  & (Join-Path $PSScriptRoot 'stage-node-runtime.ps1') -NodeRuntimeDirectory $runtime -InstallRoot $root -Confirm:$false|Out-Null
  & (Join-Path $PSScriptRoot 'stage-node-application-runtime.ps1') -SourceRoot $repo -InstallRoot $root -Confirm:$false|Out-Null
+ & (Join-Path $PSScriptRoot 'stage-migration-tool.ps1') -SourceRoot $repo -InstallRoot $root -Confirm:$false|Out-Null
  & (Join-Path $PSScriptRoot 'stage-web-standalone.ps1') -StandaloneDirectory (Join-Path $repo 'apps\web\.next\standalone') -InstallRoot $root -Confirm:$false|Out-Null
  & (Join-Path $PSScriptRoot 'stage-windows-service-hosts.ps1') -InstallRoot $root -Confirm:$false|Out-Null
  & (Join-Path $PSScriptRoot 'stage-postgresql.ps1') -InstallRoot $root -CacheDirectory (Join-Path $work 'downloads') -Confirm:$false|Out-Null
@@ -41,6 +42,8 @@ try{
  . (Join-Path $PSScriptRoot 'new-offline-payload-manifest.ps1') -PayloadRoot $extract
  $checked=Test-OfflinePayloadManifest -PayloadRoot $extract -ExpectedApplicationVersion $version
  if(-not $checked.valid -or $checked.fileCount -ne $result.payloadFileCount){throw 'Extracted experimental payload did not match its manifest.'}
+ # Validate the isolated CLI and real schema from the extracted archive.
+ & (Join-Path $PSScriptRoot 'test-migration-tool-offline.ps1') -Root $extract|Out-Null
  $blocked=$false
  try{& (Join-Path $PSScriptRoot 'install-offline-payload.ps1') -PayloadArchive $archive -ExpectedSha256 $hash -Confirm:$false|Out-Null}catch{
   $blocked=$_.Exception.Message -like '*Offline installation is disabled*no files or services were changed*'

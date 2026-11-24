@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.200 — 2026-11-24
+
+- Added isolated, pinned Prisma migration tooling staging and required it in the offline payload. The staging and extraction tests validate CLI version, Windows schema engine and schema without executing migrations. Production migration, bootstrap and installation remain disabled.
+
 ## 0.1.199 — 2026-11-24
 
 - Added a disposable Windows CI experiment assembling real Node, API/Worker, Next.js, service hosts, PostgreSQL and deployment scripts into an archive, checking extraction and manifest while confirming installation remains disabled. No release or installable artifact is produced.

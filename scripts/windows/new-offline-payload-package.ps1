@@ -27,6 +27,7 @@ function Get-OfflinePayloadPackagePlan {
   "CredentialVault.KeyringStorageHelper.exe","CredentialVault.DpapiHelper.exe",
   "apps\api\dist\server.js","apps\worker\dist\main.js","packages\database\dist\index.js",
   "packages\database\prisma\schema.prisma","packages\database\prisma\migrations",
+  "migration-tool\prisma.config.ts","migration-tool\node_modules\prisma\package.json","migration-tool\node_modules\prisma\build\index.js","migration-tool\node_modules\@prisma\engines\schema-engine-windows.exe",
   "node_modules\@platform\api\package.json","node_modules\@platform\worker\package.json","node_modules\@platform\database\package.json",
   "node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json",
   "apps\web\.next\standalone\node_modules\next\package.json","apps\web\.next\standalone\service-entry.cjs",

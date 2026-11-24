@@ -11,6 +11,7 @@ try{
   "runtime\node.exe","runtime\npm.cmd","EnterpriseIT.ApiServiceHost.exe","EnterpriseIT.WebServiceHost.exe","EnterpriseIT.WorkerServiceHost.exe","EnterpriseIT.EdgeServiceHost.exe",
   "CredentialVault.KeyringStorageHelper.exe","CredentialVault.DpapiHelper.exe",
   "apps\api\dist\server.js","apps\worker\dist\main.js","packages\database\dist\index.js","packages\database\prisma\schema.prisma","packages\database\prisma\migrations",
+  "migration-tool\prisma.config.ts","migration-tool\node_modules\prisma\package.json","migration-tool\node_modules\prisma\build\index.js","migration-tool\node_modules\@prisma\engines\schema-engine-windows.exe",
   "node_modules\@platform\api\package.json","node_modules\@platform\worker\package.json","node_modules\@platform\database\package.json","node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json",
   "apps\web\.next\standalone\server.js","apps\web\.next\standalone\.next\required-server-files.json","apps\web\.next\standalone\node_modules\next\package.json","apps\web\.next\standalone\service-entry.cjs",
   "postgresql\pgsql\bin\postgres.exe","postgresql\pgsql\bin\pg_ctl.exe","postgresql\pgsql\bin\initdb.exe","postgresql\pgsql\share\postgresql.conf.sample",
@@ -47,7 +48,7 @@ try{
  [IO.File]::Move($nestedWebConfig,$flatWebConfig)
  # Every native security helper and downstream installer/provisioning script
  # must independently block packaging when it is absent.
- foreach($relative in @($required|Where-Object{$_ -like 'scripts\windows\*' -or $_ -like 'CredentialVault.*' -or $_ -like '*service-entry.cjs' -or $_ -like '*required-server-files.json'})){
+ foreach($relative in @($required|Where-Object{$_ -like 'scripts\windows\*' -or $_ -like 'CredentialVault.*' -or $_ -like '*service-entry.cjs' -or $_ -like '*required-server-files.json' -or $_ -like 'migration-tool\*'})){
   $path=Join-Path $source $relative
   Remove-Item -LiteralPath $path -Force
   $missingRejected=$false
