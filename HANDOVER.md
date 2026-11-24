@@ -1,3 +1,11 @@
+## 0.1.214 concurrent Vault provisioner fixtures — 2026-11-24
+
+Added three independent-process races against fresh SYSTEM-only CI fixtures, requiring at least one successful provisioning, exact Vault/lock ACLs, and a subsequent non-destructive retry preserving a sentinel. Scheduling is nondeterministic; this is supplemental race coverage, not exhaustive race proof or service-SID/Windows Server acceptance. Exact-head Windows CI required. Database initialization/bootstrap/migration/orchestration/installer remain disabled; no merge/release authorized.
+
+## CI in progress — 2026-11-24
+
+[CI 45448967864](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45448967864) on `7a83293c22a6c2cb499e9eb414aea689314057d7` (0.1.213) passed Windows Vault fault fixtures, including the new pre-identity cases and existing/fresh state preservation; Windows runtime, fast migration, Web, Linux, publication and stdin functional tests also passed. Synthetic handle interception, real child PROCESS_DUP_HANDLE access, and named-pipe PID checks failed. The full assembly job was running at recording time. These are hosted CI fixtures, not production credential security or supported Windows Server acceptance.
+
 ## 0.1.213 Vault unproven-identity rollback tests — 2026-11-24
 
 Added test-build-only faults immediately after opening/creating the Vault and lock but before file identity capture. The fixture checks newly created objects without captured identity are preserved rather than deleted and pre-existing store objects/ACLs remain intact. Exact-head Windows CI is required; this does not establish exhaustive fault/race coverage, production service-SID acceptance or independent review. Production mutation gates remain closed; no merge/release authorized.

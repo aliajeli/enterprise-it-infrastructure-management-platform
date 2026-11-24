@@ -274,4 +274,47 @@ foreach($stage in @('before-vault-identity','before-lock-identity')){
   Assert-AclExact -Path $p.Lock -ExpectedServiceSid $serviceSid
  }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
 }
-Write-Host "Credential Vault provisioning and isolated fault rollback tests passed."
+# Two independent provisioners race on the same fresh fixture. At least one
+# must succeed; failures must not corrupt the winning store, and a verified
+# retry must preserve a sentinel. Scheduling is nondeterministic, so this is
+# supplemental coverage rather than proof against all races.
+for($round=0;$round -lt 3;$round++){
+ $t=New-TestRoot ('concurrent-'+$round)
+ $processes=[Collections.Generic.List[object]]::new()
+ try{
+  $p=Get-VaultPaths $t.ProgramData
+  foreach($index in 1..2){
+   $start=[Diagnostics.ProcessStartInfo]::new()
+   if($helperPath.EndsWith('.dll',[StringComparison]::OrdinalIgnoreCase)){$start.FileName='dotnet';$start.ArgumentList.Add($helperPath)}else{$start.FileName=$helperPath}
+   foreach($arg in @('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)){$start.ArgumentList.Add($arg)}
+   $start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
+   $null=$start.Environment.Remove('ENTERPRISEIT_VAULT_TEST_FAULT')
+   $process=[Diagnostics.Process]::Start($start)
+   $processes.Add([pscustomobject]@{Process=$process;Out=$process.StandardOutput.ReadToEndAsync();Err=$process.StandardError.ReadToEndAsync()})
+  }
+  $successes=0
+  foreach($entry in $processes){
+   if(-not $entry.Process.WaitForExit(30000)){throw 'Concurrent Vault provisioner timed out.'}
+   $output=$entry.Out.GetAwaiter().GetResult();$null=$entry.Err.GetAwaiter().GetResult()
+   if($entry.Process.ExitCode -eq 0){
+    if($output.Trim() -cne 'OK'){throw 'Concurrent Vault success response was invalid.'}
+    $successes++
+   }
+  }
+  if($successes -lt 1){throw 'Neither concurrent Vault provisioner succeeded.'}
+  Assert-AclExact -Path $p.Vault -ExpectedServiceSid $serviceSid
+  Assert-AclExact -Path $p.Lock -ExpectedServiceSid $serviceSid
+  [IO.File]::WriteAllText($p.Lock,'race-synthetic-sentinel')
+  $retry=Invoke-Provisioner -Arguments @('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)
+  if($retry.ExitCode -ne 0 -or [IO.File]::ReadAllText($p.Lock) -cne 'race-synthetic-sentinel'){throw 'Concurrent Vault store was not stable on retry.'}
+  Assert-AclExact -Path $p.Vault -ExpectedServiceSid $serviceSid
+  Assert-AclExact -Path $p.Lock -ExpectedServiceSid $serviceSid
+ }finally{
+  foreach($entry in $processes){
+   try{if(-not $entry.Process.HasExited){$entry.Process.Kill($true);$entry.Process.WaitForExit()}}catch{}
+   $entry.Process.Dispose()
+  }
+  Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue
+ }
+}
+Write-Host "Credential Vault provisioning and isolated fault and concurrent rollback tests passed."

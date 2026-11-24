@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.214 — 2026-11-24
+
+- Added independent concurrent Vault provisioner fixture coverage and verified retry preserves existing data and exact ACLs. This nondeterministic test is not exhaustive race or Windows Server security acceptance.
+
 ## 0.1.213 — 2026-11-24
 
 - Added test-only Vault faults before identity capture and regressions requiring unproven objects to remain untouched after failed provisioning. Production test hooks remain compiled out.
