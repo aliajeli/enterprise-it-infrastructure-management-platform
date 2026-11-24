@@ -337,6 +337,10 @@ jobs:
             throw "Unprovisioned keyring helper did not fail closed with the generic binary error contract."
           }
 
+      - name: Test Credential Vault provisioning policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-credential-vault-provisioning.ps1
+
       - name: Test read-only installer host preflight
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-installer-preflight.ps1

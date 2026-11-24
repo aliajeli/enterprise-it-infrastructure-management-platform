@@ -1,3 +1,21 @@
+## Current snapshot — Windows deployment continuation on Arena branch (0.1.165, 2026-11-24)
+
+**Snapshot observed:** 2026-11-24 (UTC). This session works on `arena/821b29af-enterprise-it-infrastructure-m` (the current Arena branch). It incorporated `origin/phase3/windows-service-deployment` (PR #9, Draft/open/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at fetch time) and implemented Batch A/B/C foundation work. Evidence is source-level in this Linux sandbox unless stated otherwise.
+
+| Item | Current verified state |
+|---|---|
+| Active branch | `arena/821b29af-enterprise-it-infrastructure-m` |
+| Incorporated PR | PR #9 Draft/open/unmerged; PR #7/#8 also Draft/open/unmerged. No PR merged. |
+| Root version | `0.1.165` |
+| Credential Vault provisioner | Implemented in `apps/api/windows/keyring-storage-helper/VaultProvisioner.cs` with `--provision-vault`/`--verify-vault`, explicit SCM SID arg, elevation check, handle-relative creation with exact SDDL, parent trust baseline (ProgramData broad-write rejection; EnterpriseIT BA/SYSTEM protected DACL), idempotent correct-store validation, fail-closed unexpected object handling, post-create verification, and limited identity-based rollback. Orchestrator provisions after API SID resolution and runs verify-only before API start; payload preflight no longer requires leaf on fresh install but still rejects reparse/type anomalies. CI test script added. **Not compiled/run on Windows in this sandbox.** |
+| PostgreSQL bootstrap/migration | Added `scripts/windows/bootstrap-postgresql-database.ps1` and `scripts/windows/invoke-postgresql-migrations.ps1`. Bootstrap is idempotent, uses SecureString + process-scoped PGPASSWORD, creates schema owner/migration/API/Worker roles and grants aligned to privilege matrix. Migration runs `prisma migrate deploy` with migration identity and reapplies runtime grants. Orchestrator can run bootstrap+migration after PostgreSQL readiness when bootstrap params are provided; failure blocks dependent startup. **Secure bootstrap transport still needs owner/security review and Windows Server acceptance.** |
+| Offline payload/installer | Staging includes keyring helper; payload package required list includes keyring helper and bootstrap/migration/orchestrator scripts. Manifest/package/install scripts remain foundations; signed manifest/artifacts, deterministic full payload assembly proof, clean Windows VM install/upgrade/repair/rollback/uninstall remain pending. |
+| Linux validation | Run in this session after code changes: pending at this snapshot line; see latest commit/test evidence below. |
+| Windows validation | Not run in this sandbox. Exact-head Windows CI and clean supported Windows Server VM acceptance required. |
+| Safety | No MikroTik/router/firewall/NAT/DST-NAT/port-mapping changes. No secrets in argv/logs/persistent env. No PR merges. |
+
+---
+
 ## 2026-11-24 — Comprehensive implementation-agent handoff (0.1.164)
 
 **Start here: `AGENT_HANDOFF.md`.** It is the self-contained takeover brief for the next implementation agent. It records the current branch/HEAD, exact CI evidence, architecture, service topology, owner constraints, security invariants, current code/design boundaries, Credential Vault and PostgreSQL blockers, offline installer/release gaps, acceptance checklist and recommended implementation batches.

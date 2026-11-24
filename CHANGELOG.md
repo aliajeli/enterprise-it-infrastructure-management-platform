@@ -1,3 +1,27 @@
+# Changelog
+
+## 0.1.165 — 2026-11-24
+
+### Credential Vault provisioner (Batch A foundation)
+- Added `VaultProvisioner` mode to `apps/api/windows/keyring-storage-helper` (`--provision-vault` / `--verify-vault`) with explicit `--service-sid` input and optional `--program-data-root` for controlled test use. The provisioner validates elevation, canonical `S-1-5-80-*` service SID format, ProgramData/EnterpriseIT/CredentialVault path safety (reparse/type/volume checks), and exact owner/protected DACL policy for Vault leaf objects (`O:<API_SID>D:P(A;;FA;;;<API_SID>)(A;;FA;;;SY)`).
+- Provisioner creates EnterpriseIT and CredentialVault directories and `keyring.lock` with handle-relative native creation and explicit SDDL at creation time; it is idempotent for an already-correct store and fails closed on unexpected owner/DACL/type/reparse/volume/collision. It performs post-create handle-based verification and rolls back only objects created by the exact invocation when identity can be proven.
+- Parent trust policy: ProgramData is treated as OS-managed and rejected on broad write ACEs for Everyone/Anonymous/Authenticated Users/Users; EnterpriseIT requires protected DACL with Administrators/SYSTEM FullControl OICI ACEs only. This is a conservative baseline and requires supported Windows Server acceptance.
+- Wired orchestrator: payload preflight no longer demands a pre-existing Vault leaf on fresh install; it still rejects reparse/type path anomalies. After API SCM provisioning returns a validated service SID, orchestrator invokes the elevated Vault provisioner; it performs verify-only immediately before API start. Provisioning/verify failures block API startup. `-WhatIf` does not invoke the helper or mutate.
+- Added `scripts/windows/test-credential-vault-provisioning.ps1` covering fresh create, idempotent rerun, missing-store verify-only failure, invalid SID rejection, wrong-ACL fail-closed/no-mutation, Vault junction rejection, lock-directory collision rejection, invalid args, and orchestrator WhatIf/policy checks. Added CI step in Windows validation.
+- Staging/orchestration now include `CredentialVault.KeyringStorageHelper.exe`; staging test and orchestration tests updated.
+
+### PostgreSQL bootstrap and migration (Batch B foundation)
+- Added `scripts/windows/bootstrap-postgresql-database.ps1`: idempotent role/database bootstrap using SecureString passwords and process-scoped PGPASSWORD for child psql processes (no argv/persistent env). Creates/validates schema owner (NOLOGIN), migration role (LOGIN NOINHERIT, NOCREATEDB/NOCREATEROLE/NOSUPERUSER, SET ROLE to owner), API runtime role, Worker runtime role, database ownership, schema grants, and existing-object runtime grants aligned with the runtime privilege matrix.
+- Added `scripts/windows/invoke-postgresql-migrations.ps1`: runs `prisma migrate deploy` using the migration identity with process-scoped DATABASE_URL, then reapplies runtime grants. Migration failure throws and prevents dependent service startup by caller contract.
+- Orchestrator accepts optional bootstrap parameters and, when provided, runs bootstrap and migration after PostgreSQL readiness and before Vault verify-only/API start. Migration/bootstrap failure prevents API/Worker/Web/Edge startup.
+
+### Offline payload / installer (Batch C foundation)
+- Added `CredentialVault.KeyringStorageHelper.exe`, bootstrap and migration scripts to offline payload required component list. Updated staging to publish the keyring helper.
+
+### Validation / evidence
+- This Linux sandbox cannot compile/run Windows .NET or PowerShell Windows-specific tests. No Windows CI run was executed from this session for this commit. Changes must be validated by exact-head Windows CI and clean supported Windows Server VM acceptance before any completion claim.
+- Linux Node/TS lint/typecheck/test/build should be run before push; record results in commit/PR evidence.
+
 ## 0.1.164 — Comprehensive implementation-agent handoff
 
 - Added `AGENT_HANDOFF.md`, a self-contained takeover brief consolidating product scope, repository/branch snapshot, owner constraints, five-service topology, security decisions, Credential Vault/DPAPI/recovery state, PostgreSQL role/migration gaps, offline payload/installer gaps, CI evidence, acceptance gates and an execution sequence.

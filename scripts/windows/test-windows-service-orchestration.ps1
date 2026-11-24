@@ -39,14 +39,19 @@ try{
  if(-not $programDataJunctionRejected){throw "ProgramData root junction must be rejected during preflight."}
  Remove-Item -LiteralPath $preflightProgramData -Force
  Rename-Item -LiteralPath $programDataJunctionTarget -NewName "programdata"
- $keyringLock=Join-Path $fixturePlan.ProgramDataRoot "EnterpriseIT\CredentialVault\keyring.lock"
- Remove-Item -LiteralPath $keyringLock -Force
- $missingKeyringRejected=$false
- try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$missingKeyringRejected=$true}
- if(-not $missingKeyringRejected){throw "Missing Credential Vault lock file must fail before service provisioning."}
 
- # A directory junction at the Vault boundary must be rejected before any service mutation.
+ # Fresh install: missing Vault leaf is allowed at payload preflight; the elevated
+ # provisioner creates/validates it after API SID provisioning and before API start.
+ $keyringLock=Join-Path $fixturePlan.ProgramDataRoot "EnterpriseIT\CredentialVault\keyring.lock"
  $vaultRoot=Split-Path -Parent $keyringLock
+ if(Test-Path -LiteralPath $vaultRoot){Remove-Item -LiteralPath $vaultRoot -Recurse -Force}
+ $freshInstallPreflight=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
+ if(-not $freshInstallPreflight.valid){throw "Fresh install payload preflight must not require a pre-existing Credential Vault leaf."}
+
+ # Recreate vault for reparse tests. A directory junction at the Vault boundary must be
+ # rejected before any service mutation.
+ New-Item -ItemType Directory -Path $vaultRoot -Force|Out-Null
+ [IO.File]::WriteAllText($keyringLock,"")
  $junctionTarget=Join-Path $preflightRoot "junction-target"
  New-Item -ItemType Directory -Path $junctionTarget -Force|Out-Null
  [IO.File]::WriteAllText((Join-Path $junctionTarget "keyring.lock"),"")

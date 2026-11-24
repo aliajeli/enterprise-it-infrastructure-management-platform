@@ -24,13 +24,15 @@ function Get-OfflinePayloadPackagePlan {
  $required=@(
   "runtime\node.exe","runtime\npm.cmd",
   "EnterpriseIT.ApiServiceHost.exe","EnterpriseIT.WebServiceHost.exe","EnterpriseIT.WorkerServiceHost.exe","EnterpriseIT.EdgeServiceHost.exe",
+  "CredentialVault.KeyringStorageHelper.exe",
   "apps\api\dist\server.js","apps\worker\dist\main.js","packages\database\dist\index.js",
   "packages\database\prisma\schema.prisma","packages\database\prisma\migrations",
   "node_modules\@platform\api\package.json","node_modules\@platform\worker\package.json","node_modules\@platform\database\package.json",
   "node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json",
   "apps\web\.next\standalone\server.js","apps\web\.next\standalone\node_modules\next\package.json",
   "postgresql\pgsql\bin\postgres.exe","postgresql\pgsql\bin\pg_ctl.exe","postgresql\pgsql\bin\initdb.exe",
-  "postgresql\pgsql\share\postgresql.conf.sample"
+  "postgresql\pgsql\share\postgresql.conf.sample",
+  "scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1"
  )
  foreach($relative in $required){if(-not(Test-Path -LiteralPath (Join-Path $source $relative))){throw "Required offline payload component is missing: $relative"}}
  $archive=[IO.Path]::GetFullPath($OutputArchive)

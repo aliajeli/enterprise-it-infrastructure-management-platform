@@ -7,7 +7,17 @@ param(
  [int]$EdgeHttpsPort=443,
  [Parameter(Mandatory=$true)][string]$EdgeTlsHostname,
  [Parameter(Mandatory=$true)][string]$EdgeCertificateThumbprint,
- [string]$DataRoot=(Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18\data")
+ [string]$DataRoot=(Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18\data"),
+ [string]$BootstrapAdminUser="",
+ [Security.SecureString]$BootstrapAdminPassword,
+ [string]$DatabaseName="enterprise_it",
+ [string]$SchemaOwnerRole="enterprise_it_owner",
+ [string]$MigrationRole="enterprise_it_migrator",
+ [Security.SecureString]$MigrationPassword,
+ [string]$ApiRuntimeRole="enterprise_it_api",
+ [Security.SecureString]$ApiRuntimePassword,
+ [string]$WorkerRuntimeRole="enterprise_it_worker",
+ [Security.SecureString]$WorkerRuntimePassword
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference="Stop"
@@ -69,6 +79,7 @@ function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
   (Join-Path $Plan.InstallRoot "EnterpriseIT.WebServiceHost.exe"),
   (Join-Path $Plan.InstallRoot "EnterpriseIT.WorkerServiceHost.exe"),
   (Join-Path $Plan.InstallRoot "EnterpriseIT.EdgeServiceHost.exe"),
+  (Join-Path $Plan.InstallRoot "CredentialVault.KeyringStorageHelper.exe"),
   (Join-Path $Plan.InstallRoot "runtime\node.exe"),
   (Join-Path $Plan.InstallRoot "apps\api\dist\server.js"),
   (Join-Path $Plan.InstallRoot "apps\worker\dist\main.js"),
@@ -78,8 +89,7 @@ function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
   (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\pg_isready.exe"),
   (Join-Path $Plan.DataRoot "PG_VERSION"),
   (Join-Path $Plan.DataRoot "postgresql.conf"),
-  (Join-Path $Plan.DataRoot "pg_hba.conf"),
-  (Join-Path $programDataRoot "EnterpriseIT\CredentialVault\keyring.lock")
+  (Join-Path $Plan.DataRoot "pg_hba.conf")
  )
 }
 function Test-WindowsServiceOrchestrationPayload([pscustomobject]$Plan){
@@ -89,14 +99,17 @@ function Test-WindowsServiceOrchestrationPayload([pscustomobject]$Plan){
  $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{$env:ProgramData}
  $vaultRoot=Join-Path $programDataRoot "EnterpriseIT\CredentialVault"
  $enterpriseRoot=Join-Path $programDataRoot "EnterpriseIT"
+ # Payload preflight validates immutable payload and safe parent path conditions. It must
+ # not demand a leaf Vault/lock on a fresh install; the elevated provisioner creates them
+ # after API service SID provisioning and before API start. Existing objects are validated
+ # for reparse/type safety only here; owner/DACL validation is enforced by the provisioner.
  foreach($path in @($programDataRoot,$enterpriseRoot,$vaultRoot,(Join-Path $vaultRoot "keyring.lock"))){
+  if(-not (Test-Path -LiteralPath $path)){continue}
   $item=Get-Item -LiteralPath $path -Force -ErrorAction Stop
   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw "Keyring provisioning preflight rejected a reparse-point path component."}
   $mustBeDirectory=$path -ne (Join-Path $vaultRoot "keyring.lock")
   if($item.PSIsContainer -ne $mustBeDirectory){throw "Keyring provisioning preflight found an unexpected file-system object type."}
  }
- if(-not (Test-Path -LiteralPath $vaultRoot -PathType Container)){throw "Credential Vault directory must be provisioned before service orchestration."}
- if(-not (Test-Path -LiteralPath (Join-Path $vaultRoot "keyring.lock") -PathType Leaf)){throw "Credential Vault lock file must be provisioned before service orchestration."}
  $version=(Get-Content -LiteralPath (Join-Path $Plan.DataRoot "PG_VERSION") -Raw).Trim()
  if($version -ne "18"){throw "Orchestration preflight requires an initialized PostgreSQL 18 data directory."}
  $postgresConfig=Get-Content -LiteralPath (Join-Path $Plan.DataRoot "postgresql.conf") -Raw
@@ -116,7 +129,46 @@ function Stop-OrchestrationStartedServices([System.Collections.Generic.List[stri
   catch{Write-Warning "Rollback could not stop $name; service remains registered and data is preserved."}
  }
 }
-function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl){
+
+function Invoke-CredentialVaultProvisioner {
+ [CmdletBinding(SupportsShouldProcess=$true,ConfirmImpact="High")]
+ param(
+  [Parameter(Mandatory=$true)][pscustomobject]$Plan,
+  [Parameter(Mandatory=$true)][string]$ServiceSid,
+  [switch]$VerifyOnly
+ )
+ if($ServiceSid -notmatch '^S-1-5-80-(?:\d+-){14}\d+$'){throw "Invalid API service SID format."}
+ $helperPath=Join-Path $Plan.InstallRoot "CredentialVault.KeyringStorageHelper.exe"
+ if(-not(Test-Path -LiteralPath $helperPath -PathType Leaf)){throw "Credential Vault helper is missing from the staged payload."}
+ $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{$env:ProgramData}
+ $mode=if($VerifyOnly){"--verify-vault"}else{"--provision-vault"}
+ $action=if($VerifyOnly){"Verify Credential Vault store"}else{"Provision Credential Vault store"}
+ if($WhatIfPreference){return [pscustomobject]@{status="whatif";mode=$mode;serviceSidValidated=$true}}
+ if(-not $PSCmdlet.ShouldProcess("EnterpriseIT Credential Vault",$action)){return [pscustomobject]@{status="skipped";mode=$mode}}
+ $args=@($mode,"--service-sid",$ServiceSid,"--program-data-root",$programDataRoot)
+ $start=[Diagnostics.ProcessStartInfo]::new()
+ $start.FileName=$helperPath
+ $start.UseShellExecute=$false
+ $start.CreateNoWindow=$true
+ $start.RedirectStandardOutput=$true
+ $start.RedirectStandardError=$true
+ $start.RedirectStandardInput=$false
+ # Pass arguments via ArgumentList to avoid shell parsing; no secrets.
+ foreach($a in $args){$start.ArgumentList.Add([string]$a)}
+ $process=[Diagnostics.Process]::Start($start)
+ $stdoutTask=$process.StandardOutput.ReadToEndAsync()
+ $stderrTask=$process.StandardError.ReadToEndAsync()
+ $process.WaitForExit()
+ $stdout=$stdoutTask.GetAwaiter().GetResult()
+ $stderr=$stderrTask.GetAwaiter().GetResult()
+ if($process.ExitCode -ne 0 -or $stdout.Trim() -ne "OK"){
+  $category=($stderr.Trim())
+  if([string]::IsNullOrWhiteSpace($category)){$category="provisioning-failed"}
+  throw "Credential Vault provisioning failed ($category). API startup is blocked."
+ }
+ [pscustomobject]@{status="ok";mode=$mode;serviceSid=$ServiceSid}
+}
+function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl,[hashtable]$Bootstrap=$null){
  if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
   Test-WindowsServiceOrchestrationPayload -Plan $Plan|Out-Null
  $resolved=@([Net.Dns]::GetHostAddresses($Plan.EdgeTlsHostname)|ForEach-Object{$_.IPAddressToString})
@@ -130,7 +182,9 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
  Invoke-PostgreSqlServiceProvisioning -Plan $pgPlan -Confirm:$false|Out-Null
  . (Join-Path $PSScriptRoot "provision-api-service.ps1") -InstallRoot $Plan.InstallRoot
  $apiPlan=Get-ApiServiceProvisioningPlan -InstallRoot $Plan.InstallRoot
- Invoke-ApiServiceProvisioning -Plan $apiPlan -DatabaseUrl $ApiDatabaseUrl -Confirm:$false|Out-Null
+ $apiProvisioningResult=Invoke-ApiServiceProvisioning -Plan $apiPlan -DatabaseUrl $ApiDatabaseUrl -Confirm:$false
+ if($null -eq $apiProvisioningResult -or [string]::IsNullOrWhiteSpace([string]$apiProvisioningResult.serviceSid)){throw "API provisioning did not return a validated service SID."}
+ Invoke-CredentialVaultProvisioner -Plan $Plan -ServiceSid ([string]$apiProvisioningResult.serviceSid)
  . (Join-Path $PSScriptRoot "provision-worker-service.ps1") -InstallRoot $Plan.InstallRoot
  $workerPlan=Get-WorkerServiceProvisioningPlan -InstallRoot $Plan.InstallRoot
  Invoke-WorkerServiceProvisioning -Plan $workerPlan -DatabaseUrl $WorkerDatabaseUrl -Confirm:$false|Out-Null
@@ -149,6 +203,15 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
  try{
   Start-ManagedService "EnterpriseITPostgreSQL" $started
   Wait-PostgreSqlReady $Plan.InstallRoot
+  if($null -ne $Bootstrap){
+   $bootstrapScript=Join-Path $PSScriptRoot "bootstrap-postgresql-database.ps1"
+   $migrateScript=Join-Path $PSScriptRoot "invoke-postgresql-migrations.ps1"
+   if(-not(Test-Path -LiteralPath $bootstrapScript -PathType Leaf)){throw "PostgreSQL bootstrap script is missing from the staged payload."}
+   if(-not(Test-Path -LiteralPath $migrateScript -PathType Leaf)){throw "PostgreSQL migration script is missing from the staged payload."}
+   & $bootstrapScript -PgHost "127.0.0.1" -PgPort 5432 -AdminUser ([string]$Bootstrap.AdminUser) -AdminPassword ([Security.SecureString]$Bootstrap.AdminPassword) -DatabaseName ([string]$Bootstrap.DatabaseName) -SchemaOwnerRole ([string]$Bootstrap.SchemaOwnerRole) -MigrationRole ([string]$Bootstrap.MigrationRole) -MigrationPassword ([Security.SecureString]$Bootstrap.MigrationPassword) -ApiRole ([string]$Bootstrap.ApiRuntimeRole) -ApiPassword ([Security.SecureString]$Bootstrap.ApiRuntimePassword) -WorkerRole ([string]$Bootstrap.WorkerRuntimeRole) -WorkerPassword ([Security.SecureString]$Bootstrap.WorkerRuntimePassword) -Confirm:$false | Out-Null
+   & $migrateScript -InstallRoot $Plan.InstallRoot -PgHost "127.0.0.1" -PgPort 5432 -DatabaseName ([string]$Bootstrap.DatabaseName) -MigrationRole ([string]$Bootstrap.MigrationRole) -MigrationPassword ([Security.SecureString]$Bootstrap.MigrationPassword) -SchemaOwnerRole ([string]$Bootstrap.SchemaOwnerRole) -ApiRole ([string]$Bootstrap.ApiRuntimeRole) -WorkerRole ([string]$Bootstrap.WorkerRuntimeRole) -AdminPassword ([Security.SecureString]$Bootstrap.AdminPassword) -AdminUser ([string]$Bootstrap.AdminUser) -Confirm:$false | Out-Null
+  }
+  Invoke-CredentialVaultProvisioner -Plan $Plan -ServiceSid $apiProvisioningResult.serviceSid -VerifyOnly
   Start-ManagedService "EnterpriseITApi" $started
   Wait-HttpReady "http://127.0.0.1:13001/health/ready" "EnterpriseITApi"
   Start-ManagedService "EnterpriseITWorker" $started
@@ -166,5 +229,15 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
 if($MyInvocation.InvocationName -ne "."){
  $plan=Get-WindowsServiceOrchestrationPlan -InstallRoot $InstallRoot -EdgeBindAddress $EdgeBindAddress -EdgeHttpsPort $EdgeHttpsPort -EdgeTlsHostname $EdgeTlsHostname -EdgeCertificateThumbprint $EdgeCertificateThumbprint -DataRoot $DataRoot
  if($WhatIfPreference){$plan|ConvertTo-Json -Depth 5;return}
- if($PSCmdlet.ShouldProcess("Enterprise IT five-service deployment","Provision, configure dependencies and start in dependency order")){Invoke-WindowsServiceOrchestration -Plan $plan -ApiDatabaseUrl $ApiDatabaseUrl -WorkerDatabaseUrl $WorkerDatabaseUrl|ConvertTo-Json -Depth 5}
+ $bootstrap=$null
+ if(-not [string]::IsNullOrWhiteSpace($BootstrapAdminUser)){
+  if($null -eq $BootstrapAdminPassword -or $null -eq $MigrationPassword -or $null -eq $ApiRuntimePassword -or $null -eq $WorkerRuntimePassword){throw "Bootstrap requires admin, migration, API runtime and Worker runtime SecureString passwords."}
+  $bootstrap=@{
+   AdminUser=$BootstrapAdminUser;AdminPassword=$BootstrapAdminPassword;DatabaseName=$DatabaseName
+   SchemaOwnerRole=$SchemaOwnerRole;MigrationRole=$MigrationRole;MigrationPassword=$MigrationPassword
+   ApiRuntimeRole=$ApiRuntimeRole;ApiRuntimePassword=$ApiRuntimePassword
+   WorkerRuntimeRole=$WorkerRuntimeRole;WorkerRuntimePassword=$WorkerRuntimePassword
+  }
+ }
+ if($PSCmdlet.ShouldProcess("Enterprise IT five-service deployment","Provision, configure dependencies and start in dependency order")){Invoke-WindowsServiceOrchestration -Plan $plan -ApiDatabaseUrl $ApiDatabaseUrl -WorkerDatabaseUrl $WorkerDatabaseUrl -Bootstrap $bootstrap|ConvertTo-Json -Depth 5}
 }

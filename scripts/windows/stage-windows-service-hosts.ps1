@@ -13,14 +13,15 @@ function Get-WindowsServiceHostStagePlan([string]$InstallRoot){
   [pscustomobject]@{Service="EnterpriseITApi";Project=(Join-Path $repoRoot "apps\api\windows\service-host\EnterpriseIT.ApiServiceHost.csproj");Executable="EnterpriseIT.ApiServiceHost.exe"},
   [pscustomobject]@{Service="EnterpriseITWeb";Project=(Join-Path $repoRoot "apps\web\windows\service-host\EnterpriseIT.WebServiceHost.csproj");Executable="EnterpriseIT.WebServiceHost.exe"},
   [pscustomobject]@{Service="EnterpriseITWorker";Project=(Join-Path $repoRoot "apps\worker\windows\service-host\EnterpriseIT.WorkerServiceHost.csproj");Executable="EnterpriseIT.WorkerServiceHost.exe"},
-  [pscustomobject]@{Service="EnterpriseITEdge";Project=(Join-Path $repoRoot "apps\edge\windows\service-host\EnterpriseIT.EdgeServiceHost.csproj");Executable="EnterpriseIT.EdgeServiceHost.exe"}
+  [pscustomobject]@{Service="EnterpriseITEdge";Project=(Join-Path $repoRoot "apps\edge\windows\service-host\EnterpriseIT.EdgeServiceHost.csproj");Executable="EnterpriseIT.EdgeServiceHost.exe"},
+  [pscustomobject]@{Service="EnterpriseITKeyringStorageHelper";Project=(Join-Path $repoRoot "apps\api\windows\keyring-storage-helper\CredentialVault.KeyringStorageHelper.csproj");Executable="CredentialVault.KeyringStorageHelper.exe"}
  )
  [pscustomobject]@{InstallRoot=$root;RuntimeIdentifier="win-x64";SelfContained=$true;PublishSingleFile=$true;Services=$items;Immutable=$true}
 }
 if($MyInvocation.InvocationName -ne "."){
  $plan=Get-WindowsServiceHostStagePlan -InstallRoot $InstallRoot
  if($WhatIfPreference){[pscustomobject]@{installRoot=$plan.InstallRoot;services=@($plan.Services|ForEach-Object{$_.Service});runtimeIdentifier=$plan.RuntimeIdentifier;selfContained=$true;dryRun=$true}|ConvertTo-Json -Depth 4;return}
- if(-not $PSCmdlet.ShouldProcess($plan.InstallRoot,"Publish and stage four self-contained Windows service hosts")){return}
+ if(-not $PSCmdlet.ShouldProcess($plan.InstallRoot,"Publish and stage five self-contained Windows service hosts/helpers")){return}
  foreach($item in $plan.Services){
   if(-not(Test-Path -LiteralPath $item.Project -PathType Leaf)){throw "Service host project is missing: $($item.Project)"}
   $destination=Join-Path $plan.InstallRoot $item.Executable

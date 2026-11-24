@@ -3,11 +3,13 @@
 **Purpose:** authoritative, self-contained handoff for an implementation agent taking over this repository. Read this file before changing code. It consolidates the decisions, implementation status, known gaps, acceptance gates and owner constraints accumulated through 2026-11-24.
 
 **Snapshot:** 2026-11-24  
-**Active branch:** `phase3/windows-service-deployment`  
-**HEAD at handoff authoring:** `1be872280c2e922c17218c4c5358cfe9be43d742`  
-**Root package version:** `0.1.163`  
+**Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
+**HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
+**Root package version:** `0.1.165`  
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
+
+**0.1.165 continuation note:** Credential Vault provisioner mode, orchestrator wiring, bootstrap/migration scripts, and payload/staging updates were added on the Arena branch. Windows compilation/CI/VM acceptance was not executed in this Linux sandbox. Re-validate all claims against exact-head CI and supported Windows Server evidence.
 
 ---
 
@@ -56,10 +58,9 @@ Project is **not production-ready**.
 ## 3. Repository and branch state at handoff
 
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
-Branch: `phase3/windows-service-deployment`  
-HEAD: `1be872280c2e922c17218c4c5358cfe9be43d742`  
-Commit: `fix(windows): guard ProgramData reparse path before orchestration v0.1.163`  
-Version: `0.1.163`
+Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
+Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
+Current version: `0.1.165`
 
 Most recent exact-head Push validation:
 - Run ID: `45359423721`

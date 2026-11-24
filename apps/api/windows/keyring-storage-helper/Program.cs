@@ -25,9 +25,11 @@ internal static class Program
     private static SecurityIdentifier? serviceSid;
     private static WindowsDirectoryHandleChain? directoryChain;
 
-    private static async Task<int> Main()
+    private static async Task<int> Main(string[] args)
     {
         if(!OperatingSystem.IsWindows()) return 1;
+        if(VaultProvisioner.IsProvisioningMode(args))
+            return VaultProvisioner.Execute(args);
         try
         {
             using var input=Console.OpenStandardInput();
