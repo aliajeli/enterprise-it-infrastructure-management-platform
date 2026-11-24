@@ -14,8 +14,11 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference="Stop"
-function Assert-SafeIdentifier([string]$Name,[string]$Label){if($Name -notmatch '^[A-Za-z][A-Za-z0-9_]{0,62}$'){throw "Unsafe SQL identifier for ${Label}."}}
-foreach($pair in @(@($DatabaseName,"DatabaseName"),@($MigrationRole,"MigrationRole"),@($SchemaOwnerRole,"SchemaOwnerRole"),@($ApiRole,"ApiRole"),@($WorkerRole,"WorkerRole"),@($AdminUser,"AdminUser"))){Assert-SafeIdentifier -Name $pair[0] -Label $pair[1]}
+# Validation is shared with the bootstrap entry point and does not contact the
+# server. It is not cluster identity or ownership verification.
+. (Join-Path $PSScriptRoot 'postgresql-deployment-inputs.ps1')
+Assert-PostgreSqlDeploymentInputs -PgHost $PgHost -PgPort $PgPort -DatabaseName $DatabaseName -AdminUser $AdminUser -SchemaOwnerRole $SchemaOwnerRole -MigrationRole $MigrationRole -ApiRole $ApiRole -WorkerRole $WorkerRole
+
 if($WhatIfPreference){[pscustomobject]@{status="whatif";database=$DatabaseName;mutated=$false}|ConvertTo-Json -Depth 4;return}
 # Fail closed until the bootstrap credential channel and ownership/adoption
 # checks are reviewed and tested. Never place passwords in SQL argv or logs.

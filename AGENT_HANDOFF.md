@@ -5,7 +5,7 @@
 **Snapshot:** 2026-11-24  
 **Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
 **HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
-**Root package version:** `0.1.209`
+**Root package version:** `0.1.210`
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
 
@@ -70,12 +70,12 @@ Project is **not production-ready**.
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
 Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
 Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
-Current version: `0.1.209`
+Current version: `0.1.210`
 
-Latest completed validation before 0.1.209:
-- Run [45432638516](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45432638516) on `7259437836a986e79894a81050f3df7d59a49257` (0.1.208) failed overall: synthetic same-user stdin handle interception and real initdb named-pipe PID mismatch.
+Latest completed validation before 0.1.210:
+- Run [45439284177](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45439284177) on `7501255a2f51ee6b623163faa8624adc3a43869d` (0.1.209) failed overall: synthetic same-user stdin interception, real initdb named-pipe PID mismatch and same-user PROCESS_DUP_HANDLE access to real initdb re-exec. No credential was sent in the latter probe.
 - Windows installer/archive and preflight fixture tests, Windows runtime, Web, disposable fast and assembled/extracted PostgreSQL migration experiments, Linux validation and self-contained publish passed. These are fixtures, not secure production credential transport or supported Windows Server acceptance.
-- 0.1.209 adds a diagnostic for same-user process access to the actual restricted initdb child; exact-head validation is needed. See HANDOVER.md for current detail.
+- 0.1.210 adds shared read-only PostgreSQL input validation and packaging checks; exact-head validation is needed. See HANDOVER.md for current detail.
 
 Current open PR constraints:
 - PR #7: Draft/open/unmerged — do not merge.

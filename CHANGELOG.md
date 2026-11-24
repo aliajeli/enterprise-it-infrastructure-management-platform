@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.210 — 2026-11-24
+
+- Added shared fail-closed PostgreSQL deployment input validation for loopback endpoint, identifier safety and distinct roles, with negative tests. Offline package validation now requires the validator and disabled initializer. No database mutation gate was opened.
+
 ## 0.1.209 — 2026-11-24
 
 - Added a no-credential hosted Windows diagnostic probing same-user PROCESS_DUP_HANDLE access to a real PostgreSQL initdb restricted re-exec child. It cannot prove either actual interception or production security and does not enable installation.

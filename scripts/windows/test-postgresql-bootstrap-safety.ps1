@@ -18,6 +18,39 @@ foreach($case in @(
  $parameters=$case.Arguments
  $preview=& $scriptPath @parameters -WhatIf | ConvertFrom-Json
  if($preview.status -ne "whatif" -or $preview.mutated){throw "Database WhatIf must not mutate."}
+ # Reject bad endpoints, reserved/ambiguous identifiers and role collisions
+ # during WhatIf as well as execution. Neither path may contact a server.
+ $invalidCases=@(
+  @{Key='PgHost';Value='localhost'},
+  @{Key='PgHost';Value='192.0.2.2'},
+  @{Key='PgPort';Value=0},
+  @{Key='PgPort';Value=65536},
+  @{Key='AdminUser';Value='bad user'},
+  @{Key='AdminUser';Value='public'},
+  @{Key='DatabaseName';Value='postgres'},
+  @{Key='DatabaseName';Value='template1'},
+  @{Key='DatabaseName';Value='Bad_Case'},
+  @{Key='DatabaseName';Value=('a'*64)},
+  @{Key='MigrationRole';Value='pg_reserved'},
+  @{Key='MigrationRole';Value='postgres'},
+  @{Key='ApiRole';Value='public'},
+  @{Key='WorkerRole';Value='test_api'},
+  @{Key='MigrationRole';Value='test_owner'},
+  @{Key='ApiRole';Value='test_admin'},
+  @{Key='SchemaOwnerRole';Value='test_worker'},
+  @{Key='ApiRole';Value="test_api;DROP ROLE postgres"}
+ )
+ foreach($invalid in $invalidCases){
+  $bad=$parameters.Clone();$bad[$invalid.Key]=$invalid.Value
+  foreach($previewOnly in @($true,$false)){
+   $rejected=$false
+   try{& $scriptPath @bad -WhatIf:$previewOnly -Confirm:$false | Out-Null}catch{
+    if($_.Exception.Message -match 'synthetic-test-secret'){throw 'Validation exposed a secret.'}
+    $rejected=$_.Exception.Message -like '*PostgreSQL deployment*' -or $_.Exception.Message -like '*PostgreSQL database name*' -or $_.Exception.Message -like '*PostgreSQL administrator role*'
+   }
+   if(-not $rejected){throw "Invalid PostgreSQL deployment input was not rejected before the disabled operation."}
+  }
+ }
  $blocked=$false
  try{& $scriptPath @parameters -Confirm:$false | Out-Null}catch{
   if($_.Exception.Message -match 'synthetic-test-secret'){throw "Database failure exposed a secret."}

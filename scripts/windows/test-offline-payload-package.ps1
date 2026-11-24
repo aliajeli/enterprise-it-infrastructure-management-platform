@@ -15,7 +15,7 @@ try{
   "node_modules\@platform\api\package.json","node_modules\@platform\worker\package.json","node_modules\@platform\database\package.json","node_modules\fastify\package.json","node_modules\@node-rs\argon2\package.json",
   "apps\web\.next\standalone\server.js","apps\web\.next\standalone\.next\required-server-files.json","apps\web\.next\standalone\node_modules\next\package.json","apps\web\.next\standalone\service-entry.cjs",
   "postgresql\pgsql\bin\postgres.exe","postgresql\pgsql\bin\pg_ctl.exe","postgresql\pgsql\bin\initdb.exe","postgresql\pgsql\share\postgresql.conf.sample",
-  "scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1",
+  "scripts\windows\initialize-postgresql-cluster.ps1","scripts\windows\postgresql-deployment-inputs.ps1","scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1",
   "scripts\windows\provision-postgresql-service.ps1","scripts\windows\provision-api-service.ps1","scripts\windows\provision-worker-service.ps1",
   "scripts\windows\provision-web-service.ps1","scripts\windows\provision-edge-service.ps1",
   "scripts\windows\installer-preflight.ps1","scripts\windows\new-offline-payload-manifest.ps1","scripts\windows\install-offline-payload.ps1"
