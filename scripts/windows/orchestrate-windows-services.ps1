@@ -89,9 +89,11 @@ function Test-WindowsServiceOrchestrationPayload([pscustomobject]$Plan){
  $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{$env:ProgramData}
  $vaultRoot=Join-Path $programDataRoot "EnterpriseIT\CredentialVault"
  $enterpriseRoot=Join-Path $programDataRoot "EnterpriseIT"
- foreach($path in @($enterpriseRoot,$vaultRoot,(Join-Path $vaultRoot "keyring.lock"))){
+ foreach($path in @($programDataRoot,$enterpriseRoot,$vaultRoot,(Join-Path $vaultRoot "keyring.lock"))){
   $item=Get-Item -LiteralPath $path -Force -ErrorAction Stop
   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw "Keyring provisioning preflight rejected a reparse-point path component."}
+  $mustBeDirectory=$path -ne (Join-Path $vaultRoot "keyring.lock")
+  if($item.PSIsContainer -ne $mustBeDirectory){throw "Keyring provisioning preflight found an unexpected file-system object type."}
  }
  if(-not (Test-Path -LiteralPath $vaultRoot -PathType Container)){throw "Credential Vault directory must be provisioned before service orchestration."}
  if(-not (Test-Path -LiteralPath (Join-Path $vaultRoot "keyring.lock") -PathType Leaf)){throw "Credential Vault lock file must be provisioned before service orchestration."}

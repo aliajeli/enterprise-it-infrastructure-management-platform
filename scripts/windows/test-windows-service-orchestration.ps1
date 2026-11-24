@@ -27,6 +27,18 @@ try{
  }
  $payloadCheck=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
  if(-not $payloadCheck.valid -or $payloadCheck.requiredFileCount -ne 15){throw "Complete service payload and PostgreSQL fixture should pass orchestration preflight."}
+
+ # ProgramData itself is part of the trusted path and must not be a junction.
+ $programDataJunctionTarget=Join-Path $preflightRoot "programdata-junction-target"
+ Copy-Item -LiteralPath $preflightProgramData -Destination $programDataJunctionTarget -Recurse
+ Remove-Item -LiteralPath $preflightProgramData -Recurse -Force
+ $programDataJunctionOutput=& cmd.exe /c "mklink /J `"$preflightProgramData`" `"$programDataJunctionTarget`""
+ if($LASTEXITCODE -ne 0){throw "Could not create the ProgramData junction fixture: $programDataJunctionOutput"}
+ $programDataJunctionRejected=$false
+ try{Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan|Out-Null}catch{$programDataJunctionRejected=$true}
+ if(-not $programDataJunctionRejected){throw "ProgramData root junction must be rejected during preflight."}
+ Remove-Item -LiteralPath $preflightProgramData -Force
+ Rename-Item -LiteralPath $programDataJunctionTarget -NewName "programdata"
  $keyringLock=Join-Path $fixturePlan.ProgramDataRoot "EnterpriseIT\CredentialVault\keyring.lock"
  Remove-Item -LiteralPath $keyringLock -Force
  $missingKeyringRejected=$false

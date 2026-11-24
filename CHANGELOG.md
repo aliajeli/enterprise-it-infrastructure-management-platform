@@ -1,3 +1,9 @@
+## 0.1.163 — Extend Credential Vault path preflight to ProgramData
+
+- Extended the Windows orchestration preflight to inspect the OS ProgramData root itself, in addition to EnterpriseIT, CredentialVault and keyring.lock. Every component must have the expected directory/file type and must not be a reparse point.
+- Added a Windows regression fixture that places a valid-looking ProgramData tree behind a directory junction and proves the preflight rejects it before service provisioning.
+- This remains a path-shape guard, not native owner/DACL verification or an elevated Vault provisioner. The keyring helper remains fail-closed; Credential Vault provisioning and clean Windows Server acceptance remain open.
+
 ## 0.1.162 — Specify fail-closed Credential Vault provisioning contract
 
 - Added a dedicated Windows provisioning design that records the exact runtime-helper owner/DACL contract, required service-creation ordering, native create-new semantics, retained-handle validation, parent trust checks, rollback limits, and acceptance tests.

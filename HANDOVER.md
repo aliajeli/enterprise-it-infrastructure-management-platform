@@ -1,3 +1,10 @@
+## 2026-11-24 — Extend Credential Vault ProgramData path guard (0.1.163)
+
+- Hardened orchestration preflight to include the ProgramData root in the reparse-point and filesystem-object-type checks, not only EnterpriseIT/CredentialVault/keyring.lock.
+- Added a Windows junction regression fixture with a copied, otherwise valid ProgramData tree. The test requires rejection before any service provisioning.
+- This is defense-in-depth path validation only. It does not replace retained-handle native owner/DACL checks or implement the elevated Credential Vault provisioner. No installer/release or Windows Server acceptance is claimed.
+- Root package and lockfile versions synchronized at 0.1.163. PR #7/#8/#9 remain unmerged. No MikroTik, firewall, NAT, DST-NAT or port-mapping changes.
+
 ## 2026-11-24 — Define Credential Vault provisioning contract (0.1.162)
 
 - Verified 0.1.161 exact-head CI run 45334177790 completed successfully: Windows API runtime smoke, Platform validation (Node.js 26/PostgreSQL 18), and npm lockfile refresh all succeeded.
