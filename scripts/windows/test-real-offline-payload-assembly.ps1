@@ -44,6 +44,7 @@ try{
  if(-not $checked.valid -or $checked.fileCount -ne $result.payloadFileCount){throw 'Extracted experimental payload did not match its manifest.'}
  # Validate the isolated CLI and real schema from the extracted archive.
  & (Join-Path $PSScriptRoot 'test-migration-tool-offline.ps1') -Root $extract|Out-Null
+ & (Join-Path $PSScriptRoot 'test-postgresql-migration-disposable.ps1') -PayloadRoot $extract -WorkRoot $work|Out-Null
  $blocked=$false
  try{& (Join-Path $PSScriptRoot 'install-offline-payload.ps1') -PayloadArchive $archive -ExpectedSha256 $hash -Confirm:$false|Out-Null}catch{
   $blocked=$_.Exception.Message -like '*Offline installation is disabled*no files or services were changed*'
@@ -56,5 +57,5 @@ try{
   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Refusing to remove a replaced assembly root.'}
   Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction Stop
  }
- if(Test-Path -LiteralPath $work){Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue}
+ if((Test-Path -LiteralPath $work) -and -not(Test-Path -LiteralPath (Join-Path $work 'DO_NOT_DELETE_RUNNING_POSTGRES'))){Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue}
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.201 — 2026-11-24
+
+- Added a disposable Windows CI experiment that uses the extracted archive Prisma tool and PostgreSQL to deploy migrations twice under a distinct synthetic login/effective schema owner, then verifies migration count and object ownership. Production bootstrap, migration and installer remain disabled.
+
 ## 0.1.200 — 2026-11-24
 
 - Added isolated, pinned Prisma migration tooling staging and required it in the offline payload. The staging and extraction tests validate CLI version, Windows schema engine and schema without executing migrations. Production migration, bootstrap and installation remain disabled.
