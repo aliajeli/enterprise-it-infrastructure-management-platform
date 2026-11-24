@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.179 — 2026-11-24
+
+- Hosted CI run 45377990138 on 0.1.178 passed Linux Node 26/PostgreSQL 18 and full Windows validation including the new ancestor-junction rejection. This does not establish clean Windows Server/security acceptance.
+- Improved Vault failure handling: post-create verification failures invoke identity-checked rollback, and a newly created Vault retains DELETE access so rollback uses its original exclusive handle instead of reopening it. Rollback remains best effort and leaves objects when identity cannot be proven. Exact-head Windows CI and fault-injection/race tests are required. Database bootstrap remains disabled; no installer has been produced.
+
 ## 0.1.178 — 2026-11-24
 
 - Windows CI run 45376861959 on 0.1.177 passed Linux Node 26/PostgreSQL 18 and the full Windows hosted validation, including elevated-admin Vault provision/verify/retry and independent protected ACL fixtures. This is not Windows Server acceptance or a release.

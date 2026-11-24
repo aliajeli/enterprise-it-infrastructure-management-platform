@@ -1,3 +1,7 @@
+## 0.1.179 Vault rollback correction — 2026-11-24
+
+Hosted exact-head CI 45377990138 on 39736214f2c586f77f5894f45af247642de81e72 passed Linux Node 26/PostgreSQL 18 and full Windows validation, including elevated non-SYSTEM provisioning and intermediate-junction regression. Added best-effort identity-checked rollback on post-create verification errors using the retained created Vault handle (rather than reopening an exclusive handle). New code requires exact-head Windows CI, fault injection, concurrency, parent trust and independent security review. CI is not Windows Server acceptance. PostgreSQL bootstrap remains disabled and no installer built.
+
 ## 0.1.178 ProgramData ancestor protection — 2026-11-24
 
 Exact-head CI 45376861959 on dfe11c34a6d83e2096b30fb8c5e254801c74aad1 passed Linux Node 26/PostgreSQL 18 and all Windows validation, including elevated-admin Vault provision/verify/retry and independent SYSTEM ACL fixtures. Hosted CI does not establish clean Windows Server acceptance. Added handle-relative retained ProgramData ancestor checks and intermediate junction fixture; helper now uses OS-known ProgramData in normal orchestration, consistent with runtime fixed path. New changes need exact-head Windows CI. Privilege scope, rollback, races and parent trust need independent security review. PostgreSQL bootstrap disabled, no installer built.

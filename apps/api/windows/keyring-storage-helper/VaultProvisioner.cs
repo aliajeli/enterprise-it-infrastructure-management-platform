@@ -64,7 +64,14 @@ internal static class VaultProvisioner
             var serviceSid = ValidateServiceSid(options.ServiceSid);
             var programData = ResolveProgramData(options.ProgramDataRoot);
             using var chain = ProvisioningChain.Open(programData, serviceSid, options.VerifyOnly);
-            chain.ProvisionOrVerify(options.VerifyOnly);
+            try { chain.ProvisionOrVerify(options.VerifyOnly); }
+            catch
+            {
+                // Post-creation validation failures must not leave objects that can
+                // be proven to have been created by this invocation.
+                chain.RollbackCreated();
+                throw;
+            }
             Console.Out.Write("OK");
             return 0;
         }
@@ -335,6 +342,18 @@ internal static class VaultProvisioner
             VerifyProgramDataAcl(programData);
         }
 
+        internal void RollbackCreated()
+        {
+            // Rollback is best-effort and identity-checked; it never removes an
+            // object whose identity cannot be proven. Preserve the original error.
+            try
+            {
+                Rollback(vaultRoot, enterpriseRoot, createdLock, createdVault, createdEnterprise,
+                    vaultIdentityAtCreation, lockIdentityAtCreation);
+            }
+            catch { /* leave the object for administrator inspection */ }
+        }
+
         public void Dispose()
         {
             if (disposed) return;
@@ -363,21 +382,22 @@ internal static class VaultProvisioner
         {
             try
             {
-                using var h = OpenRelativeFile(vault, "keyring.lock", ReadControl | DeleteAccess | Synchronize, 0, FileOpen);
+                using var h = OpenRelativeFile(vault, "keyring.lock", FileReadAttributes | ReadControl | DeleteAccess | Synchronize, 0, FileOpen);
                 var id = ReadAndVerifyRegularFile(h, "keyring-lock");
                 if (id == lockIdentity.Value)
                     DeleteRelativeHandle(h);
             }
             catch { /* leave in place; fail closed by caller */ }
         }
-        if (createdVault && enterprise is not null && !enterprise.IsInvalid)
+        if (createdVault && vault is not null && !vault.IsInvalid && enterprise is not null && !enterprise.IsInvalid)
         {
             try
             {
-                using var h = OpenRelativeDirectory(enterprise, "CredentialVault", ReadControl | DeleteAccess | Synchronize, FileOpen);
-                var id = ReadAndVerifyDirectory(h, "credential-vault");
+                // The retained CREATE_NEW handle is exclusive; reopening it can
+                // fail with a sharing violation and is unnecessary for identity.
+                var id = ReadAndVerifyDirectory(vault, "credential-vault");
                 if (id == vaultIdentity)
-                    DeleteRelativeHandle(h);
+                    DeleteRelativeHandle(vault);
             }
             catch { /* leave in place; fail closed by caller */ }
         }
@@ -411,7 +431,10 @@ internal static class VaultProvisioner
             var sd = SddlToPtr(sddl);
             try
             {
-                var created = OpenRelativeDirectory(parent, name, access, CreateNew, sd);
+                // Retain DELETE only on a newly-created Vault so rollback can
+                // remove this exact handle without taking ownership of anything.
+                var creationAccess = access | (name == "CredentialVault" ? DeleteAccess : 0u);
+                var created = OpenRelativeDirectory(parent, name, creationAccess, CreateNew, sd);
                 var id = ReadAndVerifyDirectory(created, label);
                 if (id.VolumeSerialNumber != expectedVolume.VolumeSerialNumber)
                 { created.Dispose(); throw new ProvisioningException("volume-mismatch"); }
