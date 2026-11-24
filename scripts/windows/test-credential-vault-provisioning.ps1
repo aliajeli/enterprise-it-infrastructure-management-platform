@@ -1,6 +1,8 @@
 $ErrorActionPreference="Stop"
 # Credential Vault provisioner policy/integration tests.
-# Runs on Windows CI as admin. Resolve the actual service SID via SCM for ACL shape tests.
+# Run as LocalSystem in an isolated CI fixture so exact ACLs can be independently
+# inspected and adversarial fixtures created without changing production ACLs.
+# A separate elevated-admin smoke test verifies the actual provisioning entry point.
 
 $repoRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 $helperProject=Join-Path $repoRoot "apps\api\windows\keyring-storage-helper\CredentialVault.KeyringStorageHelper.csproj"
@@ -32,8 +34,15 @@ function New-TestRoot([string]$Name){
  $root=Join-Path $env:TEMP ("enterpriseit-vault-provision-" + $Name + "-" + [guid]::NewGuid().ToString("N"))
  $pd=Join-Path $root "ProgramData"
  [IO.Directory]::CreateDirectory($pd)|Out-Null
- # ProgramData in test root is a normal directory; provisioner validates it is not reparse and
- # has no broad write ACEs. We do not copy OS ProgramData ACLs into the test root.
+ # Explicit protected fixture baseline; do not depend on the machine TEMP ACL.
+ $acl=[Security.AccessControl.DirectorySecurity]::new()
+ $acl.SetAccessRuleProtection($true,$false)
+ foreach($sid in @('S-1-5-18','S-1-5-32-544')){
+  $identity=[Security.Principal.SecurityIdentifier]::new($sid)
+  $rule=[Security.AccessControl.FileSystemAccessRule]::new($identity,'FullControl','ContainerInherit,ObjectInherit','None','Allow')
+  $acl.AddAccessRule($rule)
+ }
+ Set-Acl -LiteralPath $pd -AclObject $acl
  return [pscustomobject]@{Root=$root;ProgramData=$pd}
 }
 
@@ -47,7 +56,8 @@ function Get-VaultPaths([string]$ProgramData){
 function Assert-AclExact([string]$Path,[string]$ExpectedServiceSid){
  $item=Get-Item -LiteralPath $Path -Force
  $acl=Get-Acl -LiteralPath $Path
- if($acl.Owner -ne $ExpectedServiceSid){throw "Owner mismatch for ${Path}: $($acl.Owner)"}
+ $owner=try{([Security.Principal.NTAccount]::new($acl.Owner)).Translate([Security.Principal.SecurityIdentifier]).Value}catch{$acl.Owner}
+ if($owner -ne $ExpectedServiceSid){throw "Vault owner SID does not match the expected service SID."}
  if($acl.AreAccessRulesProtected -ne $true){throw "DACL not protected for $Path"}
  $rules=@($acl.Access|Where-Object{-not $_.IsInherited})
  if($rules.Count -ne 2){throw "Expected exactly 2 explicit ACEs for $Path, got $($rules.Count)"}
@@ -56,8 +66,12 @@ function Assert-AclExact([string]$Path,[string]$ExpectedServiceSid){
   [pscustomobject]@{Identity="NT AUTHORITY\SYSTEM";Rights=[System.Security.AccessControl.FileSystemRights]::FullControl}
  )
  foreach($e in $expected){
-  $match=@($rules|Where-Object{$_.IdentityReference.Value -ieq $e.Identity -and $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and ($_.FileSystemRights -band $e.Rights) -eq $e.Rights})
-  if($match.Count -ne 1){throw "Missing expected ACE $($e.Identity) on $Path"}
+  $wanted=try{([Security.Principal.NTAccount]::new($e.Identity)).Translate([Security.Principal.SecurityIdentifier]).Value}catch{$e.Identity}
+  $match=@($rules|Where-Object{
+   $actual=try{$_.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value}catch{$_.IdentityReference.Value}
+   $actual -eq $wanted -and $_.AccessControlType -eq [System.Security.AccessControl.AccessControlType]::Allow -and ($_.FileSystemRights -band $e.Rights) -eq $e.Rights
+  })
+  if($match.Count -ne 1){throw "Missing expected Vault ACE."}
  }
 }
 

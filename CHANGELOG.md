@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.174 — 2026-11-24
+
+- Windows run 45374694960 on 0.1.173 compiled the Vault helper and moved past fresh provisioning, but the prior test attempted to read the protected lock file as the interactive admin and got access denied. Added an explicit elevated non-SYSTEM provision/verify/retry smoke test and isolated LocalSystem-only CI fixtures for independent exact ACL and adversarial inspection; SYSTEM is an ACL principal only for fixture tests and is not a production runtime fallback. Added deterministic test parent ACL and SID translation. Exact-head Windows CI remains necessary.
+- Privilege scope, parent trust, race/rollback, service-identity operation and clean Windows Server acceptance still require independent review/testing; bootstrap is disabled and no installer exists. Linux Node 26/PostgreSQL 18 passed that run.
+
 ## 0.1.173 — 2026-11-24
 
 - Candidate fix for Windows Vault owner error 1307: the dedicated elevated provisioning process temporarily enables backup and restore privileges only around native opens/CREATE_NEW for fixed Vault and lock leaves, then restores their prior state. Both privileges must be assigned; no alternate owner or broader ACL fallback. Existing object verification remains mandatory. Requires exact-head Windows compilation/CI and independent security, race and Windows Server acceptance; not a release claim.

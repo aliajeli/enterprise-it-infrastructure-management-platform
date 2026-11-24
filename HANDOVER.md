@@ -1,3 +1,7 @@
+## 0.1.174 independent Vault fixture tests — 2026-11-24
+
+Windows run 45374694960 on a32d906014495bc5ce88e2953fcd4fa94dfaac4b compiled helper and proceeded past fresh provisioning, but test inspection of keyring.lock failed with admin access denied, consistent with the protected ACL. Added separate elevated non-SYSTEM provision/verify/retry smoke and isolated SYSTEM-only scheduled-task fixture tests to inspect exact ACL/adversarial cases without opening ACLs; SYSTEM is not a runtime fallback. CI fixtures use explicitly protected parent ACL and cleanup. Exact-head Windows CI must validate this design and the candidate privilege scope; independent security review, real service SID, parent trust and rollback/race tests remain required. Linux Node 26/PostgreSQL 18 passed. Database bootstrap disabled, no installer built.
+
 ## 0.1.173 Vault privilege candidate — 2026-11-24
 
 Windows CI run 45372992938 on 7c95f3d54ae79c87669ec0e367d1a0ffd646c450 passed the SID/orchestration regression and failed fresh Vault provisioning with error 1307; Linux Node 26/PostgreSQL 18 passed. Added candidate bounded backup/restore privilege scope for native fixed Vault/lock leaf operations in the dedicated provisioning process; restores prior privilege state and fails closed if unavailable. This is source only until exact-head Windows CI. Requires independent security review of privilege scope, trust chain, rollback and adversarial races, plus clean Windows Server acceptance. Database bootstrap remains disabled. No installer built.

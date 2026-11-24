@@ -352,7 +352,10 @@ jobs:
         shell: pwsh
         run: |
           try {
-            & ./scripts/windows/test-credential-vault-provisioning.ps1
+            # The smoke must provision under the elevated CI user; SYSTEM is used
+            # only for independent inspection of ACL-protected synthetic fixtures.
+            & ./scripts/windows/test-vault-admin-smoke.ps1
+            & ./scripts/windows/test-vault-system-fixtures.ps1
           } catch {
             $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
             Write-Output "::error title=Credential Vault test failure::$message"
