@@ -1,3 +1,4 @@
+param([Parameter(Mandatory=$true)][string]$FaultHelperPath)
 $ErrorActionPreference="Stop"
 # Credential Vault provisioner policy/integration tests.
 # Run as LocalSystem in an isolated CI fixture so exact ACLs can be independently
@@ -13,14 +14,19 @@ if(-not(Test-Path -LiteralPath $helperDll -PathType Leaf) -and -not(Test-Path -L
  if($LASTEXITCODE -ne 0){throw "Could not build keyring storage helper for Vault provisioning tests."}
 }
 $helperPath=if(Test-Path -LiteralPath $helperExe -PathType Leaf){$helperExe}else{$helperDll}
-function Invoke-Provisioner([string[]]$Arguments){
+function Invoke-Provisioner([string[]]$Arguments,[string]$Executable=$helperPath,[string]$Fault=''){
  $start=[Diagnostics.ProcessStartInfo]::new()
- if($helperPath.EndsWith(".dll",[StringComparison]::OrdinalIgnoreCase)){$start.FileName="dotnet";$start.ArgumentList.Add($helperPath)}else{$start.FileName=$helperPath}
+ if($Executable.EndsWith(".dll",[StringComparison]::OrdinalIgnoreCase)){$start.FileName="dotnet";$start.ArgumentList.Add($Executable)}else{$start.FileName=$Executable}
  foreach($a in $Arguments){$start.ArgumentList.Add([string]$a)}
  $start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
+ $null=$start.Environment.Remove('ENTERPRISEIT_VAULT_TEST_FAULT')
+ if($Fault){$start.Environment['ENTERPRISEIT_VAULT_TEST_FAULT']=$Fault}
  $p=[Diagnostics.Process]::Start($start)
- $outTask=$p.StandardOutput.ReadToEndAsync();$errTask=$p.StandardError.ReadToEndAsync();$p.WaitForExit()
- [pscustomobject]@{ExitCode=$p.ExitCode;StdOut=$outTask.GetAwaiter().GetResult();StdErr=$errTask.GetAwaiter().GetResult()}
+ try{
+  $outTask=$p.StandardOutput.ReadToEndAsync();$errTask=$p.StandardError.ReadToEndAsync()
+  if(-not $p.WaitForExit(30000)){try{$p.Kill($true);$p.WaitForExit()}catch{};throw 'Vault fixture helper timed out.'}
+  [pscustomobject]@{ExitCode=$p.ExitCode;StdOut=$outTask.GetAwaiter().GetResult();StdErr=$errTask.GetAwaiter().GetResult()}
+ }finally{$p.Dispose()}
 }
 
 $sidOutput=(& sc.exe showsid EnterpriseITApi 2>&1|Out-String)
@@ -198,4 +204,43 @@ if($orch -notmatch 'if\(\$WhatIfPreference\)\{\$plan\|ConvertTo-Json -Depth 5;re
 if($orch -notmatch 'Invoke-CredentialVaultProvisioner'){throw "Orchestrator must call Vault provisioner"}
 if($orch -notmatch 'VerifyOnly'){throw "Orchestrator must perform verify-only before API start"}
 
-Write-Host "Credential Vault provisioning tests passed."
+# Test-only fault injection is compiled into a separate executable outside the
+# source tree. The normal release executable must ignore this environment key.
+if(-not(Test-Path -LiteralPath $FaultHelperPath -PathType Leaf)){throw 'Fault-only Vault fixture executable is missing.'}
+$t=New-TestRoot 'release-no-test-hook'
+try{
+ $args=@('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)
+ $r=Invoke-Provisioner -Arguments $args -Fault 'after-final-verification'
+ if($r.ExitCode -ne 0 -or $r.StdOut.Trim() -ne 'OK'){throw 'Release helper unexpectedly enabled the test-only fault hook.'}
+}finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
+foreach($stage in @('after-vault-identity','after-lock-identity','after-final-verification')){
+ # Newly created vault and lock are removed, but EnterpriseIT is deliberately
+ # retained; do not recursively delete production ancestors during rollback.
+ $t=New-TestRoot ('fault-fresh-'+$stage)
+ try{
+  $p=Get-VaultPaths $t.ProgramData
+  $args=@('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)
+  $r=Invoke-Provisioner -Arguments $args -Executable $FaultHelperPath -Fault $stage
+  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Fresh fault did not reach the intended injection stage: $stage"}
+  if(Test-Path -LiteralPath $p.Vault){throw "Fresh fault left a Vault after proven-safe rollback: $stage"}
+  if(-not(Test-Path -LiteralPath $p.Enterprise -PathType Container)){throw 'Rollback unexpectedly removed EnterpriseIT.'}
+ }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
+ # A fully pre-existing store is never removed or rewritten by a failed retry.
+ $t=New-TestRoot ('fault-existing-'+$stage)
+ try{
+  $p=Get-VaultPaths $t.ProgramData
+  $args=@('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)
+  $r=Invoke-Provisioner -Arguments $args
+  if($r.ExitCode -ne 0){throw 'Existing-store fault fixture setup failed.'}
+  [IO.File]::WriteAllText($p.Lock,'synthetic-sentinel')
+  $vaultTime=(Get-Item -LiteralPath $p.Vault -Force).CreationTimeUtc.Ticks
+  $lockTime=(Get-Item -LiteralPath $p.Lock -Force).CreationTimeUtc.Ticks
+  $r=Invoke-Provisioner -Arguments $args -Executable $FaultHelperPath -Fault $stage
+  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Existing fault did not reach the intended injection stage: $stage"}
+  if(-not(Test-Path -LiteralPath $p.Vault -PathType Container) -or -not(Test-Path -LiteralPath $p.Lock -PathType Leaf)){throw 'Fault removed an existing Vault object.'}
+  if((Get-Item -LiteralPath $p.Vault -Force).CreationTimeUtc.Ticks -ne $vaultTime -or (Get-Item -LiteralPath $p.Lock -Force).CreationTimeUtc.Ticks -ne $lockTime -or [IO.File]::ReadAllText($p.Lock) -cne 'synthetic-sentinel'){throw 'Fault changed an existing Vault object.'}
+  Assert-AclExact -Path $p.Vault -ExpectedServiceSid $serviceSid
+  Assert-AclExact -Path $p.Lock -ExpectedServiceSid $serviceSid
+ }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
+}
+Write-Host "Credential Vault provisioning and isolated fault rollback tests passed."

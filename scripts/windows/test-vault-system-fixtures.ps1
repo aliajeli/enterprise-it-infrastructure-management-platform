@@ -9,12 +9,25 @@ $scriptPath=Join-Path $env:RUNNER_TEMP ('vault-fixture-'+$id+'.ps1')
 $resultPath=Join-Path $env:RUNNER_TEMP ('vault-fixture-'+$id+'.json')
 $testPath=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'test-credential-vault-provisioning.ps1'))
 $smokePath=Join-Path $env:RUNNER_TEMP 'enterpriseit-vault-admin-smoke'
+# Build a separate test-only executable; do not place its instrumented output
+# in normal bin/obj, the payload, or any release artifact.
+$buildRoot=Join-Path $env:RUNNER_TEMP ('vault-fault-build-'+$id)
+$outDir=Join-Path $buildRoot 'out'
+$objDir=(Join-Path $buildRoot 'obj')+[IO.Path]::DirectorySeparatorChar
+$project=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\apps\api\windows\keyring-storage-helper\CredentialVault.KeyringStorageHelper.csproj'))
+$faultHelper=Join-Path $outDir 'CredentialVault.KeyringStorageHelper.exe'
+New-Item -ItemType Directory -Path $buildRoot -ErrorAction Stop|Out-Null
+& dotnet build $project --configuration Release --output $outDir "-p:BaseIntermediateOutputPath=$objDir" '-p:DefineConstants=VAULT_TEST_FAULTS'
+if($LASTEXITCODE -ne 0 -or -not(Test-Path -LiteralPath $faultHelper -PathType Leaf)){
+ Remove-Item -LiteralPath $buildRoot -Recurse -Force -ErrorAction SilentlyContinue
+ throw 'Could not build isolated Vault fault fixture executable.'
+}
 function Escape-SingleQuoted([string]$s){return $s.Replace("'","''")}
 $worker=@'
 $ErrorActionPreference='Stop'
 $result=@{success=$false;message='Fixture process did not complete.'}
 try {
- & '__TEST_PATH__'
+ & '__TEST_PATH__' -FaultHelperPath '__FAULT_HELPER__'
  $result.success=$true
  $result.message=''
 } catch {
@@ -28,7 +41,7 @@ try {
  $result | ConvertTo-Json -Compress | Set-Content -LiteralPath '__RESULT_PATH__' -Encoding utf8
 }
 '@
-$worker=$worker.Replace('__TEST_PATH__',(Escape-SingleQuoted $testPath)).Replace('__SMOKE_PATH__',(Escape-SingleQuoted $smokePath)).Replace('__RESULT_PATH__',(Escape-SingleQuoted $resultPath))
+$worker=$worker.Replace('__TEST_PATH__',(Escape-SingleQuoted $testPath)).Replace('__FAULT_HELPER__',(Escape-SingleQuoted $faultHelper)).Replace('__SMOKE_PATH__',(Escape-SingleQuoted $smokePath)).Replace('__RESULT_PATH__',(Escape-SingleQuoted $resultPath))
 [IO.File]::WriteAllText($scriptPath,$worker,[Text.UTF8Encoding]::new($false))
 $pwsh=Join-Path $PSHOME 'pwsh.exe'
 $command='"'+$pwsh+'" -NoLogo -NoProfile -NonInteractive -File "'+$scriptPath+'"'
@@ -37,7 +50,7 @@ try{
  if($LASTEXITCODE -ne 0){throw 'Could not create isolated SYSTEM fixture task.'}
  & schtasks.exe /Run /TN $taskName | Out-Null
  if($LASTEXITCODE -ne 0){throw 'Could not start isolated SYSTEM fixture task.'}
- $deadline=[DateTime]::UtcNow.AddSeconds(120)
+ $deadline=[DateTime]::UtcNow.AddSeconds(240)
  while(-not(Test-Path -LiteralPath $resultPath -PathType Leaf) -and [DateTime]::UtcNow -lt $deadline){Start-Sleep -Seconds 1}
  if(-not(Test-Path -LiteralPath $resultPath -PathType Leaf)){throw 'SYSTEM fixture task timed out.'}
  $result=Get-Content -LiteralPath $resultPath -Raw|ConvertFrom-Json
@@ -47,4 +60,5 @@ try{
  & schtasks.exe /End /TN $taskName 2>$null | Out-Null
  & schtasks.exe /Delete /TN $taskName /F 2>$null | Out-Null
  foreach($path in @($scriptPath,$resultPath)){if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue}}
+ if(Test-Path -LiteralPath $buildRoot){Remove-Item -LiteralPath $buildRoot -Recurse -Force -ErrorAction SilentlyContinue}
 }

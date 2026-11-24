@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.211 — 2026-11-24
+
+- Retained created Vault object handles and identity state before post-open validation, allowing identity-checked rollback on later failures. Added separate test-only fault build and fresh/existing-store rollback checks; no Vault or installer security gate was opened.
+
 ## 0.1.210 — 2026-11-24
 
 - Added shared fail-closed PostgreSQL deployment input validation for loopback endpoint, identifier safety and distinct roles, with negative tests. Offline package validation now requires the validator and disabled initializer. No database mutation gate was opened.

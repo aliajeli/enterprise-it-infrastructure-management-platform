@@ -64,7 +64,13 @@ internal static class VaultProvisioner
             var serviceSid = ValidateServiceSid(options.ServiceSid);
             var programData = ResolveProgramData(options.ProgramDataRoot);
             using var chain = ProvisioningChain.Open(programData, serviceSid, options.VerifyOnly);
-            try { chain.ProvisionOrVerify(options.VerifyOnly); }
+            try
+            {
+                chain.ProvisionOrVerify(options.VerifyOnly);
+#if VAULT_TEST_FAULTS
+                InjectTestFault("after-final-verification");
+#endif
+            }
             catch
             {
                 // Post-creation validation failures must not leave objects that can
@@ -241,7 +247,7 @@ internal static class VaultProvisioner
             bool createdEnterprise = false, createdVault = false, createdLock = false;
             // A fixed operation name and numeric OS error are safe diagnostics; never emit paths or ACLs.
             string stage = "open-volume";
-            DirectoryIdentity vaultIdentity = default;
+            DirectoryIdentity? vaultIdentity = null;
             VaultFileIdentity? lockIdentity = null;
             try
             {
@@ -273,19 +279,22 @@ internal static class VaultProvisioner
 
                 stage = "open-or-create-enterprise";
                 (enterprise, createdEnterprise) = OpenOrCreateChildDirectory(
-                    pd, "EnterpriseIT", volumeIdentity, verifyOnly, EnterpriseSddl(),
-                    VerifyEnterpriseAcl, "enterprise-root");
+                    pd, "EnterpriseIT", verifyOnly, EnterpriseSddl(), "enterprise-root");
                 var enterpriseIdentity = ReadAndVerifyDirectory(enterprise, "enterprise-root");
                 if (enterpriseIdentity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
                     throw new ProvisioningException("volume-mismatch");
+                VerifyEnterpriseAcl(enterprise, serviceSid);
 
                 stage = "open-or-create-vault";
                 (vault, createdVault) = OpenOrCreateChildDirectory(
-                    enterprise, "CredentialVault", volumeIdentity, verifyOnly,
-                    ServiceSddl(serviceSid), (h, _) => VerifyVaultAcl(h, serviceSid), "credential-vault");
+                    enterprise, "CredentialVault", verifyOnly,
+                    ServiceSddl(serviceSid), "credential-vault");
                 vaultIdentity = ReadAndVerifyDirectory(vault, "credential-vault");
-                if (vaultIdentity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
+                if (vaultIdentity.Value.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
                     throw new ProvisioningException("volume-mismatch");
+#if VAULT_TEST_FAULTS
+                InjectTestFault("after-vault-identity");
+#endif
                 VerifyVaultAcl(vault, serviceSid);
 
                 stage = "open-or-create-lock";
@@ -293,11 +302,14 @@ internal static class VaultProvisioner
                 using (lockHandle)
                 {
                     lockIdentity = ReadAndVerifyRegularFile(lockHandle, "keyring-lock");
+#if VAULT_TEST_FAULTS
+                    InjectTestFault("after-lock-identity");
+#endif
                     VerifyVaultAcl(lockHandle, serviceSid);
                 }
 
                 var chain = new ProvisioningChain(volume, pd, ancestors, enterprise, vault, serviceSid,
-                    createdEnterprise, createdVault, createdLock, vaultIdentity, lockIdentity);
+                    createdEnterprise, createdVault, createdLock, vaultIdentity.Value, lockIdentity);
                 ancestors = new List<SafeFileHandle>();
                 volume = pd = enterprise = vault = null;
                 return chain;
@@ -366,6 +378,16 @@ internal static class VaultProvisioner
         }
     }
 
+#if VAULT_TEST_FAULTS
+    // This hook exists only in the separately built CI fixture executable.
+    // Release and published helpers must never define VAULT_TEST_FAULTS.
+    private static void InjectTestFault(string stage)
+    {
+        if (string.Equals(Environment.GetEnvironmentVariable("ENTERPRISEIT_VAULT_TEST_FAULT"), stage, StringComparison.Ordinal))
+            throw new ProvisioningException("test-injected-fault");
+    }
+#endif
+
     private static string ServiceSddl(SecurityIdentifier serviceSid) =>
         $"O:{serviceSid.Value}D:P(A;;FA;;;{serviceSid.Value})(A;;FA;;;SY)";
 
@@ -375,7 +397,7 @@ internal static class VaultProvisioner
     private static void Rollback(
         SafeFileHandle? vault, SafeFileHandle? enterprise,
         bool createdLock, bool createdVault, bool createdEnterprise,
-        DirectoryIdentity vaultIdentity, VaultFileIdentity? lockIdentity)
+        DirectoryIdentity? vaultIdentity, VaultFileIdentity? lockIdentity)
     {
         // Roll back in reverse order. Delete only exact objects created by this invocation.
         if (createdLock && vault is not null && !vault.IsInvalid && lockIdentity.HasValue)
@@ -389,14 +411,14 @@ internal static class VaultProvisioner
             }
             catch { /* leave in place; fail closed by caller */ }
         }
-        if (createdVault && vault is not null && !vault.IsInvalid && enterprise is not null && !enterprise.IsInvalid)
+        if (createdVault && vaultIdentity.HasValue && vault is not null && !vault.IsInvalid && enterprise is not null && !enterprise.IsInvalid)
         {
             try
             {
                 // The retained CREATE_NEW handle is exclusive; reopening it can
                 // fail with a sharing violation and is unnecessary for identity.
                 var id = ReadAndVerifyDirectory(vault, "credential-vault");
-                if (id == vaultIdentity)
+                if (id == vaultIdentity.Value)
                     DeleteRelativeHandle(vault);
             }
             catch { /* leave in place; fail closed by caller */ }
@@ -407,9 +429,7 @@ internal static class VaultProvisioner
     }
 
     private static (SafeFileHandle handle, bool created) OpenOrCreateChildDirectory(
-        SafeFileHandle parent, string name, DirectoryIdentity expectedVolume,
-        bool verifyOnly, string sddl,
-        Action<SafeFileHandle, SecurityIdentifier> verifyAcl, string label)
+        SafeFileHandle parent, string name, bool verifyOnly, string sddl, string label)
     {
         // Request only the right required to create the next fixed child. In
         // particular FILE_DELETE_CHILD is neither needed nor granted by the
@@ -418,12 +438,9 @@ internal static class VaultProvisioner
             (verifyOnly ? 0u : name == "EnterpriseIT" ? FileAddSubdirectory : FileAddFile);
         try
         {
-            var existing = OpenRelativeDirectory(parent, name, access, FileOpen);
-            var id = ReadAndVerifyDirectory(existing, label);
-            if (id.VolumeSerialNumber != expectedVolume.VolumeSerialNumber)
-            { existing.Dispose(); throw new ProvisioningException("volume-mismatch"); }
-            verifyAcl(existing, null!);
-            return (existing, false);
+            // The caller retains the handle and created flag before validation,
+            // so any later failure can close the handle and safely roll back.
+            return (OpenRelativeDirectory(parent, name, access, FileOpen), false);
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 2)
         {
@@ -434,12 +451,7 @@ internal static class VaultProvisioner
                 // Retain DELETE only on a newly-created Vault so rollback can
                 // remove this exact handle without taking ownership of anything.
                 var creationAccess = access | (name == "CredentialVault" ? DeleteAccess : 0u);
-                var created = OpenRelativeDirectory(parent, name, creationAccess, CreateNew, sd);
-                var id = ReadAndVerifyDirectory(created, label);
-                if (id.VolumeSerialNumber != expectedVolume.VolumeSerialNumber)
-                { created.Dispose(); throw new ProvisioningException("volume-mismatch"); }
-                verifyAcl(created, null!);
-                return (created, true);
+                return (OpenRelativeDirectory(parent, name, creationAccess, CreateNew, sd), true);
             }
             finally
             {
@@ -456,10 +468,7 @@ internal static class VaultProvisioner
     {
         try
         {
-            var existing = OpenRelativeFile(vaultRoot, "keyring.lock", GenericRead | ReadControl | Synchronize, ShareRead, FileOpen);
-            _ = ReadAndVerifyRegularFile(existing, "keyring-lock");
-            VerifyVaultAcl(existing, serviceSid);
-            return (existing, false);
+            return (OpenRelativeFile(vaultRoot, "keyring.lock", GenericRead | ReadControl | Synchronize, ShareRead, FileOpen), false);
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 2)
         {
@@ -468,11 +477,8 @@ internal static class VaultProvisioner
             var sd = SddlToPtr(sddl);
             try
             {
-                var created = OpenRelativeFile(vaultRoot, "keyring.lock",
-                    GenericRead | GenericWrite | ReadControl | Synchronize, 0, CreateNew, sd);
-                _ = ReadAndVerifyRegularFile(created, "keyring-lock");
-                VerifyVaultAcl(created, serviceSid);
-                return (created, true);
+                return (OpenRelativeFile(vaultRoot, "keyring.lock",
+                    GenericRead | GenericWrite | ReadControl | Synchronize, 0, CreateNew, sd), true);
             }
             finally
             {
