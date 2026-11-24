@@ -24,13 +24,23 @@ function Invoke-ExperimentalInitDbPipe {
   if($plain.IndexOfAny([char[]]@([char]0,[char]10,[char]13)) -ge 0){throw 'Invalid initdb password characters.'}
   $bytes=[Text.UTF8Encoding]::new($false,$true).GetBytes($plain+"`n")
   $plain=$null
-  # The unpredictable, single-instance local pipe is restricted to the current
-  # Windows user. The child inherits that same identity. No plaintext file or
-  # persistent environment variable is created.
+  # Explicitly grant the token USER SID, not the token owner (which can be
+  # Administrators and is disabled by PostgreSQL's restricted-token re-exec).
+  # A separate exact-client-PID check remains mandatory before sending bytes.
   $stage='create-pipe'
   $name='enterpriseit-initdb-'+[guid]::NewGuid().ToString('N')
-  $options=[IO.Pipes.PipeOptions]::Asynchronous -bor [IO.Pipes.PipeOptions]::CurrentUserOnly
-  $pipe=[IO.Pipes.NamedPipeServerStream]::new($name,[IO.Pipes.PipeDirection]::Out,1,[IO.Pipes.PipeTransmissionMode]::Byte,$options)
+  $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
+  try{$userSid=$identity.User}finally{$identity.Dispose()}
+  if($null -eq $userSid){throw 'Current Windows user SID is unavailable.'}
+  $security=[IO.Pipes.PipeSecurity]::new()
+  $security.SetOwner($userSid)
+  $security.SetAccessRuleProtection($true,$false)
+  $rule=[IO.Pipes.PipeAccessRule]::new($userSid,[IO.Pipes.PipeAccessRights]::FullControl,[Security.AccessControl.AccessControlType]::Allow)
+  $security.AddAccessRule($rule)
+  $pipe=[IO.Pipes.NamedPipeServerStreamAcl]::Create($name,[IO.Pipes.PipeDirection]::Out,1,[IO.Pipes.PipeTransmissionMode]::Byte,[IO.Pipes.PipeOptions]::Asynchronous,0,0,$security,[IO.HandleInheritability]::None,[IO.Pipes.PipeAccessRights]::ReadPermissions)
+  $actual=[IO.Pipes.PipesAclExtensions]::GetAccessControl($pipe)
+  $rules=@($actual.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]))
+  if(-not $actual.AreAccessRulesProtected -or $actual.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $userSid.Value -or $rules.Count -ne 1 -or $rules[0].IdentityReference.Value -ne $userSid.Value -or $rules[0].IsInherited -or $rules[0].AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow -or $rules[0].PipeAccessRights -ne [IO.Pipes.PipeAccessRights]::FullControl){throw 'Unexpected initdb pipe ACL.'}
   $psi=[Diagnostics.ProcessStartInfo]::new()
   $psi.FileName=$Executable
   foreach($a in $TestPrefixArguments){$psi.ArgumentList.Add($a)}

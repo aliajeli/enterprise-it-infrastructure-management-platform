@@ -1,3 +1,7 @@
+## 0.1.187 experimental pipe ACL correction — 2026-11-24
+
+Investigated 0.1.186 real initdb failure `pwfile-open-permission`. Runtime source shows PipeOptions.CurrentUserOnly constructs the ACL from WindowsIdentity.Owner, which may be Administrators; PostgreSQL restricted-token re-exec disables that group. Experimental pipe now uses a protected single-ACE ACL for WindowsIdentity.User and validates it, retaining exact client PID enforcement. This does not solve PostgreSQL's restricted grandchild PID, and the real experiment may now fail safely at client verification. Do not weaken client authentication or PostgreSQL restricted-token behavior. Requires exact-head Windows CI, independent threat review and real Windows Server tests. Initialization/bootstrap/migration remain disabled; no full installer exists.
+
 ## 0.1.186 archive handle and PostgreSQL evidence — 2026-11-24
 
 Windows run 45388522058 on 13ef9e6dd95e2be20dfada75f5e8636d3ce82422 reported `child-exited-before-client-1-pwfile-open-permission` for real PostgreSQL before secret transmission; restricted token and pipe access remain unresolved and production initialization/bootstrap/migration remain disabled. Hardened offline installer foundation to hash, inspect, read manifest and extract via one retained read-only archive handle, with Windows write/rename and no-path-reopen tests. Exact-head CI and independent security review required; this does not complete installer assembly/signing or clean Windows Server acceptance.

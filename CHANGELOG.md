@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.187 — 2026-11-24
+
+- Investigated Windows PostgreSQL pipe-open permission failure: .NET CurrentUserOnly derives the pipe ACL from the token owner, which can be the Administrators group that PostgreSQL deliberately disables in its restricted token. The experimental pipe now uses an explicit protected single-ACE ACL for the token user SID and verifies it by handle. The exact-client-PID check remains in force; no production fallback or PostgreSQL privilege bypass has been added. Synthetic and real Windows CI required; production initialization/bootstrap/migration remain disabled.
+- This is not a complete installer or clean Windows Server acceptance.
+
 ## 0.1.186 — 2026-11-24
 
 - Hardened the offline installer foundation against archive substitution: SHA-256 validation, ZIP entry inspection, manifest reading and extraction now all use a single retained read-only file handle rather than reopening a path after validation. Added Windows tests for denied writes/renames and handle-based verification independent of the original path. Exact-head CI and independent security review required; this is not a completed installer.
