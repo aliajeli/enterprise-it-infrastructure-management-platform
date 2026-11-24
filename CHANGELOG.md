@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.168 — 2026-11-24
+
+- The Windows Vault test in run 45368923642 failed on fresh provisioning with generic `provisioning-failed`. Corrected a candidate cause: provisioning parent directory handles lacked `FILE_ADD_SUBDIRECTORY`; verify-only does not request it. This change is not a demonstrated fix until Windows CI and adversarial acceptance pass.
+- Linux Node 26/PostgreSQL 18 validation passed in that run; Windows safety, staging, packaging and helper compilation passed before the Vault failure. Database bootstrap remains disabled and no installer is available.
+
 ## 0.1.167 — 2026-11-24
 
 - Windows CI run 45368459750 for 0.1.166 passed orchestration, PostgreSQL safety, staging, offline archive tests and keyring helper compilation, but failed the Credential Vault provisioning policy test. The CI log download host is inaccessible in this sandbox. Emit the test exception as a GitHub Actions error annotation so its non-secret test failure is available via the GitHub API; no production behavior or security policy is changed.

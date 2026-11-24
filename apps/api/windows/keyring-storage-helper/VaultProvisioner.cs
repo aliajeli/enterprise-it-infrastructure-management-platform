@@ -24,6 +24,7 @@ internal static class VaultProvisioner
     private const uint GenericWrite = 0x40000000;
     private const uint DeleteAccess = 0x10000;
     private const uint FileAddFile = 0x2;
+    private const uint FileAddSubdirectory = 0x4;
     private const uint FileDeleteChild = 0x40;
     private const uint ShareRead = 1;
     private const uint ShareWrite = 2;
@@ -224,7 +225,7 @@ internal static class VaultProvisioner
             {
                 volume = OpenAbsoluteDirectory(volumePath);
                 var volumeIdentity = ReadAndVerifyDirectory(volume, "programdata-root");
-                pd = OpenAbsoluteDirectory(programDataPath);
+                pd = OpenAbsoluteDirectory(programDataPath, verifyOnly ? 0u : FileAddSubdirectory);
                 var pdIdentity = ReadAndVerifyDirectory(pd, "programdata");
                 if (pdIdentity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
                     throw new ProvisioningException("volume-mismatch");
@@ -346,7 +347,7 @@ internal static class VaultProvisioner
         bool verifyOnly, string sddl,
         Action<SafeFileHandle, SecurityIdentifier> verifyAcl, string label)
     {
-        var access = FileReadAttributes | ReadControl | Synchronize | (verifyOnly ? 0u : (FileAddFile | FileDeleteChild));
+        var access = FileReadAttributes | ReadControl | Synchronize | (verifyOnly ? 0u : (FileAddFile | FileAddSubdirectory | FileDeleteChild));
         try
         {
             var existing = OpenRelativeDirectory(parent, name, access, FileOpen);
@@ -417,9 +418,9 @@ internal static class VaultProvisioner
         return sd;
     }
 
-    private static SafeFileHandle OpenAbsoluteDirectory(string path)
+    private static SafeFileHandle OpenAbsoluteDirectory(string path, uint additionalAccess = 0)
     {
-        var handle = CreateFileW(path, FileReadAttributes | ReadControl | Synchronize,
+        var handle = CreateFileW(path, FileReadAttributes | ReadControl | Synchronize | additionalAccess,
             ShareRead | ShareWrite, IntPtr.Zero, OpenExisting,
             BackupSemantics | OpenReparsePoint, IntPtr.Zero);
         if (handle.IsInvalid)

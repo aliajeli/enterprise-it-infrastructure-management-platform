@@ -1,3 +1,7 @@
+## 0.1.168 Vault handle access correction — 2026-11-24
+
+Exact-head run 45368923642 on b7086eb06d03b4a20802754ca721f71324bc186c: Linux job passed; Windows passed orchestration, PostgreSQL safety, staging, offline packaging and keyring build but fresh Vault provisioning failed with generic `provisioning-failed`. Added missing FILE_ADD_SUBDIRECTORY access on ProgramData and created parent handles for provisioning only; this is a candidate fix, unverified until next exact-head CI. Remaining SID/owner/ACL/handle semantics, race and rollback need security review and Windows Server testing. No installer has been built; database bootstrap remains blocked.
+
 ## 0.1.167 CI diagnostics — 2026-11-24
 
 Run 45368459750 for commit 6ccfac7d311692636baef64e055720eb07171ab6: Linux Node 26/PostgreSQL 18 job passed; Windows compiled the keyring helper and passed orchestration, bootstrap safety and package tests, but failed Credential Vault provisioning policy. Actions log host was unreachable from the sandbox. CI now emits that synthetic test's exception as an Actions error annotation for retrieval through GitHub API; exact-head CI is required to identify and fix the failure. No installer has been built, and first-install database setup is disabled pending secure implementation.
