@@ -243,4 +243,35 @@ foreach($stage in @('after-vault-identity','after-lock-identity','after-final-ve
   Assert-AclExact -Path $p.Lock -ExpectedServiceSid $serviceSid
  }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
 }
+# Failures before identity capture must leave unproven created objects in place.
+# This is intentionally different from successful identity-checked rollback.
+foreach($stage in @('before-vault-identity','before-lock-identity')){
+ $t=New-TestRoot ('fault-unproven-'+$stage)
+ try{
+  $p=Get-VaultPaths $t.ProgramData
+  $parameters=@('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)
+  $r=Invoke-Provisioner -Arguments $parameters -Executable $FaultHelperPath -Fault $stage
+  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Unproven-identity fault was not reached: $stage"}
+  if(-not(Test-Path -LiteralPath $p.Vault -PathType Container)){throw 'Rollback removed an object without a captured Vault identity.'}
+  Assert-AclExact -Path $p.Vault -ExpectedServiceSid $serviceSid
+  if($stage -eq 'before-lock-identity'){
+   if(-not(Test-Path -LiteralPath $p.Lock -PathType Leaf)){throw 'Rollback removed a lock without a captured identity.'}
+   Assert-AclExact -Path $p.Lock -ExpectedServiceSid $serviceSid
+  }elseif(Test-Path -LiteralPath $p.Lock){throw 'Unexpected lock before lock creation.'}
+ }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
+ # Existing objects are also never deleted when identity capture is interrupted.
+ $t=New-TestRoot ('fault-unproven-existing-'+$stage)
+ try{
+  $p=Get-VaultPaths $t.ProgramData
+  $parameters=@('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)
+  $r=Invoke-Provisioner -Arguments $parameters
+  if($r.ExitCode -ne 0){throw 'Existing-store identity fixture setup failed.'}
+  [IO.File]::WriteAllText($p.Lock,'synthetic-sentinel')
+  $r=Invoke-Provisioner -Arguments $parameters -Executable $FaultHelperPath -Fault $stage
+  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Existing identity fault was not reached: $stage"}
+  if(-not(Test-Path -LiteralPath $p.Lock -PathType Leaf) -or [IO.File]::ReadAllText($p.Lock) -cne 'synthetic-sentinel'){throw 'Fault changed an existing lock.'}
+  Assert-AclExact -Path $p.Vault -ExpectedServiceSid $serviceSid
+  Assert-AclExact -Path $p.Lock -ExpectedServiceSid $serviceSid
+ }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
+}
 Write-Host "Credential Vault provisioning and isolated fault rollback tests passed."

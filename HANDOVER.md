@@ -1,3 +1,11 @@
+## 0.1.213 Vault unproven-identity rollback tests — 2026-11-24
+
+Added test-build-only faults immediately after opening/creating the Vault and lock but before file identity capture. The fixture checks newly created objects without captured identity are preserved rather than deleted and pre-existing store objects/ACLs remain intact. Exact-head Windows CI is required; this does not establish exhaustive fault/race coverage, production service-SID acceptance or independent review. Production mutation gates remain closed; no merge/release authorized.
+
+## CI in progress — 2026-11-24
+
+[CI 45448173918](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45448173918) on `0741ecf133af648a5e52bffbe181736e4d21f0bc` (0.1.212) passed the Windows Vault fixture step, including three post-identity deterministic fault tests for fresh and existing stores and a check the ordinary helper ignores the test hook. Normal publication, Linux, Web, isolated migration tooling and synthetic stdin/SCRAM also passed. Synthetic same-user interception, real child PROCESS_DUP_HANDLE access and real named-pipe PID checks failed; full assembly was still running at recording time. CI fixtures are not production credential security or supported Windows Server acceptance.
+
 ## 0.1.212 isolated Vault fault fixture build — 2026-11-24
 
 CI 45447444209 on `e715930def78a27b2935ad16a0beef22d657d1b4` (0.1.211) compiled and published the ordinary Vault helper, but the separate test-only fault build failed before fixture execution with duplicate generated assembly attributes: changing BaseIntermediateOutputPath on the original project let its existing obj tree enter default source globbing. The fixture now copies only project and C# sources to a unique RUNNER_TEMP source directory and builds there with normal isolated obj/output paths. No release helper should contain the fault hook; the test explicitly checks that. Exact-head Windows CI is necessary. The previously known synthetic interception, actual initdb process-access and pipe PID failures also occurred; other jobs were still running at recording time. All production credential/database/installer gates remain closed; no merge/release authorized.

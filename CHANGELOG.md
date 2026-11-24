@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.213 — 2026-11-24
+
+- Added test-only Vault faults before identity capture and regressions requiring unproven objects to remain untouched after failed provisioning. Production test hooks remain compiled out.
+
 ## 0.1.212 — 2026-11-24
 
 - Isolated the test-only Vault fault build in a copied source directory to avoid duplicate generated assembly attributes and production build contamination. Exact-head Windows CI required.

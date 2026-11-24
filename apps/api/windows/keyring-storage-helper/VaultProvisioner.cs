@@ -289,6 +289,9 @@ internal static class VaultProvisioner
                 (vault, createdVault) = OpenOrCreateChildDirectory(
                     enterprise, "CredentialVault", verifyOnly,
                     ServiceSddl(serviceSid), "credential-vault");
+#if VAULT_TEST_FAULTS
+                InjectTestFault("before-vault-identity");
+#endif
                 vaultIdentity = ReadAndVerifyDirectory(vault, "credential-vault");
                 if (vaultIdentity.Value.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
                     throw new ProvisioningException("volume-mismatch");
@@ -301,6 +304,9 @@ internal static class VaultProvisioner
                 (var lockHandle, createdLock) = OpenOrCreateLockFile(vault, serviceSid, verifyOnly);
                 using (lockHandle)
                 {
+#if VAULT_TEST_FAULTS
+                    InjectTestFault("before-lock-identity");
+#endif
                     lockIdentity = ReadAndVerifyRegularFile(lockHandle, "keyring-lock");
 #if VAULT_TEST_FAULTS
                     InjectTestFault("after-lock-identity");
