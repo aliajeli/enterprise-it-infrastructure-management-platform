@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.167 — 2026-11-24
+
+- Windows CI run 45368459750 for 0.1.166 passed orchestration, PostgreSQL safety, staging, offline archive tests and keyring helper compilation, but failed the Credential Vault provisioning policy test. The CI log download host is inaccessible in this sandbox. Emit the test exception as a GitHub Actions error annotation so its non-secret test failure is available via the GitHub API; no production behavior or security policy is changed.
+- Linux Node 26/PostgreSQL 18 job passed in that run. Vault provisioning, first-install database lifecycle, installer and clean Windows Server acceptance remain incomplete.
+
 ## 0.1.166 — 2026-11-24
 
 - Security correction: the 0.1.165 PostgreSQL bootstrap prototype embedded role passwords in SQL passed to `psql -c` (process arguments) and could reset existing roles or adopt an unknown database. The earlier claim of no argv secrets was incorrect. Removed the unsafe executable prototype and made bootstrap and migration fail closed; `-WhatIf` remains non-mutating. Orchestration rejects requested bootstrap before changing services. Secure transport, ownership verification and end-to-end database setup remain unimplemented.
