@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.182 — 2026-11-24
+
+- Hosted run 45385493840 on 0.1.181 passed Windows self-contained publication of all six hosts/helpers, Windows existing policy/runtime tests and Linux Node 26/PostgreSQL 18 validation; the independent real Windows PostgreSQL initdb pipe experiment failed with a generic error. Added bounded operation-stage/exit-code diagnostics without child output, paths or secrets to identify the failure on exact-head CI. No production initialization or bootstrap is enabled.
+- The successful host publication is not an assembled/signed installer, a five-service installation, or Windows Server acceptance. No installer has been built.
+
 ## 0.1.181 — 2026-11-24
 
 - Added an isolated Windows CI experiment that downloads and SHA-256-verifies the pinned PostgreSQL 18.7 binary archive and exercises real `initdb` with a synthetic password over the experimental pipe; no service is started and production initialization remains disabled. Exact-head result and actual Windows Server security/installation acceptance remain pending.

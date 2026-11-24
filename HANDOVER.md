@@ -1,3 +1,7 @@
+## 0.1.182 real initdb diagnostics — 2026-11-24
+
+Hosted run 45385493840 on 97505ab5fff3815ba1d3bd988d3e81fee4081a06 passed Linux Node 26/PostgreSQL 18, the existing Windows runtime/policy job, and actual self-contained publication/immutable overwrite checks for all six Windows hosts/helpers. The real Windows PostgreSQL initdb named-pipe experiment failed generically; bounded stage/exit-code diagnostics were added without emitting child output, paths or secrets. Exact-head CI is needed to identify the failure. Initialization/bootstrap/migration remain disabled, no assembled/signed installer exists, and no Windows Server VM acceptance has been performed.
+
 ## 0.1.181 real PostgreSQL and payload CI — 2026-11-24
 
 Hosted CI 45382731557 on 56e30d9bd90dfe49e01e15476f23ece55d8963ae passed Linux Node 26/PostgreSQL 18 and Windows tests including synthetic named-pipe secret transport. New separate Windows job downloads/verifies pinned EDB PostgreSQL 18.7 and tests actual initdb with a synthetic secret and disposable data only; production init/bootstrap/migration remain disabled pending review and supported Windows Server acceptance. Added DPAPI helper to host staging and offline payload requirements, required all downstream provisioning/install scripts, added individual missing-component regression, and added hosted CI publication of six self-contained executables. Exact-head CI required. No signed/test installer or clean Server VM acceptance.
