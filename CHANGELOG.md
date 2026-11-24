@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.212 — 2026-11-24
+
+- Isolated the test-only Vault fault build in a copied source directory to avoid duplicate generated assembly attributes and production build contamination. Exact-head Windows CI required.
+
 ## 0.1.211 — 2026-11-24
 
 - Retained created Vault object handles and identity state before post-open validation, allowing identity-checked rollback on later failures. Added separate test-only fault build and fresh/existing-store rollback checks; no Vault or installer security gate was opened.

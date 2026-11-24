@@ -13,11 +13,17 @@ $smokePath=Join-Path $env:RUNNER_TEMP 'enterpriseit-vault-admin-smoke'
 # in normal bin/obj, the payload, or any release artifact.
 $buildRoot=Join-Path $env:RUNNER_TEMP ('vault-fault-build-'+$id)
 $outDir=Join-Path $buildRoot 'out'
-$objDir=(Join-Path $buildRoot 'obj')+[IO.Path]::DirectorySeparatorChar
-$project=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\apps\api\windows\keyring-storage-helper\CredentialVault.KeyringStorageHelper.csproj'))
+$sourceDir=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\apps\api\windows\keyring-storage-helper'))
+$fixtureSource=Join-Path $buildRoot 'source'
+$project=Join-Path $fixtureSource 'CredentialVault.KeyringStorageHelper.csproj'
 $faultHelper=Join-Path $outDir 'CredentialVault.KeyringStorageHelper.exe'
-New-Item -ItemType Directory -Path $buildRoot -ErrorAction Stop|Out-Null
-& dotnet build $project --configuration Release --output $outDir "-p:BaseIntermediateOutputPath=$objDir" '-p:DefineConstants=VAULT_TEST_FAULTS'
+New-Item -ItemType Directory -Path $fixtureSource -ErrorAction Stop|Out-Null
+# Copy sources only. Building the original project with an alternate obj path
+# makes the original obj tree eligible for wildcard compilation, duplicating
+# assembly attributes; copying also prevents test build contamination.
+Copy-Item -LiteralPath (Join-Path $sourceDir 'CredentialVault.KeyringStorageHelper.csproj') -Destination $project
+foreach($source in Get-ChildItem -LiteralPath $sourceDir -Filter '*.cs' -File){Copy-Item -LiteralPath $source.FullName -Destination $fixtureSource}
+& dotnet build $project --configuration Release --output $outDir '-p:DefineConstants=VAULT_TEST_FAULTS'
 if($LASTEXITCODE -ne 0 -or -not(Test-Path -LiteralPath $faultHelper -PathType Leaf)){
  Remove-Item -LiteralPath $buildRoot -Recurse -Force -ErrorAction SilentlyContinue
  throw 'Could not build isolated Vault fault fixture executable.'
