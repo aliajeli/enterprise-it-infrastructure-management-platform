@@ -5,7 +5,7 @@
 **Snapshot:** 2026-11-24  
 **Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
 **HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
-**Root package version:** `0.1.207`
+**Root package version:** `0.1.208`
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
 
@@ -70,16 +70,12 @@ Project is **not production-ready**.
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
 Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
 Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
-Current version: `0.1.207`
+Current version: `0.1.208`
 
-Most recent exact-head Push validation:
-- Run ID: `45359423721`
-- URL: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45359423721
-- Exact HEAD: `1be872280c2e922c17218c4c5358cfe9be43d742`
-- At last check (2026-11-24), run status: `completed`, conclusion: `success`.
-- The run includes Platform validation (Node 26/PostgreSQL 18), Windows API runtime smoke, and npm lockfile refresh. Inspect individual job logs before relying on a particular test result.
-- Prior exact-head CI for 0.1.161 also passed (run `45334177790`). 0.1.162 had no separate exact-head CI evidence.
-- Hosted CI is not a substitute for supported Windows Server VM acceptance.
+Latest completed validation before 0.1.208:
+- Run [45428804752](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45428804752) on `bd87623a55c8f165133edcb9115b00ce89f227b7` (0.1.207) failed overall: synthetic same-user stdin handle interception and real initdb named-pipe PID mismatch.
+- Windows installer/archive and preflight fixture tests, Windows runtime, Web, disposable fast and assembled/extracted PostgreSQL migration experiments, Linux validation and self-contained publish passed. These are fixtures, not secure production credential transport or supported Windows Server acceptance.
+- 0.1.208 modifies the privilege experiments; exact-head validation is needed. See HANDOVER.md for current detail.
 
 Current open PR constraints:
 - PR #7: Draft/open/unmerged — do not merge.

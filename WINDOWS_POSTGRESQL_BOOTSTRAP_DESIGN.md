@@ -6,10 +6,10 @@ Status: design/acceptance contract for the five-service Windows deployment works
 
 ## Verified current behavior
 
-- `initialize-postgresql-cluster.ps1` initializes PostgreSQL 18 with SCRAM-SHA-256, creates the initial `platform_admin` superuser, limits the listener to `127.0.0.1:5432`, and refuses an existing or non-empty data directory.
+- `initialize-postgresql-cluster.ps1` currently fails closed before mutation; it does not initialize a cluster. The earlier implementation intended PostgreSQL 18 with SCRAM, `platform_admin` and loopback-only listening but was disabled because its credential transport violated policy.
 - Historical initializer accepted a `SecureString` but wrote a temporary plaintext password file. That violated owner policy and its mutation path is disabled in 0.1.180; no claim is made that initialization is currently functional.
 - `provision-postgresql-service.ps1` registers PostgreSQL under `NT SERVICE\\EnterpriseITPostgreSQL`, applies a dedicated service SID and data ACL, and deliberately does not start the service.
-- `orchestrate-windows-services.ps1` requires an already initialized cluster during preflight. It provisions PostgreSQL and application services, accepts separate API and Worker database URLs, stores them through service-specific DPAPI configuration paths, and starts PostgreSQL, API, Worker, Web and Edge in dependency order.
+- `orchestrate-windows-services.ps1` contains service deployment and ordering code, but currently fails closed before mutation pending cluster ownership verification; it does not currently provision or start those services.
 - The orchestrator does not invoke cluster initialization, create database roles, create the application database, execute Prisma migrations, or validate that the supplied API/Worker credentials exist and have the intended grants.
 - API readiness checks database connectivity and the presence of `public.users`; this detects a missing baseline table but does not apply migrations.
 
@@ -29,7 +29,7 @@ The exact API and Worker table/sequence/function grants must be derived from Pri
 
 1. Verify elevation, supported Windows Server build, architecture, disk, versioned immutable payload, PostgreSQL binaries and port availability.
 2. Verify the target data directory is absent/empty and installer-owned, or a recognized existing Enterprise IT PostgreSQL 18 cluster. Never reinitialize, delete, replace or silently adopt an unknown cluster.
-3. Initialize only a new cluster using the existing SCRAM-protected script and a one-time bootstrap secret supplied through a protected input channel. Keep it out of command-line arguments, logs, transcripts, persistent environment variables and installer manifests.
+3. Initialize only a new cluster using a future reviewed SCRAM-protected implementation and a one-time bootstrap secret supplied through a protected input channel. Keep it out of command-line arguments, logs, transcripts, persistent environment variables and installer manifests.
 4. Provision PostgreSQL SCM identity, service SID and NTFS ACLs. Start PostgreSQL only after service configuration and data access are verified.
 5. Wait for readiness on loopback. Verify major version, expected cluster identity, SCRAM policy, effective listener and absence of remote listener exposure.
 6. Through a separately reviewed bounded bootstrap operation, create the application database, schema owner, migration identity, API runtime identity and Worker runtime identity. Apply explicit grants and default privileges; verify effective privileges from each runtime identity.
@@ -42,7 +42,7 @@ The exact API and Worker table/sequence/function grants must be derived from Pri
 
 - The initializer's `SecureString` parameter is not a complete bootstrap credential lifecycle. The orchestrator has no corresponding parameter and does not call the initializer.
 - Never place a PostgreSQL password in process arguments, PowerShell transcripts, verbose/debug output, CI logs, persistent machine environment variables, generated manifests or service logs.
-- A candidate local bootstrap transport (such as a short-lived ACL-protected password file or a dedicated native helper reading standard input) must be threat-reviewed and tested on supported Windows Server versions before implementation. File ACLs must be verified before secret bytes are written; cleanup and crash residue behavior must be explicit.
+- A candidate local bootstrap transport must not use a plaintext password file, even temporarily. A native helper or other non-file channel must be threat-reviewed and tested on supported Windows Server versions; current synthetic stdin and pipe experiments are not approved.
 - Never store the `platform_admin` password in API/Worker DPAPI files or use either runtime identity as a bootstrap/migration identity.
 - Do not claim that deleting a temporary file securely erases NTFS/SSD historical data. The boundary is access control and short exposure, not guaranteed physical erasure.
 - A generated random bootstrap credential and its one-time custody/recovery policy, or an explicit administrator-supplied credential flow, must be approved before implementation. This design note does not approve either custody behavior.

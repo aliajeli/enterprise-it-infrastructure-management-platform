@@ -48,9 +48,16 @@ expect_success() {
   fi
 }
 expect_denied() {
-  local role="$1" password="$2" sql="$3" label="$4"
-  if PGPASSWORD="$password" psql --no-psqlrc --set ON_ERROR_STOP=1 --host "$PGHOST" --port "$PGPORT" --username "$role" --dbname "$PGDATABASE" --command "$sql" >/dev/null 2>&1; then
+  local role="$1" password="$2" sql="$3" label="$4" diagnostic
+  # An arbitrary error (syntax, missing table, connection failure, etc.) does
+  # not prove a privilege boundary. Ask psql for SQLSTATE, check for 42501,
+  # and never print the raw diagnostic, which can contain SQL or secrets.
+  if diagnostic=$(PGPASSWORD="$password" psql --no-psqlrc --set ON_ERROR_STOP=1 --set VERBOSITY=verbose --host "$PGHOST" --port "$PGPORT" --username "$role" --dbname "$PGDATABASE" --command "$sql" 2>&1); then
     printf 'Unexpectedly permitted operation for %s: %s\n' "$role" "$label" >&2
+    exit 1
+  fi
+  if ! printf '%s\n' "$diagnostic" | grep -Eq 'ERROR:[[:space:]]+42501:'; then
+    printf 'Operation failed for a reason other than insufficient privilege for %s: %s\n' "$role" "$label" >&2
     exit 1
   fi
 }
@@ -72,6 +79,7 @@ expect_denied "$api_role" "$api_password" "SELECT * FROM public._prisma_migratio
 expect_denied "$api_role" "$api_password" "CREATE TABLE public.api_runtime_forbidden(id integer)" "CREATE TABLE"
 expect_denied "$api_role" "$api_password" "TRUNCATE public.users" "TRUNCATE users"
 expect_denied "$api_role" "$api_password" "CREATE DATABASE api_runtime_forbidden" "CREATE DATABASE"
+expect_denied "$api_role" "$api_password" "ALTER TABLE public.users ADD COLUMN privilege_probe integer" "ALTER TABLE users"
 
 # Worker positive access is intentionally limited to the queue table.
 expect_success "$worker_role" "$worker_password" "SELECT * FROM public.discovery_runs LIMIT 0" "SELECT discovery_runs"
@@ -88,6 +96,7 @@ expect_denied "$worker_role" "$worker_password" "SELECT * FROM public._prisma_mi
 expect_denied "$worker_role" "$worker_password" "CREATE TABLE public.worker_runtime_forbidden(id integer)" "CREATE TABLE"
 expect_denied "$worker_role" "$worker_password" "TRUNCATE public.discovery_runs" "TRUNCATE discovery_runs"
 expect_denied "$worker_role" "$worker_password" "CREATE ROLE worker_runtime_forbidden" "CREATE ROLE"
+expect_denied "$worker_role" "$worker_password" "ALTER TABLE public.discovery_runs ADD COLUMN privilege_probe integer" "ALTER TABLE discovery_runs"
 
 # Compile the workspace package whose package.json exports point to dist/.
 # Prisma client generation creates client sources but does not emit dist/index.js.

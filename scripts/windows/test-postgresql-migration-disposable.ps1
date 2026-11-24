@@ -32,9 +32,12 @@ function Invoke-TestChild([string]$Executable,[string[]]$Arguments,[hashtable]$E
   if($null -ne $InputText){$child.StandardInput.Write($InputText)}
   $child.StandardInput.Close()
   if(-not $child.WaitForExit(120000)){try{$child.Kill($true);$child.WaitForExit()}catch{};throw 'Disposable test process timed out.'}
-  $output=''
-  if($CaptureOutput){if(-not $out.Wait(5000)){throw 'Disposable test output did not close.'};$output=$out.GetAwaiter().GetResult()}
-  return [pscustomobject]@{ExitCode=$child.ExitCode;Output=$output}
+  $output='';$diagnostic=''
+  if($CaptureOutput){
+   if(-not $out.Wait(5000) -or -not $err.Wait(5000)){throw 'Disposable test output did not close.'}
+   $output=$out.GetAwaiter().GetResult();$diagnostic=$err.GetAwaiter().GetResult()
+  }
+  return [pscustomobject]@{ExitCode=$child.ExitCode;Output=$output;Diagnostic=$diagnostic}
  }finally{$child.Dispose()}
 }
 $stage='prepare-synthetic-secret';$started=$false
@@ -131,17 +134,27 @@ GRANT SELECT, UPDATE ON public.discovery_runs TO fixture_worker;
   @{role='fixture_api';password='synthetic-api-test-74';sql='UPDATE public.audit_events SET action=action;';allow=$false},
   @{role='fixture_api';password='synthetic-api-test-74';sql='SELECT * FROM public._prisma_migrations LIMIT 0;';allow=$false},
   @{role='fixture_api';password='synthetic-api-test-74';sql='CREATE TABLE public.fixture_api_forbidden(id integer);';allow=$false},
+  @{role='fixture_api';password='synthetic-api-test-74';sql='ALTER TABLE public.users ADD COLUMN privilege_probe integer;';allow=$false},
+  @{role='fixture_api';password='synthetic-api-test-74';sql='TRUNCATE public.users;';allow=$false},
+  @{role='fixture_api';password='synthetic-api-test-74';sql='SET ROLE fixture_owner;';allow=$false},
   @{role='fixture_worker';password='synthetic-worker-test-75';sql='SELECT * FROM public.discovery_runs LIMIT 0;';allow=$true},
   @{role='fixture_worker';password='synthetic-worker-test-75';sql='UPDATE public.discovery_runs SET heartbeat_at=heartbeat_at WHERE false;';allow=$true},
   @{role='fixture_worker';password='synthetic-worker-test-75';sql='SELECT * FROM public.users LIMIT 0;';allow=$false},
   @{role='fixture_worker';password='synthetic-worker-test-75';sql='DELETE FROM public.discovery_runs;';allow=$false},
   @{role='fixture_worker';password='synthetic-worker-test-75';sql='SELECT * FROM public._prisma_migrations LIMIT 0;';allow=$false},
-  @{role='fixture_worker';password='synthetic-worker-test-75';sql='CREATE ROLE fixture_forbidden;';allow=$false}
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='CREATE ROLE fixture_forbidden;';allow=$false},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='ALTER TABLE public.discovery_runs ADD COLUMN privilege_probe integer;';allow=$false},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='TRUNCATE public.discovery_runs;';allow=$false},
+  @{role='fixture_worker';password='synthetic-worker-test-75';sql='SET ROLE fixture_owner;';allow=$false}
  )
  foreach($case in $cases){
-  $roleArgs=@('-X','-w','-h','127.0.0.1','-p',[string]$port,'-U',[string]$case.role,'-d','fixture_database','-v','ON_ERROR_STOP=1','-q')
-  $outcome=Invoke-TestChild $psql $roleArgs @{PGPASSWORD=[string]$case.password} ([string]$case.sql+"`n")
+  $roleArgs=@('-X','-w','-h','127.0.0.1','-p',[string]$port,'-U',[string]$case.role,'-d','fixture_database','-v','ON_ERROR_STOP=1','-v','VERBOSITY=verbose','-q')
+  $outcome=Invoke-TestChild $psql $roleArgs @{PGPASSWORD=[string]$case.password} ([string]$case.sql+"`n") $true
   if(($outcome.ExitCode -eq 0) -ne [bool]$case.allow){throw 'Disposable runtime privilege assertion failed.'}
+  # Require insufficient_privilege (42501); a syntax, schema, connection, or
+  # unrelated SQL error is not evidence that access controls denied the query.
+  # Diagnostics stay in memory and are never printed.
+  if(-not [bool]$case.allow -and $outcome.Diagnostic -notmatch 'ERROR:\s+42501:'){throw 'Disposable runtime denial had an unexpected SQLSTATE.'}
  }
  Write-Host 'Extracted Prisma tooling applied and repeated disposable migrations with schema ownership and synthetic runtime privilege checks; production migration remains disabled.'
 
