@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.204 — 2026-11-24
+
+- Removed potential task-result leakage into the experimental stdin return stream and strengthened strict-mode result-count checks in synthetic and disposable migration tests. No production credential or migration gate was opened.
+
 ## 0.1.203 — 2026-11-24
 
 - Added independent fast disposable migration CI and narrowed synthetic initializer failure stages without emitting credentials or raw child diagnostics. Production database/installer gates remain disabled.

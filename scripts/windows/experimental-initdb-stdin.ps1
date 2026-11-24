@@ -44,7 +44,7 @@ function Invoke-ExperimentalInitDbStdin {
   $stdout=$process.StandardOutput.ReadToEndAsync();$stderr=$process.StandardError.ReadToEndAsync()
   $stage='write-stdin'
   $cancel=[Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds($TimeoutSeconds))
-  try{$process.StandardInput.BaseStream.WriteAsync($bytes,0,$bytes.Length,$cancel.Token).GetAwaiter().GetResult()}
+  try{$null=$process.StandardInput.BaseStream.WriteAsync($bytes,0,$bytes.Length,$cancel.Token).GetAwaiter().GetResult()}
   finally{$cancel.Dispose();$process.StandardInput.Close()}
   $stage='wait-child'
   if(-not $process.WaitForExit($TimeoutSeconds*1000)){throw 'Initdb process timed out.'}

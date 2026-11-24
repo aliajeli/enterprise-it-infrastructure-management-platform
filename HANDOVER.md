@@ -1,3 +1,7 @@
+## 0.1.204 initdb result shape diagnosis — 2026-11-24
+
+CI 45417877335 on 0.1.203 fast disposable migration failed at `check-initdb-result`, after initdb invocation returned. Other completed jobs showed isolated migration tool, real stdin/SCRAM and Web passing, with named-pipe and same-user interception still failing. Full CI was cancelled once the fast failure was established. Suspect task-result output contaminating the PowerShell function result under strict mode; suppress the asynchronous write result and assert exactly one object with a status property in both synthetic and migration tests. This hypothesis requires exact-head CI; do not infer cluster/migration success yet. Production PostgreSQL and installer gates remain closed. No merge/release.
+
 ## 0.1.203 fast disposable migration diagnosis — 2026-11-24
 
 CI 45415729223 on 0.1.202 again failed the assembled migration experiment at generic `initialize`; no initializer substage was reported, so the cause and whether initdb launched are unknown. Isolated Prisma staging, Web, runtime, Linux and synthetic initdb/SCRAM passed; same-user synthetic stdin and pipe PID tests failed. Added finer fixed-only stages around secret preparation, initdb invocation/result and loopback port allocation, and an independent faster CI experiment with the same PostgreSQL and migration code for quicker iteration. Exact-head CI required. All production database/installer gates remain closed; same-user handle risk, independent security review and clean Windows Server acceptance still outstanding. No release or PR merge.

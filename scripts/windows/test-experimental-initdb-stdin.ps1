@@ -1,3 +1,4 @@
+Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'experimental-initdb-stdin.ps1')
 $fixture=Join-Path $PSScriptRoot 'test-fixture-initdb-stdin.ps1'
@@ -7,7 +8,9 @@ $fakeData=Join-Path $env:TEMP ('enterpriseit-stdin-no-data-'+[guid]::NewGuid().T
 $previous=[Environment]::GetEnvironmentVariable('PG_RESTRICT_EXEC','Process')
 try{
  [Environment]::SetEnvironmentVariable('PG_RESTRICT_EXEC','1','Process')
- $result=Invoke-ExperimentalInitDbStdin -Executable $pwsh -TestPrefixArguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$fixture) -DataPath $fakeData -Password $secret -TimeoutSeconds 20
+ $results=@(Invoke-ExperimentalInitDbStdin -Executable $pwsh -TestPrefixArguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$fixture) -DataPath $fakeData -Password $secret -TimeoutSeconds 20)
+ if($results.Count -ne 1){throw 'Synthetic stdin transport must return exactly one result object.'}
+ $result=$results[0]
  if($result.status -ne 'ok' -or $result.transport -ne 'inherited-anonymous-stdin' -or $result.plaintextFileCreated -or (Test-Path -LiteralPath $fakeData)){throw 'Synthetic stdin test failed.'}
  if(($result|ConvertTo-Json -Compress) -like '*synthetic-initdb-stdin-password-42*'){throw 'Secret appeared in stdin result.'}
  $blocked=$false
