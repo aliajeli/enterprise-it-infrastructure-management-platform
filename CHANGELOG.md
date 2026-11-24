@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.216 — 2026-11-24
+
+- Added sanitized, fixed-category diagnostics for the disposable isolated-account process probe after its positive control failed; no deployment or credential gate was opened.
+
 ## 0.1.215 — 2026-11-24
 
 - Added a disposable Windows CI experiment for process access across a temporary non-admin local test account, with a same-account positive control and identity-checked cleanup. This is not PostgreSQL credential transport or production security approval.

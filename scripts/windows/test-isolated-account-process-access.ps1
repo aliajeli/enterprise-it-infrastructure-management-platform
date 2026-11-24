@@ -46,7 +46,7 @@ $id=[Security.Principal.WindowsIdentity]::GetCurrent()
 try {
  $admin=([Security.Principal.WindowsPrincipal]::new($id)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
  [Console]::Out.WriteLine($id.User.Value+'|'+$admin);[Console]::Out.Flush()
- Start-Sleep -Seconds 60
+ Start-Sleep -Seconds 120
 }finally{$id.Dispose()}
 '@
  $stage='start-victim'
@@ -79,16 +79,29 @@ exit 0
  $probeCode=$probeCode.Replace('__VICTIM_PID__',[string]$victim.Id)
  $stage='caller-access-probe'
  $attacker=Start-FixtureProcess ($probeCode.Replace('__EXPECTED_SID__',$callerSid)) $false
- if(-not $attacker.WaitForExit(20000)){throw 'Caller-identity probe timed out.'}
+ $attackerErr=$attacker.StandardError.ReadToEndAsync()
+ if(-not $attacker.WaitForExit(30000)){$stage='caller-timeout';throw 'Caller-identity probe timed out.'}
  if($victim.HasExited){throw 'Fixture victim exited before caller probe finished.'}
  $callerExit=$attacker.ExitCode
  # Positive control: a second process under the isolated identity should be
  # able to obtain the right, demonstrating that this does not defend against
  # a compromised process using that same identity.
- $stage='same-identity-control'
+ $stage='start-peer'
  $peer=Start-FixtureProcess ($probeCode.Replace('__EXPECTED_SID__',$accountSid)) $true
- if(-not $peer.WaitForExit(20000)){throw 'Same-isolated-user control timed out.'}
- if($victim.HasExited -or $peer.ExitCode -ne 0){throw 'Same-isolated-user control did not obtain process access.'}
+ $peerErr=$peer.StandardError.ReadToEndAsync()
+ if(-not $peer.WaitForExit(30000)){$stage='peer-timeout';throw 'Same-isolated-user control timed out.'}
+ if($victim.HasExited){$stage='victim-exited-before-peer';throw 'Fixture victim exited during the control.'}
+ if($peer.ExitCode -ne 0){
+  $stage='peer-exit-'+$peer.ExitCode
+  # Classify only fixed error categories, never emit child diagnostics.
+  if($peerErr.Wait(5000)){
+   $diagnostic=$peerErr.GetAwaiter().GetResult()
+   if($diagnostic -match '(?i)access.*denied|unauthorized'){$stage+='-access'}
+   elseif($diagnostic -match '(?i)cannot find|not found|could not find'){$stage+='-missing'}
+   elseif($diagnostic -match '(?i)compile|add-type'){$stage+='-compile'}
+  }
+  throw 'Same-isolated-user control did not obtain process access.'
+ }
  if($callerExit -eq 0){$stage='caller-access-granted';throw 'Caller identity obtained access.'}
  if($callerExit -ne 21){throw 'Caller-identity probe returned an unexpected result.'}
  Write-Host 'Different-identity access was denied, while the same-isolated-user control succeeded. This is not production security approval.'
