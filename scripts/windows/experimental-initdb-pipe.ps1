@@ -41,7 +41,7 @@ function Invoke-ExperimentalInitDbPipe {
   $security.AddAccessRule($rule)
   $stage='pipe-create'
   try{
-   $pipe=[IO.Pipes.NamedPipeServerStreamAcl]::Create($name,[IO.Pipes.PipeDirection]::Out,1,[IO.Pipes.PipeTransmissionMode]::Byte,[IO.Pipes.PipeOptions]::Asynchronous,0,0,$security,[IO.HandleInheritability]::None,[IO.Pipes.PipeAccessRights]::ReadPermissions)
+   $pipe=[IO.Pipes.NamedPipeServerStreamAcl]::Create($name,[IO.Pipes.PipeDirection]::Out,1,[IO.Pipes.PipeTransmissionMode]::Byte,[IO.Pipes.PipeOptions]::Asynchronous,0,0,$security,[IO.HandleInheritability]::None,[IO.Pipes.PipeAccessRights]0)
   }catch{
    # Classify by a fixed whitelist only; never emit the exception or pipe name.
    $e=$_.Exception

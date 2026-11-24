@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.190 — 2026-11-24
+
+- Removed unsupported extra READ_CONTROL bit from experimental CreateNamedPipe open mode after hosted Windows reported error 87. The explicit protected user-SID ACL and subsequent handle inspection and exact-client-PID check remain mandatory.
+
 ## 0.1.189 — 2026-11-24
 
 - Narrowed experimental pipe creation diagnostics to a fixed whitelist of exception categories and selected OS error codes, without exposing exception messages, pipe names or secret values.

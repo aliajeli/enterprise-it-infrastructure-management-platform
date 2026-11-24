@@ -1,3 +1,7 @@
+## 0.1.190 experimental pipe open mode — 2026-11-24
+
+CI 45392817128 on 0.1.189 reported `pipe-create-method-io-87` (invalid parameter), before child launch, for synthetic and real initdb; Linux and Windows self-contained publish passed. Removed the added READ_CONTROL bit from CreateNamedPipe open mode; handle ACL inspection remains required and will fail closed if not available. Run Windows CI on this exact head. Original permission and restricted-child PID issues remain unresolved; production PostgreSQL gates stay disabled and Windows Server acceptance is outstanding.
+
 ## 0.1.189 experimental diagnostics — 2026-11-24
 
 CI 45392401399 on 0.1.188 narrowed both synthetic and real experiment failures to `pipe-create`, before process launch. Linux and Windows self-contained publish succeeded. Exception messages are suppressed; whitelisted category/OS error diagnostics were added for the next exact-head CI. Original permission hypothesis and any solution to restricted-child PID remain unverified. Production initialization/bootstrap/migration remain disabled and clean Windows Server acceptance remains outstanding.
