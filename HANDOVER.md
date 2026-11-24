@@ -1,3 +1,9 @@
+## 2026-11-24 — Comprehensive implementation-agent handoff (0.1.164)
+
+**Start here: `AGENT_HANDOFF.md`.** It is the self-contained takeover brief for the next implementation agent. It records the current branch/HEAD, exact CI evidence, architecture, service topology, owner constraints, security invariants, current code/design boundaries, Credential Vault and PostgreSQL blockers, offline installer/release gaps, acceptance checklist and recommended implementation batches.
+
+This commit is a documentation and handoff change only. It does not implement the missing Vault provisioner, PostgreSQL bootstrap/migration integration, complete offline payload, integrated installer, clean Windows Server acceptance or signed release. PRs #5–#9 remain subject to explicit owner approval; do not merge. No MikroTik/router/firewall/NAT/DST-NAT/port-mapping changes.
+
 ## 2026-11-24 — Extend Credential Vault ProgramData path guard (0.1.163)
 
 - Hardened orchestration preflight to include the ProgramData root in the reparse-point and filesystem-object-type checks, not only EnterpriseIT/CredentialVault/keyring.lock.

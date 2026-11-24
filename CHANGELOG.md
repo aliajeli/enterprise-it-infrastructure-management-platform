@@ -1,3 +1,9 @@
+## 0.1.164 — Comprehensive implementation-agent handoff
+
+- Added `AGENT_HANDOFF.md`, a self-contained takeover brief consolidating product scope, repository/branch snapshot, owner constraints, five-service topology, security decisions, Credential Vault/DPAPI/recovery state, PostgreSQL role/migration gaps, offline payload/installer gaps, CI evidence, acceptance gates and an execution sequence.
+- Explicitly distinguishes implemented source, hosted CI evidence, design-only work and uncompleted Windows Server/production acceptance. It instructs the next agent not to merge PRs #5–#9 without owner authorization and forbids MikroTik/router/firewall/NAT/DST-NAT/port-mapping changes.
+- Updated HANDOVER.md with a prominent pointer to the agent brief. No application runtime behavior changed. Root package and lockfile versions synchronized at 0.1.164.
+- This documentation handoff does not complete the installer, Credential Vault provisioner, PostgreSQL first-install lifecycle, offline payload or production acceptance.
 ## 0.1.163 — Extend Credential Vault path preflight to ProgramData
 
 - Extended the Windows orchestration preflight to inspect the OS ProgramData root itself, in addition to EnterpriseIT, CredentialVault and keyring.lock. Every component must have the expected directory/file type and must not be a reparse point.
