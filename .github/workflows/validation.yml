@@ -555,6 +555,24 @@ jobs:
             exit 1
           }
 
+  windows-initdb-restricted-child-access:
+    name: Windows real initdb restricted child access probe
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Probe same-user access to actual initdb re-exec
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-real-initdb-handle-access.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Real initdb child access probe failed::$message"
+            exit 1
+          }
+
   windows-postgres-initdb:
     name: Windows disposable PostgreSQL initdb pipe experiment
     runs-on: windows-latest

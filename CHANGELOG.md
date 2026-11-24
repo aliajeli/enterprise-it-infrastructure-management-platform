@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.209 — 2026-11-24
+
+- Added a no-credential hosted Windows diagnostic probing same-user PROCESS_DUP_HANDLE access to a real PostgreSQL initdb restricted re-exec child. It cannot prove either actual interception or production security and does not enable installation.
+
 ## 0.1.208 — 2026-11-24
 
 - Hardened disposable Linux and Windows database privilege tests to require PostgreSQL SQLSTATE 42501 for denied operations rather than accepting arbitrary failures, and added DDL/ownership checks. Corrected stale PostgreSQL bootstrap documentation; production mutation remains disabled.

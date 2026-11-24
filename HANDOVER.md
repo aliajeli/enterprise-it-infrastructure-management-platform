@@ -1,3 +1,11 @@
+## 0.1.209 real initdb restricted-child access diagnostic — 2026-11-24
+
+Added a separate disposable Windows CI job that launches PostgreSQL 18.7 initdb with stdin withheld, observes its actual re-exec child, and tests PROCESS_DUP_HANDLE from an independent same-user PowerShell process. No credential or marker is sent. Access is a security risk indicator, not proof that a pipe was read; denial is not security approval. The probe is not integrated into production initialization, and process-parent/path correlation is used only to locate a test process, not authenticate a production credential recipient. Exact-head CI required. Existing synthetic interception and pipe PID failures remain security gates; Windows Server acceptance and independent review remain outstanding. No merge/release authorized.
+
+## Latest CI — 2026-11-24
+
+[CI 45432638516](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45432638516) on `7259437836a986e79894a81050f3df7d59a49257` (0.1.208) failed overall: same-user synthetic stdin interception and real pipe PID mismatch. The Linux restricted Prisma/SQL privilege tests and both fast and assembled/extracted Windows disposable migration experiments passed with the new 42501 denial assertions; Windows preflight/archive/runtime, Web, publication, isolated tooling and synthetic stdin/SCRAM passed. This is not production bootstrap, credential isolation or clean Windows Server acceptance.
+
 ## 0.1.208 privilege-denial test hardening — 2026-11-24
 
 Previous Linux and Windows disposable SQL privilege experiments treated every nonzero psql exit as proof of denial, so syntax errors, missing objects or failed connections could produce false positives. Both now require verbose SQLSTATE `42501` for every denied assertion and keep diagnostics out of logs; added negative ALTER/TRUNCATE and Windows SET ROLE probes. This is synthetic CI, not production role provisioning or evidence of full privilege coverage. Fixed stale first-install documentation that incorrectly described disabled initializer/orchestration as operational and mentioned a plaintext-file candidate in conflict with policy. Exact-head CI is required. No security gate was opened; no merge/release authorized.
