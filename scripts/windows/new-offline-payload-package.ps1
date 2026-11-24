@@ -58,11 +58,28 @@ if($MyInvocation.InvocationName -ne "."){
  try{
   New-Item -ItemType Directory -Path $work -ErrorAction Stop|Out-Null
   foreach($item in Get-ChildItem -LiteralPath $plan.SourceRoot -Force){Copy-Item -LiteralPath $item.FullName -Destination $work -Recurse}
-  $created=New-OfflinePayloadManifest -PayloadRoot $work -ApplicationVersion $plan.ApplicationVersion
+  $created=New-OfflinePayloadManifest -PayloadRoot $work -ApplicationVersion $plan.ApplicationVersion -Reproducible
   $verified=Test-OfflinePayloadManifest -PayloadRoot $work -ExpectedApplicationVersion $plan.ApplicationVersion
   if(-not $verified.valid -or $verified.fileCount -ne $created.fileCount){throw "Offline payload manifest verification failed before archive creation."}
   Add-Type -AssemblyName System.IO.Compression.FileSystem
-  [IO.Compression.ZipFile]::CreateFromDirectory($work,$archiveTemp,[IO.Compression.CompressionLevel]::Optimal,$false)
+  # Stable order, timestamps and attributes make the archive reproducible for
+  # identical inputs on the same .NET toolchain. Empty directories contain no
+  # payload files and are intentionally omitted.
+  [string[]]$entries=@(Get-OfflinePayloadInventory -PayloadRoot $work|ForEach-Object{$_.path})+@('payload.manifest.json')
+  [Array]::Sort($entries,[StringComparer]::Ordinal)
+  $stream=[IO.File]::Open($archiveTemp,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+  try{
+   $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true,[Text.Encoding]::UTF8)
+   try{
+    foreach($relative in $entries){
+     $entry=$zip.CreateEntry($relative,[IO.Compression.CompressionLevel]::Optimal)
+     $entry.LastWriteTime=[DateTimeOffset]::Parse('2000-01-01T00:00:00Z',[Globalization.CultureInfo]::InvariantCulture)
+     $entry.ExternalAttributes=0
+     $input=[IO.File]::OpenRead((Join-Path $work ($relative.Replace('/',[IO.Path]::DirectorySeparatorChar))))
+     try{$output=$entry.Open();try{$input.CopyTo($output)}finally{$output.Dispose()}}finally{$input.Dispose()}
+    }
+   }finally{$zip.Dispose()}
+  }finally{$stream.Dispose()}
   $archiveHash=(Get-FileHash -LiteralPath $archiveTemp -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText($checksumTemp,($archiveHash+"  "+[IO.Path]::GetFileName($plan.OutputArchive)+[Environment]::NewLine),[Text.UTF8Encoding]::new($false))
   if((Test-Path -LiteralPath $plan.OutputArchive) -or (Test-Path -LiteralPath $plan.ChecksumPath)){throw "Output destination appeared during packaging; refusing overwrite."}

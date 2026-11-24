@@ -22,16 +22,25 @@ function Get-OfflinePayloadInventory {
    $files.Add([pscustomobject]@{path=$relative;size=[int64]$item.Length;sha256=$hash})
   }
  }
- @($files | Sort-Object -Property path)
+ # Ordinal ordering avoids locale-dependent manifest and archive bytes.
+ $byPath=[Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+ foreach($file in $files){$byPath.Add([string]$file.path,$file)}
+ [string[]]$paths=@($byPath.Keys)
+ [Array]::Sort($paths,[StringComparer]::Ordinal)
+ foreach($path in $paths){$byPath[$path]}
 }
 function New-OfflinePayloadManifest {
- [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$PayloadRoot,[Parameter(Mandatory=$true)][string]$ApplicationVersion)
+ [CmdletBinding()]param([Parameter(Mandatory=$true)][string]$PayloadRoot,[Parameter(Mandatory=$true)][string]$ApplicationVersion,[switch]$Reproducible)
  if($ApplicationVersion -notmatch '^\d+\.\d+\.\d+$'){throw "Application version must use major.minor.patch format."}
  $root=[IO.Path]::GetFullPath($PayloadRoot);$manifestPath=Join-Path $root $script:OfflinePayloadManifestName
  if(Test-Path -LiteralPath $manifestPath){throw "Manifest exists; refusing to overwrite immutable metadata."}
  $inventory=@(Get-OfflinePayloadInventory -PayloadRoot $root)
  if($inventory.Count -eq 0){throw "Cannot create a manifest for an empty payload."}
- $manifest=[ordered]@{schemaVersion=1;applicationVersion=$ApplicationVersion;createdUtc=[DateTime]::UtcNow.ToString("o");hashAlgorithm="SHA-256";files=$inventory}
+ $manifest=[ordered]@{schemaVersion=1;applicationVersion=$ApplicationVersion}
+ # Reproducible archives deliberately omit wall-clock creation time; the fixed
+ # archive timestamp is metadata normalization, not a claim about build time.
+ if($Reproducible){$manifest['archiveTimestampUtc']='2000-01-01T00:00:00Z'}else{$manifest['createdUtc']=[DateTime]::UtcNow.ToString("o")}
+ $manifest['hashAlgorithm']='SHA-256';$manifest['files']=$inventory
  [IO.File]::WriteAllText($manifestPath,(($manifest|ConvertTo-Json -Depth 8)+[Environment]::NewLine),[Text.UTF8Encoding]::new($false))
  [pscustomobject]@{manifestPath=$manifestPath;applicationVersion=$ApplicationVersion;fileCount=$inventory.Count;totalBytes=[int64](($inventory|Measure-Object -Property size -Sum).Sum);created=$true}
 }

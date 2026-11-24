@@ -1,3 +1,7 @@
+## 0.1.184 reproducible archive foundation — 2026-11-24
+
+Hosted real Windows PostgreSQL experiment run 45386888172 on c051f1e91a86ef23f0c172ff944cafdc96c3f0bb failed `child-exited-before-client-1-pwfile-open` before transmitting the synthetic password. The PostgreSQL restricted-token re-exec and named-pipe access require a secure design; never suppress restricted-token handling or relax client identity checks to make it pass. Init/bootstrap/migration remain disabled. Added normalized ordinal/time/attribute ZIP packaging and repeated-build/content-change tests; exact-head Windows CI required. Reproducibility is scoped to identical inputs and same .NET toolchain. No assembled/signed installer, clean VM acceptance or production readiness.
+
 ## 0.1.183 real initdb early-failure diagnosis — 2026-11-24
 
 Run 45386231171 on 4e2c800c5d6c242c5ab57aeff0ba8d7565393713 reported `child-exited-before-client-1` in the real Windows PostgreSQL experiment; host publication and Linux validation passed. Added only whitelisted early-error categories and no raw child output. PostgreSQL REL_18_STABLE `src/common/restricted_token.c` shows initdb re-executes under a restricted token before opening the pwfile, so direct-child PID pinning cannot simply be relaxed; any redesign must authenticate the exact legitimate restricted process and resist same-user parent/PID spoofing. No production init/bootstrap/migration, no installer, no clean Windows Server acceptance. Re-run exact-head CI.

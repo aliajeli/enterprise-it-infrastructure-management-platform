@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.184 — 2026-11-24
+
+- Made offline ZIP generation reproducible for identical input files on the same .NET toolchain by using ordinal path ordering, normalized ZIP timestamps/attributes and a manifest without wall-clock build time. Added repeated-build and changed-content digest regressions. Empty directories are omitted. Exact-head Windows CI required; this is not yet a full assembler or signed installer.
+- Hosted real Windows PostgreSQL experiment run 45386888172 on 0.1.183 failed opening the named-pipe password path before any secret was sent. The PostgreSQL process re-executes with a restricted token; do not bypass it or weaken client authentication. Production initialization/bootstrap/migration remain disabled pending secure solution and acceptance.
+
 ## 0.1.183 — 2026-11-24
 
 - Hosted Windows real initdb run 45386231171 for 0.1.182 exited before connecting to the experimental pipe. Added fixed, whitelisted early-failure categories; child output, paths and secrets remain suppressed. PostgreSQL source review also shows Windows initdb re-executes itself with a restricted token, so the synthetic direct-child PID assumption needs careful redesign rather than relaxed authentication. Production initialization/bootstrap/migration remain disabled. Exact-head CI required.

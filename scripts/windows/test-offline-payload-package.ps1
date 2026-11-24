@@ -44,6 +44,18 @@ try{
  $expected=(Get-Content -LiteralPath ($archive+".sha256") -Raw).Trim().Split(" ")[0]
  $actual=(Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
  if($expected -ne $actual){throw "Archive SHA-256 sidecar does not match the archive."}
+ # Rebuilding identical inputs must not depend on wall-clock time or source
+ # file timestamps. A changed payload must still change the archive digest.
+ $fixtureFile=Join-Path $source 'CredentialVault.DpapiHelper.exe'
+ (Get-Item -LiteralPath $fixtureFile).LastWriteTimeUtc=[DateTime]::UtcNow.AddDays(-2)
+ $repeat=Join-Path $out 'repeat.zip'
+ & $scriptPath -SourceRoot $source -OutputArchive $repeat -Confirm:$false|Out-Null
+ if((Get-FileHash -LiteralPath $repeat -Algorithm SHA256).Hash -ne $actual){throw 'Equivalent payloads produced different archive digests.'}
+ [IO.File]::WriteAllText($fixtureFile,'different-fixture-content')
+ $changed=Join-Path $out 'changed.zip'
+ & $scriptPath -SourceRoot $source -OutputArchive $changed -Confirm:$false|Out-Null
+ if((Get-FileHash -LiteralPath $changed -Algorithm SHA256).Hash -eq $actual){throw 'Changed payload must change the archive digest.'}
+ [IO.File]::WriteAllText($fixtureFile,'fixture')
  Add-Type -AssemblyName System.IO.Compression.FileSystem
  $extract=Join-Path $root "extract"
  [IO.Compression.ZipFile]::ExtractToDirectory($archive,$extract)
