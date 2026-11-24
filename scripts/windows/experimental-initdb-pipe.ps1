@@ -29,17 +29,22 @@ function Invoke-ExperimentalInitDbPipe {
   # A separate exact-client-PID check remains mandatory before sending bytes.
   $stage='create-pipe'
   $name='enterpriseit-initdb-'+[guid]::NewGuid().ToString('N')
+  $stage='pipe-user-sid'
   $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
   try{$userSid=$identity.User}finally{$identity.Dispose()}
   if($null -eq $userSid){throw 'Current Windows user SID is unavailable.'}
+  $stage='pipe-security'
   $security=[IO.Pipes.PipeSecurity]::new()
   $security.SetOwner($userSid)
   $security.SetAccessRuleProtection($true,$false)
   $rule=[IO.Pipes.PipeAccessRule]::new($userSid,[IO.Pipes.PipeAccessRights]::FullControl,[Security.AccessControl.AccessControlType]::Allow)
   $security.AddAccessRule($rule)
+  $stage='pipe-create'
   $pipe=[IO.Pipes.NamedPipeServerStreamAcl]::Create($name,[IO.Pipes.PipeDirection]::Out,1,[IO.Pipes.PipeTransmissionMode]::Byte,[IO.Pipes.PipeOptions]::Asynchronous,0,0,$security,[IO.HandleInheritability]::None,[IO.Pipes.PipeAccessRights]::ReadPermissions)
+  $stage='pipe-read-security'
   $actual=[IO.Pipes.PipesAclExtensions]::GetAccessControl($pipe)
   $rules=@($actual.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier]))
+  $stage='pipe-check-security'
   if(-not $actual.AreAccessRulesProtected -or $actual.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $userSid.Value -or $rules.Count -ne 1 -or $rules[0].IdentityReference.Value -ne $userSid.Value -or $rules[0].IsInherited -or $rules[0].AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow -or $rules[0].PipeAccessRights -ne [IO.Pipes.PipeAccessRights]::FullControl){throw 'Unexpected initdb pipe ACL.'}
   $psi=[Diagnostics.ProcessStartInfo]::new()
   $psi.FileName=$Executable

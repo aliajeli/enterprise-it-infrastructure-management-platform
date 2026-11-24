@@ -1,3 +1,7 @@
+## 0.1.188 diagnostic follow-up — 2026-11-24
+
+CI 45391948797 on 0.1.187 failed at `create-pipe` for both synthetic and real experiments, before launching the child; Linux validation and six-executable publish succeeded. No conclusion on the original PostgreSQL permission hypothesis is possible yet. Narrowed the failure stage to identify whether SID, security construction, pipe creation, reading ACL, or verification fails. Diagnostics expose no exception content or secret. CI and clean Windows Server acceptance remain outstanding; no production PostgreSQL gate was opened.
+
 ## 0.1.187 experimental pipe ACL correction — 2026-11-24
 
 Investigated 0.1.186 real initdb failure `pwfile-open-permission`. Runtime source shows PipeOptions.CurrentUserOnly constructs the ACL from WindowsIdentity.Owner, which may be Administrators; PostgreSQL restricted-token re-exec disables that group. Experimental pipe now uses a protected single-ACE ACL for WindowsIdentity.User and validates it, retaining exact client PID enforcement. This does not solve PostgreSQL's restricted grandchild PID, and the real experiment may now fail safely at client verification. Do not weaken client authentication or PostgreSQL restricted-token behavior. Requires exact-head Windows CI, independent threat review and real Windows Server tests. Initialization/bootstrap/migration remain disabled; no full installer exists.

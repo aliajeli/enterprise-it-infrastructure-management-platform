@@ -5,7 +5,7 @@
 **Snapshot:** 2026-11-24  
 **Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
 **HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
-**Root package version:** `0.1.187`
+**Root package version:** `0.1.188`
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
 
@@ -70,7 +70,7 @@ Project is **not production-ready**.
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
 Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
 Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
-Current version: `0.1.187`
+Current version: `0.1.188`
 
 Most recent exact-head Push validation:
 - Run ID: `45359423721`

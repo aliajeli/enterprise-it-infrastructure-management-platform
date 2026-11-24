@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.188 — 2026-11-24
+
+- Added fixed, non-secret pipe creation substage diagnostics after CI 45391948797 failed at pipe creation before starting a child. Exact ACL and PID checks remain mandatory; production PostgreSQL initialization remains disabled.
+
 ## 0.1.187 — 2026-11-24
 
 - Investigated Windows PostgreSQL pipe-open permission failure: .NET CurrentUserOnly derives the pipe ACL from the token owner, which can be the Administrators group that PostgreSQL deliberately disables in its restricted token. The experimental pipe now uses an explicit protected single-ACE ACL for the token user SID and verifies it by handle. The exact-client-PID check remains in force; no production fallback or PostgreSQL privilege bypass has been added. Synthetic and real Windows CI required; production initialization/bootstrap/migration remain disabled.
