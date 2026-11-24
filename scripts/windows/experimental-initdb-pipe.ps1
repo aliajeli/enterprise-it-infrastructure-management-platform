@@ -116,7 +116,8 @@ public static class EnterpriseItInitDbPipeNative {
 '@
   }
   [uint32]$clientPid=0
-  if(-not [EnterpriseItInitDbPipeNative]::GetNamedPipeClientProcessId($pipe.SafePipeHandle,[ref]$clientPid) -or $clientPid -ne $process.Id){throw 'Unexpected initdb pipe client.'}
+  if(-not [EnterpriseItInitDbPipeNative]::GetNamedPipeClientProcessId($pipe.SafePipeHandle,[ref]$clientPid)){$stage='verify-client-query-failed';throw 'Unable to verify initdb pipe client.'}
+  if($clientPid -ne $process.Id){$stage='verify-client-pid-mismatch';throw 'Unexpected initdb pipe client.'}
   $stage='write-pipe'
   $cancel=[Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds($TimeoutSeconds))
   try{$pipe.WriteAsync($bytes,0,$bytes.Length,$cancel.Token).GetAwaiter().GetResult()}

@@ -1,3 +1,7 @@
+## 0.1.191 pipe client diagnosis — 2026-11-24
+
+CI 45393206077 on 0.1.190 reached `verify-client` in the real PostgreSQL experiment: pipe connection now succeeded, but identity verification rejected it before any credential was sent. It is not yet established whether the PID query failed or a different client PID connected. Added fixed categories for those cases; strengthened wrong-client regression to require PID mismatch, not an arbitrary setup failure. Exact-child check is unchanged. Linux and self-contained Windows publish succeeded; see CI for final runtime result. Never bypass PostgreSQL restricted execution or use parent PID alone as authentication. Production initialization/bootstrap/migration remain disabled; review and Windows Server acceptance outstanding.
+
 ## 0.1.190 experimental pipe open mode — 2026-11-24
 
 CI 45392817128 on 0.1.189 reported `pipe-create-method-io-87` (invalid parameter), before child launch, for synthetic and real initdb; Linux and Windows self-contained publish passed. Removed the added READ_CONTROL bit from CreateNamedPipe open mode; handle ACL inspection remains required and will fail closed if not available. Run Windows CI on this exact head. Original permission and restricted-child PID issues remain unresolved; production PostgreSQL gates stay disabled and Windows Server acceptance is outstanding.

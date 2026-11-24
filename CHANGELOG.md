@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.191 — 2026-11-24
+
+- Split pipe client verification into fixed query-failure and PID-mismatch categories, and made the synthetic wrong-client test require the PID-mismatch guard. No credential is sent on either failure.
+
 ## 0.1.190 — 2026-11-24
 
 - Removed unsupported extra READ_CONTROL bit from experimental CreateNamedPipe open mode after hosted Windows reported error 87. The explicit protected user-SID ACL and subsequent handle inspection and exact-client-PID check remain mandatory.
