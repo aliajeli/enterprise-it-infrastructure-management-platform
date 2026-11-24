@@ -235,7 +235,14 @@ jobs:
 
       - name: Test five-service orchestration policy
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/windows/test-windows-service-orchestration.ps1
+        run: |
+          try {
+            & ./scripts/windows/test-windows-service-orchestration.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Orchestration policy test failure::$message"
+            exit 1
+          }
 
       - name: Test PostgreSQL bootstrap safety gates
         shell: pwsh

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.171 — 2026-11-24
+
+- Run 45372111100 (0.1.170) passed Linux/Node 26/PostgreSQL 18 but failed the Windows five-service orchestration policy test after new SID/WhatIf cases were added. Emit the synthetic test failure as an Actions annotation to diagnose it when log download is unavailable. No Windows acceptance or installer is claimed. Vault owner error 1307 and secure bootstrap remain unresolved.
+
 ## 0.1.170 — 2026-11-24
 
 - Fixed the orchestrator to accept the actual five-subauthority Windows service SID shape and reject malformed or out-of-range SIDs before helper launch. Added provision/verify `-WhatIf` regression cases for valid and invalid SIDs; Windows CI must confirm them.

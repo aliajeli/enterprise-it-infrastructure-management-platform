@@ -1,3 +1,7 @@
+## 0.1.171 CI diagnostic — 2026-11-24
+
+Exact-head CI 45372111100 on 157c7ab103212ef65915b9b71dd1c4a2e322821e passed Linux/Node 26/PostgreSQL 18 but failed the Windows five-service orchestration policy test with the new SID/WhatIf cases. Since Actions logs cannot be downloaded, capture synthetic test exceptions as Actions annotations to identify the failure. Re-run exact-head CI; do not claim SID fix validated. Vault owner failure 1307, secure database bootstrap, and installer remain unresolved.
+
 ## 0.1.170 Vault SID and owner diagnosis — 2026-11-24
 
 Exact-head run 45371445342 on 9d1aa056e9675bfe8434b3714323b6aec1d05796: Linux Node 26/PostgreSQL 18 job passed. Windows passed orchestration, bootstrap safety, staging, package tests and keyring compilation; fresh Vault provision failed at `open-or-create-vault:win32-1307` (invalid owner). The API service SID is not a valid assignable owner for the elevated process token without appropriate privilege handling. Next: design bounded privilege acquisition/reversion and handle access against exact owner/DACL contract, reject when privilege unavailable, test under elevated Windows token, ensure no mutations to unexpected stores and validate parent trust/rollback; no permissive fallback. Also fixed an independent orchestrator SID regex (was 15 instead of five subauthorities) with non-mutating WhatIf regression cases. Those changes need exact-head Windows CI. PostgreSQL bootstrap is disabled and no installer has been built.
