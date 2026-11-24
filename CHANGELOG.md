@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.178 — 2026-11-24
+
+- Windows CI run 45376861959 on 0.1.177 passed Linux Node 26/PostgreSQL 18 and the full Windows hosted validation, including elevated-admin Vault provision/verify/retry and independent protected ACL fixtures. This is not Windows Server acceptance or a release.
+- Hardened the Vault provisioner to open and retain each ProgramData ancestor relative to its parent, rejecting reparse points and volume transitions; leaf privilege handling is no longer selected merely by an ancestor name. Production orchestration no longer passes mutable ProgramData environment data as a helper override. Added an intermediate junction fixture. Exact-head Windows CI and independent security review remain necessary. No installer; PostgreSQL bootstrap remains disabled.
+
 ## 0.1.177 — 2026-11-24
 
 - Windows run 45376364739 on 0.1.176 passed elevated non-SYSTEM Vault fresh provision, verification and retry; independent SYSTEM ACL fixture reported an owner mismatch. Compare owner using the ACL API directly as a SecurityIdentifier instead of converting its displayed account name; if still failing, report only a bounded owner category. The owner mismatch remains unverified until exact-head CI, and no owner/ACL policy was changed. Linux Node 26/PostgreSQL 18 passed. No installer.

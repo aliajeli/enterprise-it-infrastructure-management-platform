@@ -145,12 +145,14 @@ function Invoke-CredentialVaultProvisioner {
  try{[void][Security.Principal.SecurityIdentifier]::new($ServiceSid)}catch{throw "Invalid API service SID format."}
  $helperPath=Join-Path $Plan.InstallRoot "CredentialVault.KeyringStorageHelper.exe"
  if(-not(Test-Path -LiteralPath $helperPath -PathType Leaf)){throw "Credential Vault helper is missing from the staged payload."}
- $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{$env:ProgramData}
  $mode=if($VerifyOnly){"--verify-vault"}else{"--provision-vault"}
  $action=if($VerifyOnly){"Verify Credential Vault store"}else{"Provision Credential Vault store"}
  if($WhatIfPreference){return [pscustomobject]@{status="whatif";mode=$mode;serviceSidValidated=$true}}
  if(-not $PSCmdlet.ShouldProcess("EnterpriseIT Credential Vault",$action)){return [pscustomobject]@{status="skipped";mode=$mode}}
- $args=@($mode,"--service-sid",$ServiceSid,"--program-data-root",$programDataRoot)
+ # Production uses the helper's OS-known ProgramData; the explicit root is a
+ # test fixture override only and is not sourced from mutable environment data.
+ $args=@($mode,"--service-sid",$ServiceSid)
+ if($Plan.PSObject.Properties["ProgramDataRoot"]){$args+=@("--program-data-root",[string]$Plan.ProgramDataRoot)}
  $start=[Diagnostics.ProcessStartInfo]::new()
  $start.FileName=$helperPath
  $start.UseShellExecute=$false

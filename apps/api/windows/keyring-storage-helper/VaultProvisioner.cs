@@ -173,13 +173,21 @@ internal static class VaultProvisioner
         }
         var known = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
         if (string.IsNullOrWhiteSpace(known)) throw new ProvisioningException("programdata-unavailable");
-        return Path.GetFullPath(known);
+        var resolved = Path.GetFullPath(known);
+        var volume = Path.GetPathRoot(resolved);
+        // Match the runtime helper's fixed-path contract; do not provision a
+        // redirected location that the service will subsequently refuse to use.
+        if (string.IsNullOrEmpty(volume) ||
+            !string.Equals(Path.GetRelativePath(volume, resolved), "ProgramData", StringComparison.OrdinalIgnoreCase))
+            throw new ProvisioningException("invalid-programdata-root");
+        return resolved;
     }
 
     private sealed class ProvisioningChain : IDisposable
     {
         private readonly SafeFileHandle volumeRoot;
         private readonly SafeFileHandle programData;
+        private readonly List<SafeFileHandle> programDataAncestors;
         private readonly SafeFileHandle enterpriseRoot;
         private readonly SafeFileHandle vaultRoot;
         private readonly SecurityIdentifier serviceSid;
@@ -192,7 +200,7 @@ internal static class VaultProvisioner
         private bool disposed;
 
         private ProvisioningChain(
-            SafeFileHandle volumeRoot, SafeFileHandle programData,
+            SafeFileHandle volumeRoot, SafeFileHandle programData, List<SafeFileHandle> programDataAncestors,
             SafeFileHandle enterpriseRoot, SafeFileHandle vaultRoot,
             SecurityIdentifier serviceSid,
             bool createdEnterprise, bool createdVault, bool createdLock,
@@ -201,6 +209,7 @@ internal static class VaultProvisioner
         {
             this.volumeRoot = volumeRoot;
             this.programData = programData;
+            this.programDataAncestors = programDataAncestors;
             this.enterpriseRoot = enterpriseRoot;
             this.vaultRoot = vaultRoot;
             this.serviceSid = serviceSid;
@@ -221,6 +230,7 @@ internal static class VaultProvisioner
                 throw new ProvisioningException("invalid-programdata-root");
 
             SafeFileHandle? volume = null, pd = null, enterprise = null, vault = null;
+            var ancestors = new List<SafeFileHandle>();
             bool createdEnterprise = false, createdVault = false, createdLock = false;
             // A fixed operation name and numeric OS error are safe diagnostics; never emit paths or ACLs.
             string stage = "open-volume";
@@ -231,10 +241,27 @@ internal static class VaultProvisioner
                 volume = OpenAbsoluteDirectory(volumePath);
                 var volumeIdentity = ReadAndVerifyDirectory(volume, "programdata-root");
                 stage = "open-programdata";
-                pd = OpenAbsoluteDirectory(programDataPath, verifyOnly ? 0u : FileAddSubdirectory);
-                var pdIdentity = ReadAndVerifyDirectory(pd, "programdata");
-                if (pdIdentity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
-                    throw new ProvisioningException("volume-mismatch");
+                var relative = Path.GetRelativePath(volumePath, programDataPath);
+                var components = relative.Split(new[] { '\\', '/' }, StringSplitOptions.None);
+                if (components.Length == 0) throw new ProvisioningException("invalid-programdata-root");
+                SafeFileHandle parent = volume;
+                for (var i = 0; i < components.Length; i++)
+                {
+                    var isLast = i == components.Length - 1;
+                    var access = FileReadAttributes | ReadControl | Synchronize |
+                        (isLast && !verifyOnly ? FileAddSubdirectory : 0u);
+                    var next = OpenRelativeObject(parent, components[i], access, ShareRead | ShareWrite,
+                        FileOpen, FileDirectoryFile | FileOpenReparsePoint | FileSynchronousIoNonAlert,
+                        IntPtr.Zero);
+                    // Retain each handle until the operation ends; check every path component
+                    // before opening its child so intermediate junctions cannot be traversed.
+                    if (isLast) pd = next; else ancestors.Add(next);
+                    var identity = ReadAndVerifyDirectory(next, isLast ? "programdata" : "programdata-ancestor");
+                    if (identity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
+                        throw new ProvisioningException("volume-mismatch");
+                    parent = next;
+                }
+                if (pd is null) throw new ProvisioningException("invalid-programdata-root");
                 VerifyProgramDataAcl(pd);
 
                 stage = "open-or-create-enterprise";
@@ -262,8 +289,9 @@ internal static class VaultProvisioner
                     VerifyVaultAcl(lockHandle, serviceSid);
                 }
 
-                var chain = new ProvisioningChain(volume, pd, enterprise, vault, serviceSid,
+                var chain = new ProvisioningChain(volume, pd, ancestors, enterprise, vault, serviceSid,
                     createdEnterprise, createdVault, createdLock, vaultIdentity, lockIdentity);
+                ancestors = new List<SafeFileHandle>();
                 volume = pd = enterprise = vault = null;
                 return chain;
             }
@@ -272,7 +300,9 @@ internal static class VaultProvisioner
                 // Roll back only objects created by this exact invocation.
                 try { Rollback(vault, enterprise, createdLock, createdVault, createdEnterprise, vaultIdentity, lockIdentity); }
                 catch { /* fail closed: leave objects and report original failure */ }
-                vault?.Dispose(); enterprise?.Dispose(); pd?.Dispose(); volume?.Dispose();
+                vault?.Dispose(); enterprise?.Dispose(); pd?.Dispose();
+                for (var i = ancestors.Count - 1; i >= 0; i--) ancestors[i].Dispose();
+                volume?.Dispose();
                 if (ex is Win32Exception nativeError)
                     throw new ProvisioningException($"{stage}:win32-{nativeError.NativeErrorCode}");
                 if (ex is not ProvisioningException)
@@ -312,6 +342,7 @@ internal static class VaultProvisioner
             vaultRoot.Dispose();
             enterpriseRoot.Dispose();
             programData.Dispose();
+            for (var i = programDataAncestors.Count - 1; i >= 0; i--) programDataAncestors[i].Dispose();
             volumeRoot.Dispose();
         }
     }
@@ -455,19 +486,21 @@ internal static class VaultProvisioner
         uint desiredAccess, uint disposition, IntPtr securityDescriptor = default)
     {
         return OpenRelativeObject(parent, component, desiredAccess, 0, disposition,
-            FileDirectoryFile | FileOpenReparsePoint | FileSynchronousIoNonAlert, securityDescriptor);
+            FileDirectoryFile | FileOpenReparsePoint | FileSynchronousIoNonAlert, securityDescriptor,
+            useVaultPrivileges: component == "CredentialVault");
     }
 
     private static SafeFileHandle OpenRelativeFile(SafeFileHandle parent, string component,
         uint desiredAccess, uint shareAccess, uint disposition, IntPtr securityDescriptor = default)
     {
         return OpenRelativeObject(parent, component, desiredAccess, shareAccess, disposition,
-            FileNonDirectoryFile | FileOpenReparsePoint | FileSynchronousIoNonAlert, securityDescriptor, 0x80);
+            FileNonDirectoryFile | FileOpenReparsePoint | FileSynchronousIoNonAlert, securityDescriptor, 0x80,
+            useVaultPrivileges: component == "keyring.lock");
     }
 
     private static SafeFileHandle OpenRelativeObject(SafeFileHandle parent, string component,
         uint desiredAccess, uint shareAccess, uint disposition, uint createOptions,
-        IntPtr securityDescriptor, uint fileAttributes = 0)
+        IntPtr securityDescriptor, uint fileAttributes = 0, bool useVaultPrivileges = false)
     {
         ValidateComponent(component);
         var nameBuffer = Marshal.StringToHGlobalUni(component);
@@ -496,13 +529,12 @@ internal static class VaultProvisioner
             // Only these fixed leaf components need privileged access: their exact DACL
             // intentionally excludes the interactive administrator. Their parents are
             // opened and validated before this call. CREATE_NEW still prevents adoption.
-            var needsVaultPrivileges = component is "CredentialVault" or "keyring.lock";
             int status;
-            using (needsVaultPrivileges ? PrivilegeScope.EnableVaultPrivileges() : null)
+            using (useVaultPrivileges ? PrivilegeScope.EnableVaultPrivileges() : null)
             {
                 status = NtCreateFile(out handle, desiredAccess | Synchronize, ref attributes, ref ioStatus,
                     IntPtr.Zero, fileAttributes, shareAccess, disposition,
-                    createOptions | (needsVaultPrivileges ? FileOpenForBackupIntent : 0), IntPtr.Zero, 0);
+                    createOptions | (useVaultPrivileges ? FileOpenForBackupIntent : 0), IntPtr.Zero, 0);
             }
             if (status < 0)
             {

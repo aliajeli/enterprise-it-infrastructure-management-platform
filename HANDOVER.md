@@ -1,3 +1,7 @@
+## 0.1.178 ProgramData ancestor protection — 2026-11-24
+
+Exact-head CI 45376861959 on dfe11c34a6d83e2096b30fb8c5e254801c74aad1 passed Linux Node 26/PostgreSQL 18 and all Windows validation, including elevated-admin Vault provision/verify/retry and independent SYSTEM ACL fixtures. Hosted CI does not establish clean Windows Server acceptance. Added handle-relative retained ProgramData ancestor checks and intermediate junction fixture; helper now uses OS-known ProgramData in normal orchestration, consistent with runtime fixed path. New changes need exact-head Windows CI. Privilege scope, rollback, races and parent trust need independent security review. PostgreSQL bootstrap disabled, no installer built.
+
 ## 0.1.177 independent owner check — 2026-11-24
 
 Windows run 45376364739 on 0fe6f458f4be387939e4cf7b20d408c9126379bb passed elevated non-SYSTEM Vault provision, verify and retry; the separate SYSTEM fixture stopped at owner SID comparison. ACL owner comparison now uses GetOwner(SecurityIdentifier) directly, with bounded category reporting on mismatch. Re-run exact-head CI; do not claim Vault accepted. Linux Node 26/PostgreSQL 18 passed. Bootstrap disabled; no installer built.

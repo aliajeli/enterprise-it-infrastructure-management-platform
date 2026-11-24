@@ -157,6 +157,24 @@ try{
  if($r.ExitCode -eq 0){throw "Junction Vault must be rejected"}
 }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
 
+# An intermediate ProgramData ancestor junction must be rejected, even when
+# the final directory itself is ordinary and on the same volume.
+$t=New-TestRoot "ancestor-junction"
+try{
+ $ordinary=Join-Path $t.ProgramData 'nested'
+ New-Item -ItemType Directory -Path $ordinary -Force|Out-Null
+ $link=Join-Path $t.Root 'intermediate-link'
+ & cmd.exe /c "mklink /J `"$link`" `"$($t.ProgramData)`"" | Out-Null
+ if($LASTEXITCODE -ne 0){throw 'Could not create ancestor junction fixture.'}
+ $throughLink=Join-Path $link 'nested'
+ $r=Invoke-Provisioner @('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$throughLink)
+ if($r.ExitCode -eq 0 -or $r.StdErr -notmatch 'unexpected-object-type:programdata-ancestor'){
+  throw "Intermediate junction must be rejected by handle: $($r.StdErr)"
+ }
+ if(Test-Path -LiteralPath (Join-Path $ordinary 'EnterpriseIT')){throw 'Ancestor junction rejection mutated its target.'}
+ Remove-Item -LiteralPath $link -Force -ErrorAction Stop
+}finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
+
 # 7. Lock file as directory rejected
 $t=New-TestRoot "lock-dir"
 try{
