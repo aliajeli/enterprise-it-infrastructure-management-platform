@@ -1,3 +1,7 @@
+## 0.1.185 PostgreSQL pipe-open classification — 2026-11-24
+
+Hosted run 45387588398 on bbe527ffb5ef0205da39e91ef3f4166ebbe82c9a passed Windows reproducible archive fixtures, six self-contained executable publications, existing Windows validation and Linux Node 26/PostgreSQL 18. The actual Windows initdb pipe experiment failed before the secret was sent: `child-exited-before-client-1-pwfile-open`. Added fixed error-type subcategories, never raw child output. PostgreSQL's Windows restricted-token re-exec and the pipe's current-user/elevation checks must be resolved while preserving exact client authentication and avoiding privilege bypass; production initialization, bootstrap and migration remain disabled. No full installer or clean Windows Server VM acceptance. Exact-head CI required.
+
 ## 0.1.184 reproducible archive foundation — 2026-11-24
 
 Hosted real Windows PostgreSQL experiment run 45386888172 on c051f1e91a86ef23f0c172ff944cafdc96c3f0bb failed `child-exited-before-client-1-pwfile-open` before transmitting the synthetic password. The PostgreSQL restricted-token re-exec and named-pipe access require a secure design; never suppress restricted-token handling or relax client identity checks to make it pass. Init/bootstrap/migration remain disabled. Added normalized ordinal/time/attribute ZIP packaging and repeated-build/content-change tests; exact-head Windows CI required. Reproducibility is scoped to identical inputs and same .NET toolchain. No assembled/signed installer, clean VM acceptance or production readiness.

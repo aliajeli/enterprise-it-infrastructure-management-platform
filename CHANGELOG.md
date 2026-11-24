@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.185 — 2026-11-24
+
+- Hosted run 45387588398 on 0.1.184 passed reproducible offline archive fixture tests, six actual self-contained Windows executable publications, existing Windows validation and Linux Node 26/PostgreSQL 18; real Windows initdb failed opening the protected named pipe before any secret was sent. Added fixed error-type subcategories without logging child output or secrets. Exact-head CI required.
+- PostgreSQL restricted-token execution and same-user pipe client authentication remain unresolved; no production initialization/bootstrap/migration, signed installer or clean Windows Server acceptance is claimed.
+
 ## 0.1.184 — 2026-11-24
 
 - Made offline ZIP generation reproducible for identical input files on the same .NET toolchain by using ordinal path ordering, normalized ZIP timestamps/attributes and a manifest without wall-clock build time. Added repeated-build and changed-content digest regressions. Empty directories are omitted. Exact-head Windows CI required; this is not yet a full assembler or signed installer.

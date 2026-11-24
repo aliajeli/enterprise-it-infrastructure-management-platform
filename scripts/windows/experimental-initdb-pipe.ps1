@@ -51,7 +51,13 @@ function Invoke-ExperimentalInitDbPipe {
     # Emit only fixed categories, never the child output itself. No password
     # bytes have been sent at this point.
     $diagnostic=$stderr.GetAwaiter().GetResult()
-    if($diagnostic -match '(?i)could not open file.+for reading'){$stage+='-pwfile-open'}
+    if($diagnostic -match '(?i)could not open file.+for reading'){
+     $stage+='-pwfile-open'
+     if($diagnostic -match '(?i)permission denied|access is denied'){$stage+='-permission'}
+     elseif($diagnostic -match '(?i)no such file|file not found'){$stage+='-not-found'}
+     elseif($diagnostic -match '(?i)invalid argument'){$stage+='-invalid-argument'}
+     else{$stage+='-other'}
+    }
     elseif($diagnostic -match '(?i)restricted token|re-execute'){$stage+='-restricted-token'}
     elseif($diagnostic -match '(?i)not the same version|not found in the same directory'){$stage+='-backend-binary'}
     elseif($diagnostic -match '(?i)permission denied|access is denied'){$stage+='-permission'}
