@@ -1,6 +1,6 @@
 # Windows PostgreSQL first-install and migration contract
 
-> **Implementation update (0.1.223): hosted synthetic stdin works functionally but same-user handle interception is reproducible; the real named-pipe client PID mismatch fails closed, and a separate test user did not isolate it from an elevated runner. Neither transport is approved for production. Disposable migrations passed on hosted Windows but do not establish cluster identity, production grants, bootstrap, migration or supported-server acceptance. See [HANDOVER](HANDOVER.md).**
+> **Implementation update (0.1.223): hosted synthetic stdin works functionally but same-user handle interception is reproducible; the real named-pipe client PID mismatch fails closed, and a separate test user did not isolate it from an elevated runner. Neither transport is approved for production. The 0.1.224 experimental pipe delays credential materialization and clears temporary buffers, but does not solve identity or handle interception. Disposable migrations passed on hosted Windows but do not establish cluster identity, production grants, bootstrap, migration or supported-server acceptance. See [HANDOVER](HANDOVER.md).**
 
 
 Status: design/acceptance contract for the five-service Windows deployment workstream. This document does not claim that first-install database bootstrap or migrations are implemented.

@@ -1,3 +1,7 @@
+## 0.1.224 experimental pipe exposure reduction — 2026-11-24
+
+After preserving and pushing 0.1.223 documentation, changed only the synthetic initdb pipe experiment to materialize the SecureString after the existing exact-PID guard, use clearable char/byte arrays instead of immutable managed plaintext strings, and promptly clear BSTR/temporary buffers (best-effort managed-memory hygiene). Added synthetic wrong-client invalid-marker ordering, newline rejection and UTF-8/surrogate-pair regression fixtures. This is not an authenticated re-exec solution: exact PID still rejects the actual initdb child, same-user handle duplication remains possible, and the guard must not be weakened. Initializer, bootstrap, migration, installer and orchestration remain disabled. Exact-head Windows CI required; no merge/release authorized.
+
 ## 0.1.223 documentation and preservation — 2026-11-24
 
 Reconciled README and active deployment/security/testing specifications with the exact completed 0.1.222 hosted CI result and current fail-closed gates. Historical reports remain dated evidence rather than current requirements or release claims. No credential transport, installer, migration or orchestration gate was opened. All existing changes, including the prior CI handover note, are retained on the current branch. No merge/release authorized.

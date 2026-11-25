@@ -1,6 +1,7 @@
 # Synthetic initdb stand-in. NEVER used to initialize a real cluster.
 $ErrorActionPreference='Stop'
 $expected='synthetic-initdb-secret-42'
+if($args -contains '--fixture-unicode'){$expected='synthetic-'+[char]0x00f6+'-secret-'+[char]0xd83d+[char]0xde80+'-42'}
 if(([Environment]::GetCommandLineArgs() -join ' ').Contains($expected)){exit 11}
 if($args -contains '--fixture-timeout'){Start-Sleep -Seconds 15;exit 12}
 $childArgument=@($args|Where-Object{$_ -like '--fixture-child=*'})

@@ -16,14 +16,9 @@ function Invoke-ExperimentalInitDbPipe {
  if(-not [IO.Path]::IsPathFullyQualified($Executable) -or -not(Test-Path -LiteralPath $Executable -PathType Leaf)){throw 'Invalid initdb executable.'}
  if(-not [IO.Path]::IsPathFullyQualified($DataPath)){throw 'Invalid initdb data path.'}
  if($Password.Length -lt 16 -or $Password.Length -gt 1024){throw 'Invalid initdb password length.'}
- $pipe=$null;$process=$null;$bytes=$null;$ptr=[IntPtr]::Zero;$plain=$null
- $stage='credential-preparation'
+ $pipe=$null;$process=$null;$bytes=$null;$chars=$null;$ptr=[IntPtr]::Zero
+ $stage='create-pipe'
  try{
-  $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
-  $plain=[Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
-  if($plain.IndexOfAny([char[]]@([char]0,[char]10,[char]13)) -ge 0){throw 'Invalid initdb password characters.'}
-  $bytes=[Text.UTF8Encoding]::new($false,$true).GetBytes($plain+"`n")
-  $plain=$null
   # Explicitly grant the token USER SID, not the token owner (which can be
   # Administrators and is disabled by PostgreSQL's restricted-token re-exec).
   # A separate exact-client-PID check remains mandatory before sending bytes.
@@ -136,10 +131,31 @@ public static class EnterpriseItInitDbPipeNative {
    }
    throw 'Unexpected initdb pipe client.'
   }
+  # Only materialize a synthetic credential after the exact-PID guard. This
+  # reduces exposure; it does NOT protect against same-user handle duplication
+  # and is not authorization to use this experiment for production secrets.
+  # Avoid immutable managed plaintext strings and clear both temporary buffers.
+  $stage='credential-preparation'
+  try{
+   $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+   $chars=[char[]]::new($Password.Length)
+   [Runtime.InteropServices.Marshal]::Copy($ptr,$chars,0,$chars.Length)
+   if([Array]::IndexOf($chars,[char]0) -ge 0 -or [Array]::IndexOf($chars,[char]10) -ge 0 -or [Array]::IndexOf($chars,[char]13) -ge 0){throw 'Invalid initdb password characters.'}
+   $encoding=[Text.UTF8Encoding]::new($false,$true)
+   $bytes=[byte[]]::new($encoding.GetByteCount($chars)+1)
+   $written=$encoding.GetBytes($chars,0,$chars.Length,$bytes,0)
+   $bytes[$written]=10
+  }finally{
+   if($ptr -ne [IntPtr]::Zero){[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr);$ptr=[IntPtr]::Zero}
+   if($chars){[Array]::Clear($chars,0,$chars.Length);$chars=$null}
+  }
   $stage='write-pipe'
   $cancel=[Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds($TimeoutSeconds))
   try{$pipe.WriteAsync($bytes,0,$bytes.Length,$cancel.Token).GetAwaiter().GetResult()}
-  finally{$cancel.Dispose()}
+  finally{
+   $cancel.Dispose()
+   if($bytes){[Array]::Clear($bytes,0,$bytes.Length);$bytes=$null}
+  }
   # Keep the server open until the child has read its line and exited; closing
   # immediately can discard buffered named-pipe data on Windows.
   $stage='wait-child'
@@ -159,7 +175,7 @@ public static class EnterpriseItInitDbPipeNative {
    $process.Dispose()
   }
   if($ptr -ne [IntPtr]::Zero){[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}
+  if($chars){[Array]::Clear($chars,0,$chars.Length)}
   if($bytes){[Array]::Clear($bytes,0,$bytes.Length)}
-  $plain=$null
  }
 }
