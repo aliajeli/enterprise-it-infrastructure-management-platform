@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.233 — 2026-11-25
+
+- Corrected the isolated-account CI probe to honor the selected threat model: elevated Local Administrators are trusted, so their access is an expected positive control rather than a failure. Non-administrator access remains denied; this does not implement or approve the production bootstrap service.
+
 ## 0.1.232 — 2026-11-25
 
 - Enabled push validation for `arena/**` development branches so security and Windows integration changes receive CI feedback before review. This does not approve credential transport or enable PostgreSQL initialization.

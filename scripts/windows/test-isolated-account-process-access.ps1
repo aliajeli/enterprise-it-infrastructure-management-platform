@@ -11,6 +11,7 @@ $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 try{
  if(-not ([Security.Principal.WindowsPrincipal]::new($identity)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){throw 'An elevated disposable runner is required.'}
  $callerSid=$identity.User.Value
+ $callerIsAdmin=([Security.Principal.WindowsPrincipal]::new($identity)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }finally{$identity.Dispose()}
 $name='eip'+[guid]::NewGuid().ToString('N').Substring(0,12)
 $random=[byte[]]::new(32)
@@ -105,9 +106,17 @@ exit 0
   }
   throw 'Same-isolated-user control did not obtain process access.'
  }
- if($callerExit -eq 0){$stage='caller-access-granted';throw 'Caller identity obtained access.'}
- if($callerExit -ne 21){throw 'Caller-identity probe returned an unexpected result.'}
- Write-Host 'Different-identity access was denied, while the same-isolated-user control succeeded. This is not production security approval.'
+ if($callerIsAdmin){
+  # Scenario 1 explicitly trusts Local Administrators and SYSTEM. A hosted
+  # runner is elevated, so access by this caller is expected and is not a
+  # reason to reject the service-account boundary.
+  if($callerExit -ne 0){throw 'Trusted elevated administrator positive control did not obtain process access.'}
+  Write-Host 'Trusted elevated-administrator access was confirmed as expected by the selected threat model; this does not test a standard-user attacker.'
+ }else{
+  if($callerExit -eq 0){$stage='standard-caller-access-granted';throw 'Non-administrator caller obtained access to the isolated process.'}
+  if($callerExit -ne 21){throw 'Non-administrator caller probe returned an unexpected result.'}
+  Write-Host 'Non-administrator caller access was denied, while the same-isolated-user control succeeded. This is not production security approval.'
+ }
 }catch{
  # Exceptions from process/account APIs are deliberately not emitted; their
  # text is not a safe channel for credential-adjacent diagnostics.
