@@ -122,7 +122,7 @@ verification mismatch:
 - Runtime helper handle-based owner/DACL, file identity, volume and reparse checks: implemented in source; supported Windows Server adversarial acceptance remains pending.
 - Elevated Vault directory/lock provisioner: implemented in `VaultProvisioner.cs` using handle-relative create-new operations, explicit SDDL, exact leaf ACL verification, idempotent validation and identity-limited rollback.
 - Parent trust: ProgramData ACL policy and EnterpriseIT parent ACL policy are implemented; the current hardening change checks each opened ProgramData ancestor and evaluates ordinary and object-specific allow ACEs for broad-principal write grants. This requires exact-head Windows CI and clean Windows Server validation.
-- Hosted SYSTEM fixtures cover fresh provisioning, idempotency, wrong ACL, reparse points, ancestor junctions, broad-write ancestor rejection, rollback faults and limited concurrency. These fixtures are not equivalent to a production installer token or actual API virtual-account acceptance.
+- Hosted SYSTEM fixtures cover fresh provisioning, idempotency, wrong ACL, reparse points, ancestor junctions, broad-write ancestor rejection, rollback faults and limited concurrency. Elevated-admin and SYSTEM fixtures are rooted below the OS ProgramData directory so their ancestor ACLs model the production path rather than runner TEMP. These fixtures are not equivalent to actual API virtual-account acceptance.
 - Orchestration's mutation path remains disabled pending PostgreSQL cluster ownership and secure bootstrap acceptance.
 - Node keyring adapter registration and durable credential persistence are not enabled.
 - Installer/release integration and clean-VM acceptance are not complete.

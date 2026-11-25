@@ -1,3 +1,9 @@
+## 0.1.280 — run Vault fixtures beneath trusted ProgramData — 2026-11-25
+
+- The 0.1.279 Windows Vault smoke correctly failed closed because its synthetic ProgramData path lived below the GitHub runner TEMP tree, whose ancestor ACL is not a production trust boundary and may grant broad write access.
+- Moved both elevated-admin and SYSTEM disposable Vault fixtures beneath the OS ProgramData directory. The test still applies a protected exact ACL to its synthetic ProgramData leaf and the adversarial broad-write ancestor fixture remains expected to fail.
+- This changes test placement only; it does not relax ancestor ACL validation or change production path policy. Exact-head Windows CI is required.
+
 ## 0.1.279 — synchronize lockfile root package metadata — 2026-11-25
 
 - The first 0.1.278 validation run correctly caught stale `packages[""].version` metadata even though the lockfile header had advanced. The automated lockfile refresh corrected that state; this release advances package.json and both lockfile root version fields together to 0.1.279.

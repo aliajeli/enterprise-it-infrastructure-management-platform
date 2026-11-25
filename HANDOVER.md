@@ -1,3 +1,13 @@
+## 0.1.280 — place Vault CI fixtures under trusted ProgramData — 2026-11-25
+
+The 0.1.279 Windows API runtime smoke failed at the elevated-admin fixture with `programdata-acl-unsafe`. Inspection showed that both admin and SYSTEM fixtures placed their synthetic ProgramData root beneath runner TEMP. The new ancestor policy correctly evaluates every path component; runner TEMP is not a trusted production ancestor and can have broad write ACLs.
+
+- Moved disposable elevated-admin and SYSTEM fixture roots beneath the OS-managed `%ProgramData%` directory, preserving unique create-new paths and explicit protected ACLs on each synthetic ProgramData leaf.
+- The adversarial test that adds Everyone Modify to an intermediate fixture ancestor remains unchanged and must still be rejected before child creation.
+- No production ACL policy was weakened. No existing path is adopted. The admin fixture removes only its GUID-unique root after success; SYSTEM fixtures retain their existing scoped cleanup.
+- Exact-head Windows CI must verify both the clean baseline and adversarial rejection. Actual Windows Server API Virtual Service Account acceptance remains pending.
+- PostgreSQL bootstrap, durable credential persistence, service orchestration and installer activation remain disabled.
+
 ## 0.1.279 — synchronize package and lockfile root versions — 2026-11-25
 
 The 0.1.278 source change is retained. The first exact-head validation run caught stale `packages[""].version` metadata; the lockfile refresh workflow regenerated it. This follow-up advances `package.json`, the lockfile header, and `packages[""].version` together to 0.1.279. No dependencies or workspace versions changed. Exact-head CI must validate the corrected metadata and the Vault ancestor ACL fixture.

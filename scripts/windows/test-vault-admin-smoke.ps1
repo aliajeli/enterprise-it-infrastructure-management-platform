@@ -1,12 +1,13 @@
 # The provisioner must work from the elevated runner account, not just LocalSystem.
-# The separate SYSTEM fixture test cleans this GUID-scoped directory afterwards.
+# Place the disposable fixture directly below the OS ProgramData directory so
+# the test exercises a production-like trusted ancestor chain, not runner TEMP ACLs.
 $ErrorActionPreference='Stop'
 $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 if($identity.User.Value -eq 'S-1-5-18'){throw 'Administrator smoke must not run as LocalSystem.'}
-$smokeRoot=Join-Path $env:RUNNER_TEMP 'enterpriseit-vault-admin-smoke'
+$smokeRoot=Join-Path $env:ProgramData ('EnterpriseIT-Vault-Admin-Smoke-' + [guid]::NewGuid().ToString('N'))
 if(Test-Path -LiteralPath $smokeRoot){throw 'Refusing to adopt an existing smoke-test directory.'}
 $pd=Join-Path $smokeRoot 'ProgramData'
-New-Item -ItemType Directory -Path $pd -Force|Out-Null
+[IO.Directory]::CreateDirectory($pd)|Out-Null
 $acl=[Security.AccessControl.DirectorySecurity]::new()
 $acl.SetAccessRuleProtection($true,$false)
 foreach($sid in @('S-1-5-18','S-1-5-32-544')){
@@ -33,3 +34,4 @@ foreach($mode in @('--provision-vault','--verify-vault','--provision-vault')){
  }
 }
 Write-Host 'Elevated administrator Vault provision, verify, and retry passed.'
+Remove-Item -LiteralPath $smokeRoot -Recurse -Force -ErrorAction Stop

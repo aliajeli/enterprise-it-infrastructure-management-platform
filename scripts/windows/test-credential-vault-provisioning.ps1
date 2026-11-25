@@ -37,7 +37,7 @@ $serviceSid=$sidMatch.Value
 $badSid="S-1-5-21-1-2-3-1000"
 
 function New-TestRoot([string]$Name){
- $root=Join-Path $env:TEMP ("enterpriseit-vault-provision-" + $Name + "-" + [guid]::NewGuid().ToString("N"))
+ $root=Join-Path $env:ProgramData ("EnterpriseIT-Vault-Provision-" + $Name + "-" + [guid]::NewGuid().ToString("N"))
  $pd=Join-Path $root "ProgramData"
  [IO.Directory]::CreateDirectory($pd)|Out-Null
  # Explicit protected fixture baseline; do not depend on the machine TEMP ACL.
