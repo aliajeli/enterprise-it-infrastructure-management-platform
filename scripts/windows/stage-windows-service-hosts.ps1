@@ -57,7 +57,9 @@ if($MyInvocation.InvocationName -ne "."){
   }
   [pscustomobject]@{installRoot=$plan.InstallRoot;services=@($plan.Services|ForEach-Object{$_.Service});runtimeIdentifier="win-x64";selfContained=$true;singleFile=$true;atomicPromotion=$true;installerCreated=$false}|ConvertTo-Json -Depth 4
  }catch{
-  foreach($destination in @($promoted.ToArray()|Select-Object -Reverse)){
+  $rollbackTargets=$promoted.ToArray()
+  [Array]::Reverse($rollbackTargets)
+  foreach($destination in $rollbackTargets){
    if(Test-Path -LiteralPath $destination){Remove-Item -LiteralPath $destination -Force -ErrorAction SilentlyContinue}
   }
   throw

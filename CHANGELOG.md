@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.238 — 2026-11-25
+
+- Removed the unavailable System.IO.Pipes.AccessControl 10.0.0 package reference; the Windows target uses the framework-provided API surface. Corrected service-host staging rollback to use .NET Array.Reverse rather than an unsupported Select-Object parameter.
+- Windows CI for 0.1.234 identified both issues. The corrected exact-head build and publish must pass before acceptance.
+
 ## 0.1.237 — 2026-11-25
 
 - Consolidated bootstrap service provisioning into one ShouldProcess approval before SCM and ACL mutation. This prevents a declined individual ACL prompt from being reported as a successful provisioning operation.

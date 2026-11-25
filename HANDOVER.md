@@ -1914,3 +1914,10 @@ An earlier application-repository inspection reported an empty clone before the 
 
 - Provisioning now uses one ShouldProcess approval covering SCM registration, service-SID enablement, and ACL changes. If approval is declined, no mutation is reported as successful.
 - Exact-head Windows CI remains the next validation gate. The service has not yet passed an end-to-end real initdb/standard-user process-object test and is not wired into the production initializer.
+
+
+## 2026-11-25 — Windows bootstrap build and payload rollback correction (v0.1.238)
+
+- Run [45558186216](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45558186216) on candidate 0.1.234 found that NuGet does not publish `System.IO.Pipes.AccessControl` 10.0.0; removed the unnecessary package reference so the Windows target resolves the framework API.
+- The self-contained seven-host publish job exposed an existing rollback bug: `Select-Object -Reverse` is not a supported parameter. Replaced it with `[Array]::Reverse` over the promoted-path array.
+- These are build/packaging corrections only. The initdb pipe/handle security failures from the prior CI remain open; the service candidate is not production-approved or wired into the initializer.
