@@ -2186,3 +2186,7 @@ An earlier application-repository inspection reported an empty clone before the 
 - Replaced raw-text multiline regex parsing with `[IO.File]::ReadAllLines` and a line-level PID pattern that tolerates CRLF/LF. The service and security checks are unchanged; the 45-second smoke hold remains bounded.
 - Same-user diagnostic jobs remain informational/non-blocking. The SCM fixture still must prove that a distinct Standard User is denied `PROCESS_DUP_HANDLE` on both actual service-owned initdb parent and re-exec child, complete real initialization, SCRAM verification and no-secret scan.
 - No credential-safety acceptance is claimed. The production initializer remains fail-closed pending exact-head CI and supported Windows Server acceptance.
+## 2026-11-25 — PID parser single-line correction (v0.1.269)
+- Follow-up source inspection found the initial line-reader pattern contained an unintended literal carriage return. Corrected the fixture to parse each line returned by `[IO.File]::ReadAllLines` with a single-line PID pattern; the API strips CRLF/LF terminators before matching.
+- This only repairs the test fixture. No process DACL, service identity, credential transport or authorization behavior changed. The actual SCM distinct-account Standard User handle-denial and real initdb completion checks remain mandatory.
+- Production initializer remains fail-closed; no credential-security acceptance is claimed.

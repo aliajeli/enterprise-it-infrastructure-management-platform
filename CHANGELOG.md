@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.269 — correct line-based PID marker parser — 2026-11-25
+
+- Follow-up source inspection caught an accidental literal carriage-return escape in the first line-reader correction. Replaced it with a single-line PID regex; [IO.File]::ReadAllLines already removes CRLF/LF terminators.
+- No service behavior or security gates changed. The SCM Standard User denial against actual initdb parent and re-exec child remains blocking; production initializer remains fail-closed.
+
+
 ## 0.1.268 — parse SCM initdb PID trace across Windows line endings — 2026-11-25
 
 - Exact-head CI for 0.1.267 proved the service identity and Administrator pipe preflight, PostgreSQL 18.7 validation, data-root preparation, and initdb process launch all succeeded. The trace contained the PID marker, but the PowerShell fixture failed to parse it when reading the raw CRLF trace.
