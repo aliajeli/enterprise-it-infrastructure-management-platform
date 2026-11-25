@@ -1,3 +1,8 @@
+## 0.1.279 — synchronize lockfile root package metadata — 2026-11-25
+
+- The first 0.1.278 validation run correctly caught stale `packages[""].version` metadata even though the lockfile header had advanced. The automated lockfile refresh corrected that state; this release advances package.json and both lockfile root version fields together to 0.1.279.
+- No dependencies or workspace versions changed. The ProgramData ancestor ACL hardening from 0.1.278 remains included and requires exact-head Windows CI.
+
 ## 0.1.278 — validate every ProgramData ancestor ACL — 2026-11-25
 
 - Hardened the native Credential Vault provisioner to evaluate the ACL of every opened intermediate directory between the volume root and ProgramData before creating any child objects.

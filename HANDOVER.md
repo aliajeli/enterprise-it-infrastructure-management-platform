@@ -1,3 +1,7 @@
+## 0.1.279 — synchronize package and lockfile root versions — 2026-11-25
+
+The 0.1.278 source change is retained. The first exact-head validation run caught stale `packages[""].version` metadata; the lockfile refresh workflow regenerated it. This follow-up advances `package.json`, the lockfile header, and `packages[""].version` together to 0.1.279. No dependencies or workspace versions changed. Exact-head CI must validate the corrected metadata and the Vault ancestor ACL fixture.
+
 ## 0.1.278 — ProgramData ancestor ACL trust enforcement — 2026-11-25
 
 The Arena branch remains the sole continuation branch. Parent commit: `0b489e9785c3279e5ef32466c8e9285df4186a50`; root package version advances from 0.1.277 to 0.1.278.
