@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.260 — 2026-11-25
+
+- Shortened the Standard User SCM probe command and switched it from `-EncodedCommand` to a bounded inline `-Command`. The 0.1.259 run passed Administrator preflight and malformed-frame rejection, but the credentialed child process could not start because the encoded command line exceeded the conservative CreateProcessWithLogonW command-line limit.
+- The fixture now follows the already-passing isolated-account probe pattern: `ProcessStartInfo` credential fields, redirected standard streams, and a compact probe script under the runner's command-line limit.
+- No production service or credential protocol behavior changed.
+
 ## 0.1.259 — 2026-11-25
 
 - Replaced the SCM fixture's `Start-Process -Credential` Standard User launcher with `ProcessStartInfo` credential properties and `Process.Start`, matching the isolated-account process probe that already passed on the hosted Windows runner.

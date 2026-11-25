@@ -115,7 +115,7 @@ try {
   } finally { $adminPipe.Dispose() }
 
   $probe = @'
-$name = "EnterpriseIT.PostgreSQL.Bootstrap.v1"
+$name = "EnterpriseIT.PostgreSQL.Bootstrap.v2"
 $until = [DateTime]::UtcNow.AddSeconds(15)
 while ([DateTime]::UtcNow -lt $until) {
   $p = [IO.Pipes.NamedPipeClientStream]::new(".",$name,[IO.Pipes.PipeDirection]::InOut)
@@ -127,14 +127,14 @@ while ([DateTime]::UtcNow -lt $until) {
 }
 exit 42
 '@
-  $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($probe))
   $probeStart = [Diagnostics.ProcessStartInfo]::new()
   $probeStart.FileName = Join-Path $PSHOME "pwsh.exe"
-  foreach ($argument in @("-NoLogo","-NoProfile","-NonInteractive","-EncodedCommand",$encoded)) {
+  foreach ($argument in @("-NoLogo","-NoProfile","-NonInteractive","-Command",$probe)) {
     $probeStart.ArgumentList.Add($argument)
   }
   $probeStart.UseShellExecute = $false
   $probeStart.CreateNoWindow = $true
+  $probeStart.RedirectStandardInput = $true
   $probeStart.RedirectStandardOutput = $true
   $probeStart.RedirectStandardError = $true
   $probeStart.Domain = $env:COMPUTERNAME
