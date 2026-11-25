@@ -67,9 +67,13 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
     {
         var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
         var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        var serviceSid = (SecurityIdentifier)new NTAccount("NT SERVICE", ServiceName)
+            .Translate(typeof(SecurityIdentifier));
         var security = new PipeSecurity();
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-        security.SetOwner(systemSid);
+        security.SetOwner(serviceSid);
+        security.AddAccessRule(new PipeAccessRule(serviceSid, PipeAccessRights.FullControl,
+            AccessControlType.Allow));
         security.AddAccessRule(new PipeAccessRule(systemSid, PipeAccessRights.FullControl,
             AccessControlType.Allow));
         security.AddAccessRule(new PipeAccessRule(adminSid, PipeAccessRights.ReadWrite,
@@ -88,7 +92,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             if (identity is null) return;
             var principal = new WindowsPrincipal(identity);
             var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
-            authorized = system.Equals(identity.User) ||
+            authorized = identity.User is SecurityIdentifier userSid && system.Equals(userSid) ||
                 principal.IsInRole(WindowsBuiltInRole.Administrator);
         });
         return authorized;
@@ -101,7 +105,8 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         if (account.Translate(typeof(SecurityIdentifier)) is not SecurityIdentifier expected)
             throw new UnauthorizedAccessException("Bootstrap service identity could not be resolved.");
 
-        var hasSid = expected.Equals(identity.User) || new WindowsPrincipal(identity).IsInRole(expected);
+        var hasSid = identity.User is SecurityIdentifier userSid && expected.Equals(userSid) ||
+            new WindowsPrincipal(identity).IsInRole(expected);
         if (!hasSid)
             throw new UnauthorizedAccessException("Bootstrap service SID is not present in the service token.");
     }
@@ -214,11 +219,9 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         })
             start.ArgumentList.Add(argument);
 
-        start.Environment.Remove("PG_RESTRICT_EXEC");
-        start.Environment.Remove("PGPASSWORD");
-        start.Environment.Remove("PGPASSFILE");
-        start.Environment.Remove("PGSERVICE");
-        start.Environment.Remove("PGSERVICEFILE");
+        foreach (var key in start.Environment.Keys
+            .Where(key => key.StartsWith("PG", StringComparison.OrdinalIgnoreCase)).ToArray())
+            start.Environment.Remove(key);
         start.Environment["OSTYPE"] = "msys";
         start.Environment["LC_ALL"] = "C";
 
@@ -248,6 +251,10 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
                 !string.Equals((await File.ReadAllTextAsync(versionFile, cancellationToken)).Trim(), "18",
                     StringComparison.Ordinal))
                 throw new InvalidDataException("PostgreSQL cluster verification failed.");
+            var hbaPath = Path.Combine(dataRoot, "pg_hba.conf");
+            if (!File.Exists(hbaPath) ||
+                !(await File.ReadAllTextAsync(hbaPath, cancellationToken)).Contains("scram-sha-256", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("PostgreSQL SCRAM authentication policy was not created.");
         }
         catch
         {

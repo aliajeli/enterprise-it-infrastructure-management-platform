@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.240 — 2026-11-25
+
+- Fixed Windows bootstrap service compilation: imported the service namespace in the top-level host, guarded nullable Windows token user SIDs, and set the pipe owner to the dedicated service SID rather than requiring the service to assign ownership to SYSTEM.
+- Sanitized all inherited PostgreSQL environment variables before launching initdb and added a post-initdb SCRAM policy check. CI on 0.1.234 identified the namespace and nullable-analysis errors.
+
 ## 0.1.239 — 2026-11-25
 
 - Restored the supported System.IO.Pipes.AccessControl 5.0.0 package for PipeSecurity/NamedPipeServerStreamAcl APIs (the package does not publish a 10.0.0 release). Improved the self-contained publisher's failure diagnostics so the exact dotnet publish output is preserved for the failed host.
