@@ -1,3 +1,13 @@
+## 0.1.285 — Rebuild SYSTEM Vault fixture runner after malformed source splice — 2026-11-25
+
+The 0.1.284 exact-head Windows run exposed that the SYSTEM fixture script was not merely missing a delimiter: its opening path-validation block had been truncated and fragments from multiple prior versions were spliced into the file. PowerShell therefore parsed an invalid script before the SYSTEM task could run.
+
+- Replaced the malformed script with one coherent runner, complete GUID-scoped volume-root validation, isolated fault-helper build, SYSTEM task execution, and narrowly scoped cleanup.
+- Revalidates the handed-off path inside the SYSTEM worker and rejects unexpected parent paths, names, and reparse-point roots before recursive deletion.
+- Keeps the production Vault ACL and fail-closed provisioning policy unchanged.
+
+Exact-head Windows CI must validate the script parser, administrator handoff, SYSTEM adversarial fixtures, and cleanup. This is a test-harness repair only; it does not establish Windows Server Virtual Service Account acceptance or authorize durable credential persistence, production bootstrap activation, installer activation, or release.
+
 ## 0.1.284 — Repair SYSTEM Vault fixture parser and cross-step handoff — 2026-11-25
 
 The 0.1.283 CI run exposed two integration defects in the test harness: a missing closing delimiter in the generated PowerShell path-validation condition, and a process-local environment assignment that did not survive into the next GitHub Actions step.

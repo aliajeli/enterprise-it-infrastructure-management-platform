@@ -1,3 +1,11 @@
+## 0.1.285 — Rebuild SYSTEM Vault fixture runner after malformed source splice — 2026-11-25
+
+The 0.1.284 exact-head Windows run showed the SYSTEM fixture script contained a truncated path-validation block and duplicated fragments from earlier versions, producing multiple PowerShell parser errors before the SYSTEM test ran. The elevated Administrator Vault provision, verify, and idempotent retry had passed before this parser failure.
+
+Replaced the script as a single coherent runner. The parent and SYSTEM worker both validate the exact generated volume-root path, strict GUID name, and non-reparse root. The SYSTEM task remains responsible for cleaning the protected admin fixture; no production ACL was widened. The isolated fault-instrumented helper is built only in runner temp and is not included in release payloads.
+
+Next: require exact-head Windows CI to pass the complete Vault admin + SYSTEM fixture suite. The unrelated same-user handle duplication diagnostics remain unresolved security-boundary evidence and must not be suppressed or "fixed" by broadening ACLs. Hosted LocalService CI is not Windows Server Virtual Service Account acceptance. Production credential persistence, PostgreSQL initializer/migrations, discovery/monitoring activation, and offline installer activation remain gated.
+
 ## 0.1.284 — Repair SYSTEM Vault fixture parser and cross-step handoff — 2026-11-25
 
 The 0.1.283 hosted run confirmed elevated Administrator Vault provision, verify, and idempotent retry succeeded. The subsequent SYSTEM fixture script failed to parse because its path-validation condition was split before the closing delimiter. The handoff was also process-local and would not persist between workflow steps.
