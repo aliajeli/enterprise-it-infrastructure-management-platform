@@ -147,20 +147,36 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
 
     private void RequireServiceIdentity()
     {
-        using var identity = WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
-        var expected = CreateServiceSid(ServiceName);
+        WriteTrace("identity-check-entered");
+        try
+        {
+            WriteTrace("before-token-query");
+            using var identity = WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
+            WriteTrace("token-query-succeeded");
 
-        var userSid = identity.User as SecurityIdentifier;
-        var groupMatch = identity.Groups?.OfType<SecurityIdentifier>().Any(expected.Equals) == true;
-        var roleMatch = new WindowsPrincipal(identity).IsInRole(expected);
-        WriteTrace("expected-service-sid:" + expected.Value);
-        WriteTrace("token-user-sid:" + (userSid?.Value ?? "none"));
-        WriteTrace("service-sid-in-groups:" + groupMatch);
-        WriteTrace("service-sid-is-in-role:" + roleMatch);
+            var expected = CreateServiceSid(ServiceName);
+            WriteTrace("computed-service-sid:" + expected.Value);
 
-        var hasSid = (userSid is not null && expected.Equals(userSid)) || roleMatch;
-        if (!hasSid)
-            throw new UnauthorizedAccessException("Bootstrap service SID is not present in the service token.");
+            var userSid = identity.User as SecurityIdentifier;
+            WriteTrace("token-user-sid:" + (userSid?.Value ?? "none"));
+
+            var groups = identity.Groups;
+            WriteTrace("token-groups-read");
+            var groupMatch = groups?.OfType<SecurityIdentifier>().Any(expected.Equals) == true;
+            WriteTrace("service-sid-in-groups:" + groupMatch);
+
+            var roleMatch = new WindowsPrincipal(identity).IsInRole(expected);
+            WriteTrace("service-sid-is-in-role:" + roleMatch);
+
+            var hasSid = (userSid is not null && expected.Equals(userSid)) || roleMatch;
+            if (!hasSid)
+                throw new UnauthorizedAccessException("Bootstrap service SID is not present in the service token.");
+        }
+        catch
+        {
+            WriteTrace("identity-check-failed");
+            throw;
+        }
     }
 
     private static async Task<byte[]> ReadPasswordAsync(

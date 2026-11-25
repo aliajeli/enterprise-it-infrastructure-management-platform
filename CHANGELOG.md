@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.255 — 2026-11-25
+
+- Added stepwise protected trace markers around token acquisition, deterministic service-SID derivation, token user SID access, group enumeration and WindowsPrincipal membership. The 0.1.254 run stopped after worker entry without reaching the first post-token marker; this isolates the failing operation.
+- Authorization predicate is unchanged and no credential/request data is traced.
+
 ## 0.1.254 — 2026-11-25
 
 - Replaced runtime `NTAccount.Translate("NT SERVICE\\<name>")` with the documented service-SID derivation: SHA-1 over the uppercase UTF-16LE service name, interpreted as five little-endian 32-bit subauthorities under `S-1-5-80`. The hosted trace showed the worker stopped before any token membership diagnostics, localizing the failure to the previous SID-resolution step.

@@ -1,3 +1,11 @@
+## 0.1.255 — isolate token acquisition versus service SID computation — 2026-11-25
+
+The 0.1.254 exact-head run [45565159334](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45565159334) compiled and started the worker, but its protected trace still contained only `worker-entered`. The deterministic SID calculation and token membership markers were not reached. The test did print SCM's service SID, confirming the service exists and SCM can derive its SID.
+
+Added protected trace markers before and after `WindowsIdentity.GetCurrent(TokenAccessLevels.Query)`, after deterministic service-SID calculation, after reading the token user SID, after reading token groups, and after `WindowsPrincipal.IsInRole`. An outer catch writes only the fixed marker `identity-check-failed` and rethrows; it does not log exception text. This will distinguish a token-query failure from SID calculation or token-membership failure.
+
+The next exact-head run must provide these trace markers. Do not relax the service SID authorization check. The service still has no validated end-to-end credential transport, no service-owned initdb process isolation test, and no successful PostgreSQL 18.7 initialization. Production initializer/orchestrator remain fail-closed. No PR merge or Release authorized.
+
 ## 0.1.254 — derive the service SID without NTAccount lookup — 2026-11-25
 
 The 0.1.253 exact-head run [45564636593](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45564636593) built successfully and ran the SCM fixture. The protected trace again contained only `worker-entered`; the expected SID and token membership markers were absent. Since the trace write immediately after SID resolution was never reached, the likely failing operation is `NTAccount("NT SERVICE", ServiceName).Translate(SecurityIdentifier)` in `RequireServiceIdentity()`.
