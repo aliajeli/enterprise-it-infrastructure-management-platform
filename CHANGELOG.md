@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.252 — 2026-11-25
+
+- Added protected trace fields for the expected service SID, process token user SID, raw token-group membership and WindowsPrincipal role membership. The 0.1.251 trace proved the worker starts but stops before recording successful service-identity validation.
+- The authorization decision remains unchanged: the primary token user must equal the expected SID or Windows token membership must pass. Diagnostic SID values are written only to the ACL-restricted CI trace file and never to command output or production logs.
+
 ## 0.1.251 — 2026-11-25
 
 - Corrected the SCM fixture to pass the opt-in `--smoke-diagnostics` argument to the service executable. The 0.1.250 commit created the protected ProgramData trace directory but its SCM binPath did not yet include the switch, so the trace writer would have remained disabled.

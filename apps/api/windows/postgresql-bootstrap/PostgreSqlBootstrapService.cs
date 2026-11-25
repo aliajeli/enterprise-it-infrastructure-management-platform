@@ -121,15 +121,22 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         return authorized;
     }
 
-    private static void RequireServiceIdentity()
+    private void RequireServiceIdentity()
     {
         using var identity = WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
         var account = new NTAccount("NT SERVICE", ServiceName);
         if (account.Translate(typeof(SecurityIdentifier)) is not SecurityIdentifier expected)
             throw new UnauthorizedAccessException("Bootstrap service identity could not be resolved.");
 
-        var hasSid = identity.User is SecurityIdentifier userSid && expected.Equals(userSid) ||
-            new WindowsPrincipal(identity).IsInRole(expected);
+        var userSid = identity.User as SecurityIdentifier;
+        var groupMatch = identity.Groups?.OfType<SecurityIdentifier>().Any(expected.Equals) == true;
+        var roleMatch = new WindowsPrincipal(identity).IsInRole(expected);
+        WriteTrace("expected-service-sid:" + expected.Value);
+        WriteTrace("token-user-sid:" + (userSid?.Value ?? "none"));
+        WriteTrace("service-sid-in-groups:" + groupMatch);
+        WriteTrace("service-sid-is-in-role:" + roleMatch);
+
+        var hasSid = expected.Equals(userSid) || roleMatch;
         if (!hasSid)
             throw new UnauthorizedAccessException("Bootstrap service SID is not present in the service token.");
     }

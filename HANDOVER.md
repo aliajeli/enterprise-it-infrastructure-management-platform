@@ -1,3 +1,13 @@
+## 0.1.252 — diagnose service SID token membership — 2026-11-25
+
+The 0.1.251 hosted run [45563787390](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45563787390) successfully created the protected ProgramData trace file. Its only entry was `worker-entered`; there was no `service-identity-passed`. Therefore the worker is instantiated and ExecuteAsync begins, but the process exits during `RequireServiceIdentity()` before creating the named pipe.
+
+The next version records, in the ACL-protected CI-only trace file, the expected service SID resolved from `NT SERVICE\EnterpriseITPostgreSQLBootstrap`, the process token's primary user SID, whether the expected SID is present in `WindowsIdentity.Groups`, and whether `WindowsPrincipal.IsInRole(expected)` succeeds. The authorization decision is deliberately unchanged: accept only if the token user SID equals the expected service SID or WindowsPrincipal role membership passes. These diagnostic values are SIDs/booleans, not credentials, and are not emitted to console or production logs.
+
+The next exact-head CI will identify whether SCM failed to add the service SID to the LocalService token, the SID translation differs from SCM's `showsid`, or WindowsPrincipal membership semantics are the issue. Do not replace the check with unvalidated group membership until the token group attributes are understood.
+
+All other gates remain open: production virtual-account acceptance, service-owned initdb process-object isolation, real PostgreSQL 18.7 initialization, secret-leakage, timeout/crash cleanup, data ACL/ownership, roles, migrations and initializer integration. Production initializer/orchestrator stay fail-closed. No PR merge or Release authorized.
+
 ## 0.1.251 — enable protected trace in the SCM fixture — 2026-11-25
 
 The 0.1.250 implementation added opt-in file tracing in the service and created a protected ProgramData directory in the test, but review of the committed fixture showed the `sc.exe create` binPath had not yet included `--smoke-diagnostics`. Without the switch, `BootstrapDiagnosticOptions.Enabled` remained false and no trace file could be produced.
