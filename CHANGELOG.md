@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.229 — 2026-11-24
+
+- Corrected privilege restoration in the synthetic Windows process-object boundary diagnostic; exact-head CI required.
+
 ## 0.1.228 — 2026-11-24
 
 - Added bounded child-fixture diagnostics to investigate the synthetic process-object positive-control failure.

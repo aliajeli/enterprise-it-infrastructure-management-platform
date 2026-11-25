@@ -39,6 +39,7 @@ public static class EnterpriseItProcessObjectExperiment {
  [DllImport("advapi32.dll",SetLastError=true)] static extern bool OpenProcessToken(IntPtr process,uint access,out IntPtr token);
  [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool LookupPrivilegeValue(string system,string name,out LUID luid);
  [DllImport("advapi32.dll",SetLastError=true)] static extern bool AdjustTokenPrivileges(IntPtr token,bool disable,ref TOKEN_PRIVILEGES state,int length,out TOKEN_PRIVILEGES previous,out int returned);
+ [DllImport("advapi32.dll",EntryPoint="AdjustTokenPrivileges",SetLastError=true)] static extern bool AdjustTokenPrivilegesNoPrevious(IntPtr token,bool disable,ref TOKEN_PRIVILEGES state,int length,IntPtr previous,IntPtr returned);
  [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool ConvertStringSecurityDescriptorToSecurityDescriptor(string sddl,uint revision,out IntPtr descriptor,out uint size);
  [DllImport("kernel32.dll")] static extern IntPtr LocalFree(IntPtr memory);
  static Win32Exception Error(string stage) { return new Win32Exception(Marshal.GetLastWin32Error(),stage); }
@@ -51,8 +52,8 @@ public static class EnterpriseItProcessObjectExperiment {
   return old;
  }
  static void Restore(IntPtr token,TOKEN_PRIVILEGES old) {
-  TOKEN_PRIVILEGES ignored; int n;
-  if(!AdjustTokenPrivileges(token,false,ref old,0,out ignored,out n) || Marshal.GetLastWin32Error()!=0) throw Error("restore-privilege");
+  if(old.PrivilegeCount==0) return; // The privilege was already in the requested state.
+  if(!AdjustTokenPrivilegesNoPrevious(token,false,ref old,0,IntPtr.Zero,IntPtr.Zero) || Marshal.GetLastWin32Error()!=0) throw Error("restore-privilege");
  }
  public static int Probe(int pid,bool enableDebug) {
   IntPtr token=IntPtr.Zero; TOKEN_PRIVILEGES old=new TOKEN_PRIVILEGES(); bool changed=false;

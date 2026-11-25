@@ -5,7 +5,7 @@
 **Snapshot:** 2026-11-24  
 **Active branch (original handoff):** `phase3/windows-service-deployment` (PR #9, Draft/unmerged). **Current Arena working branch:** `arena/821b29af-enterprise-it-infrastructure-m` incorporates that state and continues implementation.  
 **HEAD at handoff authoring:** `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` (PR #9 base incorporated); 0.1.165 continuation on `arena/821b29af-enterprise-it-infrastructure-m` (see git log for exact commit)  
-**Root package version:** `0.1.228`
+**Root package version:** `0.1.229`
 **Project state:** Phase 3 implementation; Windows deployment foundation exists, but Phase 4 / production installer is NOT complete.  
 **This handoff is not an authorization to merge PRs or declare a release.**
 
@@ -70,12 +70,12 @@ Project is **not production-ready**.
 Repository: https://github.com/aliajeli/enterprise-it-infrastructure-management-platform  
 Original PR9 branch: `phase3/windows-service-deployment` (Draft/unmerged, head `ebf9522feb9067d8da80b5dcd2f4538f06f72e7b` at incorporation).  
 Current Arena working branch: `arena/821b29af-enterprise-it-infrastructure-m`  
-Current version: `0.1.228`
+Current version: `0.1.229`
 
-Latest completed validation before 0.1.228:
+Latest completed validation before 0.1.229:
 - Run [45539790333](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45539790333) on `25d12f447176f7a2393cf80d4ba38ffb55fdd46b` (0.1.224) failed overall: synthetic same-user stdin interception, real initdb named-pipe PID mismatch, same-user PROCESS_DUP_HANDLE access to real initdb re-exec, and elevated caller process access to a separate non-admin test identity. No credential was sent in the latter access probes.
 - Windows installer/archive and preflight fixture tests, Windows runtime, Web, disposable fast and assembled/extracted PostgreSQL migration experiments, Linux validation and self-contained publish passed. These are fixtures, not secure production credential transport or supported Windows Server acceptance.
-- 0.1.211 changed Vault handle retention/rollback; 0.1.214 Windows CI passed pre/post-identity fault and nondeterministic concurrent fixture tests. On 0.1.217 an elevated runner obtained PROCESS_DUP_HANDLE on a separate non-admin fixture process, so a simple separate user does not solve credential custody. 0.1.219 completed fast and fully extracted disposable partial-migration recovery experiments; 0.1.220 added diagnostics for pipe PID mismatch, 0.1.221 changed package promotion failure handling, 0.1.222 hardened manifest creation and archive path inspection; 0.1.223 reconciled documentation; 0.1.224 reduces exposure in the experimental pipe only, without resolving process isolation; 0.1.225 recorded exact-head results; 0.1.226 adds a no-secret process-object DACL/debug-privilege diagnostic whose first hosted test failed without a useful diagnostic; 0.1.227 identified a default-DACL positive-control failure; 0.1.228 adds child-fixture diagnosis and requires exact-head Windows CI. Exact-head Windows CI and independent security review are required. See HANDOVER.md for current detail.
+- 0.1.211 changed Vault handle retention/rollback; 0.1.214 Windows CI passed pre/post-identity fault and nondeterministic concurrent fixture tests. On 0.1.217 an elevated runner obtained PROCESS_DUP_HANDLE on a separate non-admin fixture process, so a simple separate user does not solve credential custody. 0.1.219 completed fast and fully extracted disposable partial-migration recovery experiments; 0.1.220 added diagnostics for pipe PID mismatch, 0.1.221 changed package promotion failure handling, 0.1.222 hardened manifest creation and archive path inspection; 0.1.223 reconciled documentation; 0.1.224 reduces exposure in the experimental pipe only, without resolving process isolation; 0.1.225 recorded exact-head results; 0.1.226 adds a no-secret process-object DACL/debug-privilege diagnostic whose first hosted test failed without a useful diagnostic; 0.1.227 identified a default-DACL positive-control failure; 0.1.228 diagnosed a fixture privilege-restoration failure, corrected in 0.1.229; exact-head Windows CI required. Exact-head Windows CI and independent security review are required. See HANDOVER.md for current detail.
 
 Current open PR constraints:
 - PR #7: Draft/open/unmerged — do not merge.

@@ -1,3 +1,7 @@
+## 0.1.229 process-object privilege restoration correction — 2026-11-24
+
+[Run 45544629229](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45544629229) on `8ddb585d3cdf7ce9dc71f6ac1b42aee6cca771bb` identified `restore-privilege` as the default control's failure, not evidence of process isolation. The fixture passed a non-null previous-state pointer with zero buffer length to AdjustTokenPrivileges and attempted to restore even when no privilege state changed. The fixture now skips unchanged state and uses null previous-state/length pointers when restoring a changed state. Exact-head Windows CI required. This is synthetic test code only; no PostgreSQL credential transport or production gate is enabled.
+
 ## 0.1.228 process-object positive-control diagnosis — 2026-11-24
 
 [Run 45544195546](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45544195546) on `e5d5ed40f101f3f6f30363c8a2810b6656bb381f` reported `Default process DACL positive control did not grant same-user access`; it did not reach the strict-DACL/debug comparison. The diagnostic had discarded the child fixture exit and errors, so it cannot distinguish setup failure from denial. This revision preserves bounded synthetic-only child diagnostics and the fixed control result; Windows CI required. It changes no production credential path, and no conclusion about a strict process DACL is established yet.
