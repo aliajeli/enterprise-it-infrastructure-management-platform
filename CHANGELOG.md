@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.228 — 2026-11-24
+
+- Added bounded child-fixture diagnostics to investigate the synthetic process-object positive-control failure.
+
 ## 0.1.227 — 2026-11-24
 
 - Added bounded, synthetic-only diagnostic annotations for the process-object experiment.

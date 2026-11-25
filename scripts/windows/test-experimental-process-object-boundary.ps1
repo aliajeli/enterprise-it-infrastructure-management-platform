@@ -110,7 +110,7 @@ public static class EnterpriseItProcessObjectExperiment {
 if($Mode -eq 'attacker'){
  $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
  try{if($identity.User.Value -cne $ExpectedSid){exit 23}}finally{$identity.Dispose()}
- try{exit [EnterpriseItProcessObjectExperiment]::Probe($TargetPid,[bool]$EnableDebug)}catch{exit 24}
+ try{exit [EnterpriseItProcessObjectExperiment]::Probe($TargetPid,[bool]$EnableDebug)}catch{[Console]::Error.WriteLine($_.Exception.Message);exit 24}
 }
 function Invoke-Attacker([int]$ProcessId,[string]$Sid,[bool]$DebugPrivilege){
  $start=[Diagnostics.ProcessStartInfo]::new()
@@ -123,6 +123,13 @@ function Invoke-Attacker([int]$ProcessId,[string]$Sid,[bool]$DebugPrivilege){
  try{
   $out=$process.StandardOutput.ReadToEndAsync();$err=$process.StandardError.ReadToEndAsync()
   if(-not $process.WaitForExit(30000)){try{$process.Kill($true)}catch{};throw 'Attacker fixture timed out.'}
+  $output=$out.GetAwaiter().GetResult();$errors=$err.GetAwaiter().GetResult()
+  if($process.ExitCode -notin @(0,21)){
+   # The child receives no secret or marker; bound diagnostics nonetheless.
+   $diagnostic=($errors+' '+$output).Replace("`r",' ').Replace("`n",' ')
+   if($diagnostic.Length -gt 500){$diagnostic=$diagnostic.Substring(0,500)}
+   throw "Attacker fixture setup exit $($process.ExitCode): $diagnostic"
+  }
   return $process.ExitCode
  }finally{$process.Dispose()}
 }
@@ -137,7 +144,8 @@ try{
  foreach($arg in @('-NoLogo','-NoProfile','-NonInteractive','-Command','Start-Sleep -Seconds 90')){$start.ArgumentList.Add($arg)}
  $start.UseShellExecute=$false;$start.CreateNoWindow=$true
  $baseline=[Diagnostics.Process]::Start($start)
- if((Invoke-Attacker $baseline.Id $sid $false) -ne 0){throw 'Default process DACL positive control did not grant same-user access.'}
+ $baselineResult=Invoke-Attacker $baseline.Id $sid $false
+ if($baselineResult -ne 0){throw "Default process DACL positive control did not grant same-user access; result $baselineResult."}
  $child=[EnterpriseItProcessObjectExperiment]::Start((Join-Path $PSHOME 'pwsh.exe'))
  $plain=Invoke-Attacker $child.Pid $sid $false
  if($plain -ne 21){throw "Strict process DACL probe was not denied; fixed result $plain."}
