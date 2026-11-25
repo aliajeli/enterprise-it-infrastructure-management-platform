@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.242 — 2026-11-25
+
+- Added hosted-Windows SCM integration for the dedicated PostgreSQL bootstrap service: virtual-account registration, unrestricted service SID, startup verification, authorized-admin pipe positive control and same-session Standard User pipe denial. Only a malformed frame is sent; no credential or initdb is used.
+- Reclassified superseded caller-owned pipe/handle experiments as non-gating legacy diagnostics. Their failures remain visible in Actions but no longer block the dedicated-service validation path.
+- This is not end-to-end credential acceptance. Real service-owned initdb isolation, PostgreSQL 18.7 initialization, secret-leakage checks, timeout/crash cleanup, data ACL/ownership and supported Windows Server acceptance remain open. Production initializer remains fail-closed.
+
 ## 0.1.241 — 2026-11-25
 
 - Removed the explicit System.IO.Pipes.AccessControl package reference after Windows CI confirmed the API is already included by the .NET 10 target and treats redundant references as NU1510 errors. This is a build correction only.

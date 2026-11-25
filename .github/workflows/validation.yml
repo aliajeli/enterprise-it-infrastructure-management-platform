@@ -221,6 +221,10 @@ jobs:
 
       - name: Build dedicated PostgreSQL bootstrap service
         run: dotnet build apps/api/windows/postgresql-bootstrap/EnterpriseIT.PostgreSQLBootstrap.csproj --configuration Release
+      - name: Verify dedicated PostgreSQL bootstrap service under SCM and Standard User pipe denial
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-service-scm.ps1
+
 
       - name: Test PostgreSQL bootstrap service staging plan
         shell: pwsh
@@ -241,7 +245,8 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-postgresql-cluster-initialization.ps1
 
-      - name: Test experimental initdb named-pipe transport
+      - name: Legacy experimental initdb named-pipe transport (diagnostic only)
+        continue-on-error: true
         shell: pwsh
         run: |
           try {
@@ -527,6 +532,7 @@ jobs:
   windows-stdin-handle-isolation:
     name: Windows synthetic stdin handle isolation probe
     runs-on: windows-latest
+    continue-on-error: true # Superseded legacy caller-owned transport diagnostic; not service acceptance.
     timeout-minutes: 5
     steps:
       - name: Checkout source
@@ -604,6 +610,7 @@ jobs:
   windows-initdb-restricted-child-access:
     name: Windows real initdb restricted child access probe
     runs-on: windows-latest
+    continue-on-error: true # Superseded legacy caller-owned transport diagnostic; not service acceptance.
     timeout-minutes: 15
     steps:
       - name: Checkout source
@@ -622,6 +629,7 @@ jobs:
   windows-postgres-initdb:
     name: Windows disposable PostgreSQL initdb pipe experiment
     runs-on: windows-latest
+    continue-on-error: true # Superseded legacy caller-owned transport diagnostic; not service acceptance.
     timeout-minutes: 20
     steps:
       - name: Checkout source
