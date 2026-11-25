@@ -555,6 +555,17 @@ jobs:
             exit 1
           }
 
+  windows-process-object-boundary:
+    name: Windows synthetic process-object boundary experiment
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Evaluate strict process DACL and debug privilege
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-experimental-process-object-boundary.ps1
+
   windows-isolated-account-probe:
     name: Windows isolated account process access probe
     runs-on: windows-latest

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.226 — 2026-11-24
+
+- Added a no-secret, hosted-Windows-only process object DACL and debug-privilege diagnostic. It does not enable or establish an approved PostgreSQL credential transport.
+
 ## 0.1.225 — 2026-11-24
 
 - Recorded completed 0.1.224 hosted CI and updated deployment/test status; no production security gate was opened.
