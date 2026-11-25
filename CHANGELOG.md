@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.249 — 2026-11-25
+
+- Added an explicit Windows Event Log provider with the existing Application log as source, plus fixed host-start/normal-stop markers. Prior runs showed clean SCM shutdown but no ILogger lifecycle messages, so the provider was not reliably observable in the test.
+- No credential or request data is included in lifecycle events. Exact-head CI must now distinguish host startup, worker startup, token cancellation and normal exit.
+
 ## 0.1.248 — 2026-11-25
 
 - Raised fixed bootstrap lifecycle trace events to Warning so the Windows Event Log provider's default threshold does not filter them. The 0.1.247 run still showed only normal SCM state transitions and no worker lifecycle messages.

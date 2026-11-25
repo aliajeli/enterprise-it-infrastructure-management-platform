@@ -1,3 +1,13 @@
+## 0.1.249 — explicit Event Log lifecycle provider — 2026-11-25
+
+The 0.1.248 exact-head run [45562565017](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45562565017) still observed the bootstrap service stop cleanly with SCM exit code 0. The four Warning-level worker lifecycle messages did not appear in the Application event query, so the Windows Event Log provider was not reliably configured/observable for this service.
+
+Added an explicit `Microsoft.Extensions.Logging.EventLog` provider targeting the existing Application event source, set the minimum log level to Information, and added fixed host-start and normal-stop markers around `RunAsync`. Existing worker Warning-level markers identify entry to ExecuteAsync, successful service-SID validation, host shutdown cancellation and request-loop exit. All messages are static and contain no credential, request bytes, process output or exception text.
+
+The next exact-head run must establish which lifecycle markers appear. If host-start appears without worker-entered, investigate hosted-service registration/DI. If worker-entered and identity-passed appear followed by cancellation, identify the source of host shutdown. If the EventLog provider cannot write under LocalService, correct its source configuration without granting broad permissions.
+
+No security gate is relaxed. Production virtual-account startup, service-owned initdb process-object isolation, real PostgreSQL 18.7 initdb, secret-leakage checks, timeout/cancel/crash cleanup, data ACL/ownership, roles, migrations and initializer integration remain open. Production initializer/orchestrator stay fail-closed. No PR merge or Release authorized.
+
 ## 0.1.248 — make bootstrap lifecycle trace visible in Event Log — 2026-11-25
 
 The 0.1.247 exact-head run [45562139441](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45562139441) still observed a clean service stop (SCM exit code 0). The captured Application log did not contain the `LogInformation` lifecycle messages, while SCM showed normal Running/Stopped transitions. The Windows Event Log provider's default minimum level is likely filtering Information messages.
