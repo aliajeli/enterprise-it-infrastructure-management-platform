@@ -1,3 +1,7 @@
+## 0.1.230 process-object security descriptor binding — 2026-11-24
+
+[Run 45545064090](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45545064090) on `46c538702102496554030ef20a897b138cae109a` passed the default-security positive control and reached process creation, but the fixture incorrectly imported `GetKernelObjectSecurity` from kernel32 rather than advapi32. Corrected the binding. The strict-DACL/debug comparisons still have no result and require exact-head Windows CI. No production credential transport or deployment gate was enabled.
+
 ## 0.1.229 process-object privilege restoration correction — 2026-11-24
 
 [Run 45544629229](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45544629229) on `8ddb585d3cdf7ce9dc71f6ac1b42aee6cca771bb` identified `restore-privilege` as the default control's failure, not evidence of process isolation. The fixture passed a non-null previous-state pointer with zero buffer length to AdjustTokenPrivileges and attempted to restore even when no privilege state changed. The fixture now skips unchanged state and uses null previous-state/length pointers when restoring a changed state. Exact-head Windows CI required. This is synthetic test code only; no PostgreSQL credential transport or production gate is enabled.

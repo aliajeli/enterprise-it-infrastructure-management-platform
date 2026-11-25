@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.230 — 2026-11-24
+
+- Corrected the Windows DLL binding for process security descriptor inspection in the synthetic process-boundary diagnostic.
+
 ## 0.1.229 — 2026-11-24
 
 - Corrected privilege restoration in the synthetic Windows process-object boundary diagnostic; exact-head CI required.
