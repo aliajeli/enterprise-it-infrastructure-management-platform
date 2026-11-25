@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.253 — 2026-11-25
+
+- Added the required null guard before comparing the token's primary user SID with the expected service SID. The exact-head 0.1.252 build correctly failed under nullable warnings-as-errors; authorization semantics are unchanged.
+
 ## 0.1.252 — 2026-11-25
 
 - Added protected trace fields for the expected service SID, process token user SID, raw token-group membership and WindowsPrincipal role membership. The 0.1.251 trace proved the worker starts but stops before recording successful service-identity validation.

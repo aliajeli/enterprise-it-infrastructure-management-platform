@@ -136,7 +136,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         WriteTrace("service-sid-in-groups:" + groupMatch);
         WriteTrace("service-sid-is-in-role:" + roleMatch);
 
-        var hasSid = expected.Equals(userSid) || roleMatch;
+        var hasSid = (userSid is not null && expected.Equals(userSid)) || roleMatch;
         if (!hasSid)
             throw new UnauthorizedAccessException("Bootstrap service SID is not present in the service token.");
     }

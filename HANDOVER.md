@@ -1,3 +1,11 @@
+## 0.1.253 — null-safe primary token SID comparison — 2026-11-25
+
+The 0.1.252 exact-head run [45564318178](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45564318178) reached the bootstrap service build but failed with CS8604 because `WindowsIdentity.User` is nullable and was passed directly to `SecurityIdentifier.Equals`. Added an explicit non-null guard before comparing the primary token user SID. The fallback remains `WindowsPrincipal.IsInRole(expected)`; no authorization path was broadened.
+
+The next run is the first compile-valid run of the token membership diagnostics added in 0.1.252. The previous valid 0.1.251 run's protected trace contained only `worker-entered`, showing that execution stops inside `RequireServiceIdentity()`. The next trace should show expected SID, primary user SID, raw group membership and WindowsPrincipal role membership. Keep the exact identity check until those values explain the discrepancy.
+
+Production virtual-account acceptance, service-owned initdb process-object isolation, real PostgreSQL 18.7 initialization, secret-leakage checks, timeout/cancel/crash cleanup, data ACL/ownership, roles, migrations and initializer integration remain open. Production initializer/orchestrator stay fail-closed. No PR merge or Release authorized.
+
 ## 0.1.252 — diagnose service SID token membership — 2026-11-25
 
 The 0.1.251 hosted run [45563787390](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45563787390) successfully created the protected ProgramData trace file. Its only entry was `worker-entered`; there was no `service-identity-passed`. Therefore the worker is instantiated and ExecuteAsync begins, but the process exits during `RequireServiceIdentity()` before creating the named pipe.
