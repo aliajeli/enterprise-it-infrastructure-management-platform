@@ -1,3 +1,15 @@
+## 0.1.288 — establish main/beta/developer branch flow — 2026-11-25
+
+Introduced an explicit three-stage branch model without changing the default branch or merging experimental work into main.
+
+- `main` remains the stable release branch.
+- `beta` is initialized as a fast-forward of the current validated development head, so it contains the current project state without rewriting main.
+- `developer` is the active integration branch and starts from the latest reviewed development commit.
+- Platform validation now runs on pushes to main, beta, and developer, and on pull requests targeting those branches.
+- Existing arena and phase3 branches are preserved. No pull requests were merged and no installer, service, credential, database, firewall, or NAT behavior was enabled.
+
+The offline installer remains disabled pending handle-based PostgreSQL data-directory provisioning, transactional service/ACL rollback, secure bootstrap credential transport, and Windows Server acceptance.
+
 ## 0.1.287 — make legacy handle and pipe diagnostics assert their documented outcomes — 2026-11-25
 
 The three legacy Windows experiments were failing because they treated observations outside the supported trust boundary as product-test failures: same-account processes can obtain process-handle access when running under the same interactive identity, while PostgreSQL 18.7 re-exec changes the named-pipe client PID. These observations do not demonstrate compromise of the production bootstrap service, which is tested separately against a distinct Standard User and the service-owned initdb parent/re-exec child.
