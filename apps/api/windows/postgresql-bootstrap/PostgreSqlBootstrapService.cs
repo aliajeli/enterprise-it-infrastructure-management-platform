@@ -1,5 +1,7 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Globalization;
+using System.Security.Cryptography;
 using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -68,6 +70,28 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         WriteTrace("request-loop-exited");
     }
 
+    private static SecurityIdentifier CreateServiceSid(string serviceName)
+    {
+        var nameBytes = Encoding.Unicode.GetBytes(serviceName.ToUpperInvariant());
+        var hash = SHA1.HashData(nameBytes);
+        try
+        {
+            var parts = new string[5];
+            for (var index = 0; index < parts.Length; index++)
+            {
+                var subAuthority = BinaryPrimitives.ReadUInt32LittleEndian(hash.AsSpan(index * 4, 4));
+                parts[index] = subAuthority.ToString(CultureInfo.InvariantCulture);
+            }
+
+            return new SecurityIdentifier("S-1-5-80-" + string.Join("-", parts));
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(hash);
+            Array.Clear(nameBytes, 0, nameBytes.Length);
+        }
+    }
+
     private void WriteTrace(string marker)
     {
         if (!_diagnosticsEnabled) return;
@@ -124,9 +148,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
     private void RequireServiceIdentity()
     {
         using var identity = WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
-        var account = new NTAccount("NT SERVICE", ServiceName);
-        if (account.Translate(typeof(SecurityIdentifier)) is not SecurityIdentifier expected)
-            throw new UnauthorizedAccessException("Bootstrap service identity could not be resolved.");
+        var expected = CreateServiceSid(ServiceName);
 
         var userSid = identity.User as SecurityIdentifier;
         var groupMatch = identity.Groups?.OfType<SecurityIdentifier>().Any(expected.Equals) == true;

@@ -1,3 +1,13 @@
+## 0.1.254 — derive the service SID without NTAccount lookup — 2026-11-25
+
+The 0.1.253 exact-head run [45564636593](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45564636593) built successfully and ran the SCM fixture. The protected trace again contained only `worker-entered`; the expected SID and token membership markers were absent. Since the trace write immediately after SID resolution was never reached, the likely failing operation is `NTAccount("NT SERVICE", ServiceName).Translate(SecurityIdentifier)` in `RequireServiceIdentity()`.
+
+Replaced that lookup with deterministic service-SID derivation: uppercase the service name, encode UTF-16LE, SHA-1 hash it, read five little-endian UInt32 values, and construct `S-1-5-80-<five subauthorities>`. The temporary name bytes and hash buffer are cleared. The test prints the SCM `sc showsid` SID so exact equality can be verified from the trace. The authorization decision remains unchanged: primary token user SID equality or `WindowsPrincipal.IsInRole(expected)`; there is no fallback to raw group membership.
+
+The next exact-head run must confirm the computed SID matches SCM's value, then show whether the service SID is present/enabled in the process token. Do not weaken the authorization predicate until these values are observed.
+
+Remaining gates: production virtual-account acceptance on supported Windows Server, service-owned initdb process-object isolation, real PostgreSQL 18.7 initialization, secret-leakage, timeout/crash cleanup, data ACL/ownership, roles, migrations and initializer integration. Production initializer/orchestrator remain fail-closed. No PR merge or Release authorized.
+
 ## 0.1.253 — null-safe primary token SID comparison — 2026-11-25
 
 The 0.1.252 exact-head run [45564318178](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45564318178) reached the bootstrap service build but failed with CS8604 because `WindowsIdentity.User` is nullable and was passed directly to `SecurityIdentifier.Equals`. Added an explicit non-null guard before comparing the primary token user SID. The fallback remains `WindowsPrincipal.IsInRole(expected)`; no authorization path was broadened.

@@ -50,6 +50,7 @@ try {
   $sidMatch = [regex]::Match($sidOutput,"S-1-5-80-(?:\d+-){4}\d+")
   if (-not $sidMatch.Success) { throw "SCM did not return a valid service SID for diagnostic ACL." }
   $serviceSid = $sidMatch.Value
+  Write-Host ("SCM service SID: " + $serviceSid)
   & icacls.exe $diagnosticRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" "*S-1-5-19:(OI)(CI)(M)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap diagnostic directory." }
   & sc.exe start $serviceName | Out-Null

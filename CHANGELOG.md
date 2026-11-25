@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.254 — 2026-11-25
+
+- Replaced runtime `NTAccount.Translate("NT SERVICE\\<name>")` with the documented service-SID derivation: SHA-1 over the uppercase UTF-16LE service name, interpreted as five little-endian 32-bit subauthorities under `S-1-5-80`. The hosted trace showed the worker stopped before any token membership diagnostics, localizing the failure to the previous SID-resolution step.
+- The CI fixture now prints SCM's `sc showsid` result so the computed SID can be compared directly. Authorization still requires the primary token user SID match or WindowsPrincipal membership; no membership bypass was added.
+
 ## 0.1.253 — 2026-11-25
 
 - Added the required null guard before comparing the token's primary user SID with the expected service SID. The exact-head 0.1.252 build correctly failed under nullable warnings-as-errors; authorization semantics are unchanged.
