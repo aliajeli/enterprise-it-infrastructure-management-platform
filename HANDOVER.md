@@ -1,3 +1,11 @@
+## 0.1.263 — normalize PowerShell regex and path literals — 2026-11-25
+
+The 0.1.261/0.1.262 integration fixture was reviewed before its first exact-head run. PowerShell treats backslash literally in quoted strings, unlike C# or JavaScript. The previous patch left doubled backslashes in the SHA-256 word-boundary regex, initdb PID regex, and staged PostgreSQL paths. Normalized those to single regex escapes and path separators. Also confirmed the outer and embedded Standard User process probes use `$targetPid`, not the read-only automatic `$PID` variable.
+
+No CI result is claimed yet for service-owned initdb isolation. The 0.1.260 SCM/pipe ACL acceptance remains the latest passing result. The 0.1.263 run must now prove archive checksum validation, real PostgreSQL 18.7 initdb launch under the service identity, Standard User denial of PROCESS_DUP_HANDLE on both parent and restricted re-exec child, SCRAM cluster creation, plaintext-marker absence, and cleanup.
+
+Production initializer/orchestrator remain fail-closed. Actual dedicated virtual-account acceptance on supported Windows Server, PostgreSQL service configuration/start, roles/grants, migrations, DPAPI runtime credentials, backup/restore, upgrade/rollback and signed installer/release remain open. No PR merge or Release authorized.
+
 ## 0.1.262 — correct PowerShell process-probe fixture syntax — 2026-11-25
 
 The 0.1.261 commit adds a hosted SCM test for real PostgreSQL 18.7 initdb running under the service identity, with a separate Standard User attempting `PROCESS_DUP_HANDLE` on the parent and restricted re-exec child during a test-only stdin hold. Before relying on its CI result, corrected several PowerShell fixture details found by static inspection: .NET regex patterns now contain a single regex escape for word boundaries and decimal PID matching; staged payload paths use normalized separators; and both the outer script and embedded Standard User script use `$targetPid` rather than PowerShell's read-only automatic `$PID` variable.

@@ -42,7 +42,7 @@ try {
   $pgUrl = "https://get.enterprisedb.com/postgresql/postgresql-18.7-1-windows-x64-binaries.zip"
   Invoke-WebRequest -Uri $pgUrl -OutFile $pgArchive -UseBasicParsing
   Invoke-WebRequest -Uri ($pgUrl + ".sha256") -OutFile $pgChecksum -UseBasicParsing
-  $pgExpected = [regex]::Match((Get-Content -LiteralPath $pgChecksum -Raw),"(?i)\\b[a-f0-9]{64}\\b").Value
+  $pgExpected = [regex]::Match((Get-Content -LiteralPath $pgChecksum -Raw),"(?i)\b[a-f0-9]{64}\b").Value
   if ($pgExpected.Length -ne 64 -or (Get-FileHash -LiteralPath $pgArchive -Algorithm SHA256).Hash -ine $pgExpected) { throw "PostgreSQL 18.7 fixture archive checksum mismatch." }
   Expand-Archive -LiteralPath $pgArchive -DestinationPath $pgExtract
   $pgInitDbFiles = @(Get-ChildItem -LiteralPath $pgExtract -Filter "initdb.exe" -File -Recurse)
@@ -51,10 +51,10 @@ try {
   if ((Split-Path -Leaf $pgBinRoot) -ne "bin") { throw "PostgreSQL fixture initdb is not beneath a bin directory." }
   $pgRoot = Split-Path -Parent $pgBinRoot
   if ((Split-Path -Leaf $pgRoot) -ne "pgsql") { throw "Unexpected PostgreSQL fixture payload layout." }
-  $pgDestination = Join-Path $root "postgresql\\pgsql"
+  $pgDestination = Join-Path $root "postgresql\pgsql"
   New-Item -ItemType Directory -Path $pgDestination -Force | Out-Null
   Copy-Item -Path (Join-Path $pgRoot "*") -Destination $pgDestination -Recurse -Force
-  if (-not (Test-Path -LiteralPath (Join-Path $pgDestination "bin\\initdb.exe") -PathType Leaf)) { throw "Staged PostgreSQL initdb payload is incomplete." }
+  if (-not (Test-Path -LiteralPath (Join-Path $pgDestination "bin\initdb.exe") -PathType Leaf)) { throw "Staged PostgreSQL initdb payload is incomplete." }
 
   New-LocalUser -Name $userName -Password $secure -AccountExpires ([DateTime]::Now.AddHours(1)) -Description "Disposable bootstrap pipe ACL fixture" | Out-Null
   $createdUser = $true
@@ -213,7 +213,7 @@ exit 42
   do {
     if (Test-Path -LiteralPath $diagnosticFile) {
       $traceText = Get-Content -LiteralPath $diagnosticFile -Raw
-      $pidMatch = [regex]::Match($traceText,"(?m)^initdb-process-started:(\\d+)$")
+      $pidMatch = [regex]::Match($traceText,"(?m)^initdb-process-started:(\d+)$")
       if ($pidMatch.Success) { $initdbPid = [int]$pidMatch.Groups[1].Value; break }
     }
     Start-Sleep -Milliseconds 100

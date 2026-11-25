@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.263 — 2026-11-25
+
+- Normalized doubled literal backslashes in the PowerShell SCM fixture. PowerShell does not use backslash as a string escape, so the checksum/PID regexes must contain one regex escape and the staged PostgreSQL paths must contain one path separator.
+- Static inspection now confirms there are no assignments to the read-only automatic `$PID` variable and no doubled path/regex escapes in the new integration fixture.
+- No production code changed.
+
 ## 0.1.262 — 2026-11-25
 
 - Corrected the new service-owned initdb acceptance fixture's PowerShell syntax: use single regex escapes for SHA-256 and PID parsing, normalized the staged PostgreSQL path separators, and avoid assigning to PowerShell's read-only automatic `$PID` variable in both parent/child process probes.
