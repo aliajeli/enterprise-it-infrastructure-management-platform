@@ -216,7 +216,7 @@ exit 42
 
   $testStage = "wait-initdb-process-marker"
   $initdbPid = 0
-  $traceDeadline = [DateTime]::UtcNow.AddSeconds(10)
+  $traceDeadline = [DateTime]::UtcNow.AddSeconds(35)
   do {
     if (Test-Path -LiteralPath $diagnosticFile) {
       $traceText = Get-Content -LiteralPath $diagnosticFile -Raw
@@ -229,7 +229,7 @@ exit 42
 
   $testStage = "wait-initdb-reexec-child"
   $reexecPid = 0
-  $reexecDeadline = [DateTime]::UtcNow.AddSeconds(8)
+  $reexecDeadline = [DateTime]::UtcNow.AddSeconds(20)
   do {
     $reexecChildren = @(Get-CimInstance -ClassName Win32_Process -Filter ("ParentProcessId = " + $initdbPid) -ErrorAction Stop | Where-Object { $_.Name -ieq "initdb.exe" })
     if ($reexecChildren.Count -gt 1) { throw "Ambiguous PostgreSQL initdb re-exec child." }
@@ -276,7 +276,7 @@ if($denied -eq 2){exit 0};exit 43
   $handleProbeStart.LoadUserProfile = $false
   $child = [Diagnostics.Process]::Start($handleProbeStart)
   if ($null -eq $child) { throw "Standard User initdb process-access probe could not be created." }
-  if (-not $child.WaitForExit(10000)) { $child.Kill($true); throw "Standard User initdb process-access probe timed out." }
+  if (-not $child.WaitForExit(15000)) { $child.Kill($true); throw "Standard User initdb process-access probe timed out." }
   if ($child.ExitCode -ne 0) {
     if ($child.ExitCode -eq 41) { throw "Standard User obtained PROCESS_DUP_HANDLE on a service-owned initdb process." }
     throw "Standard User PROCESS_DUP_HANDLE denial was not established for both initdb processes."

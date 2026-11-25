@@ -323,7 +323,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             if (_diagnosticsEnabled && File.Exists(smokePauseMarker))
             {
                 WriteTrace("initdb-smoke-hold-entered");
-                await Task.Delay(TimeSpan.FromSeconds(15), cancellationToken);
+                await Task.Delay(TimeSpan.FromSeconds(45), cancellationToken);
                 WriteTrace("initdb-smoke-hold-released");
             }
 

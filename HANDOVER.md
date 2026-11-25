@@ -1,3 +1,13 @@
+## 0.1.266 — SCM initdb observation window — 2026-11-25
+
+The 0.1.265 exact-head trace proves the service reached PostgreSQL 18.7 version validation, prepared the data directory, started initdb (PID recorded only as a non-secret diagnostic), and entered the disposable pre-stdin hold. The SCM test nevertheless timed out waiting for the PID marker, indicating its 10-second observation deadline was too short relative to hosted-runner scheduling. Increased the marker/re-exec observation windows and extended the test-only hold to 45 seconds.
+
+The same run exposed a separate and serious blocker: a Standard User probe was able to obtain PROCESS_DUP_HANDLE on the synthetic child and on the real PostgreSQL re-exec child. This remains unresolved and means the current process-handle boundary is not acceptable. Do not enable credential transfer in production, do not activate the initializer, and do not claim that LocalService + Service SID protects initdb handles. The next design task is to create initdb with a process-object security descriptor that denies PROCESS_DUP_HANDLE to untrusted users from process creation time (not by a post-start ACL race), and to prove it on both parent and re-exec child.
+
+The old named-pipe PID-mismatch experiment is not a valid authorization model for the current service because the production service authorizes by impersonated Windows token, not by client PID; keep it informational or replace it with token-authorization tests rather than relaxing the service to PID-based authorization.
+
+Exact-head CI must additionally pass package/lockfile consistency, real initdb execution, Standard User process-handle denial, SCRAM verification, plaintext-marker scan and cleanup. Production virtual-account acceptance on supported Windows Server remains separate from hosted LocalService CI. No PR merge or Release authorized.
+
 ## 0.1.265 — bootstrap SCM failure-stage diagnostics — 2026-11-25
 
 The 0.1.264 exact-head Windows run passed the SCM startup, administrator preflight, malformed-frame response, and Standard User named-pipe denial portions of the dedicated bootstrap fixture. It then failed at the bounded wait for the service's non-secret initdb PID marker. The failure occurred after the client sent the synthetic credential frame; it does not prove successful initdb launch or credential consumption.
