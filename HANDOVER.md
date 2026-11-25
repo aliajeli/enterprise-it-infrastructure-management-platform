@@ -1,3 +1,9 @@
+## 0.1.286 — fail closed on pre-existing bootstrap service — 2026-11-25
+
+Source review found that the PostgreSQL bootstrap provisioner treated an existing service with a matching executable path and service account as reusable. That is insufficient ownership evidence: an operator-created or tampered service could be adopted and have its service-SID and filesystem ACLs changed. Provisioning now rejects any pre-existing service before those mutations, with a policy regression assertion in the Windows safety suite.
+
+This is a fail-closed policy correction only. It does not activate bootstrap, database initialization, migrations, credential persistence, service orchestration, or the offline installer. Exact-head Windows CI is required. Supported Windows Server Virtual Service Account acceptance remains outstanding.
+
 ## 0.1.285 — Rebuild SYSTEM Vault fixture runner after malformed source splice — 2026-11-25
 
 The 0.1.284 exact-head Windows run showed the SYSTEM fixture script contained a truncated path-validation block and duplicated fragments from earlier versions, producing multiple PowerShell parser errors before the SYSTEM test ran. The elevated Administrator Vault provision, verify, and idempotent retry had passed before this parser failure.

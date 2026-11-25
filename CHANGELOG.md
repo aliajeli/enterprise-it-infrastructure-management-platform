@@ -1,3 +1,13 @@
+## 0.1.286 — refuse adoption of pre-existing PostgreSQL bootstrap services — 2026-11-25
+
+The PostgreSQL bootstrap service provisioner previously accepted an existing service when its executable path and account matched the requested values, then continued changing service-SID and filesystem ACLs. Matching metadata does not establish ownership or prove that the service and its protected paths are safe to adopt.
+
+- Changed provisioning to reject every pre-existing `EnterpriseITPostgreSQLBootstrap` service before any service or filesystem mutation.
+- Added a Windows policy regression assertion that prevents reintroducing metadata-based adoption.
+- No service, ACL, database, credential, installer, firewall, or NAT state was changed by this source-only update. Bootstrap and offline installation remain gated pending Windows Server acceptance and ownership verification.
+
+Exact-head Windows CI must validate the policy regression and all existing bootstrap safety tests. This does not authorize production service activation or credential persistence.
+
 ## 0.1.285 — Rebuild SYSTEM Vault fixture runner after malformed source splice — 2026-11-25
 
 The 0.1.284 exact-head Windows run exposed that the SYSTEM fixture script was not merely missing a delimiter: its opening path-validation block had been truncated and fragments from multiple prior versions were spliced into the file. PowerShell therefore parsed an invalid script before the SYSTEM task could run.

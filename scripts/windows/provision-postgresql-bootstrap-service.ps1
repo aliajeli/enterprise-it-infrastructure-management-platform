@@ -25,7 +25,7 @@ if($null -eq $existing){
  & sc.exe create $serviceName "binPath=" $bin "obj=" $serviceAccount "start=" "demand" "DisplayName=" "Enterprise IT PostgreSQL Bootstrap"
  if($LASTEXITCODE -ne 0){throw "Bootstrap service registration failed."}
 }else{
- if($existing.PathName -ine ('"'+$exe+'"') -or $existing.StartName -ine $serviceAccount){throw "Existing bootstrap service path or identity differs; refusing replacement."}
+ throw "Existing bootstrap service detected; refusing to adopt or modify it."
 }
 & sc.exe sidtype $serviceName unrestricted|Out-Null
 if($LASTEXITCODE -ne 0){throw "Bootstrap service SID configuration failed."}

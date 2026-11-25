@@ -71,3 +71,13 @@ try{Invoke-WindowsServiceOrchestration -Plan ([pscustomobject]@{}) -ApiDatabaseU
 }
 if(-not $blocked){throw "Orchestration without bootstrap must not adopt an unknown cluster."}
 Write-Host "PostgreSQL bootstrap safety gates passed."
+
+# A matching image path and service identity are not proof of ownership. The
+# provisioner must refuse every pre-existing service before touching its ACLs.
+$provisionerSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot "provision-postgresql-bootstrap-service.ps1") -Raw
+if ($provisionerSource -notmatch '(?m)^\s*throw "Existing bootstrap service detected; refusing to adopt or modify it\."\s*$') {
+ throw "Bootstrap provisioner must fail closed for every pre-existing service."
+}
+if ($provisionerSource -match '\$existing\.PathName|\$existing\.StartName') {
+ throw "Bootstrap provisioner must not treat matching service metadata as ownership proof."
+}
