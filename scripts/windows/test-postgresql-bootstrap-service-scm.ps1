@@ -16,7 +16,7 @@ $diagnosticFile = Join-Path $diagnosticRoot "bootstrap-smoke.log"
 if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw "Refusing to adopt an existing service." }
 $build = [IO.Path]::GetFullPath($BuildOutput)
 if (-not (Test-Path -LiteralPath (Join-Path $build "EnterpriseIT.PostgreSQLBootstrap.exe") -PathType Leaf)) { throw "Build output missing." }
-$version = "0.0." + [guid]::NewGuid().ToString("N").Substring(0,9)
+$version = "0.0." + [Security.Cryptography.RandomNumberGenerator]::GetInt32(100000000,999999999).ToString([Globalization.CultureInfo]::InvariantCulture)
 $root = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)) "EnterpriseIT\$version"
 $userName = "eip" + [guid]::NewGuid().ToString("N").Substring(0,12)
 $random = [byte[]]::new(36)

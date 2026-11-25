@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.264 — 2026-11-25
+
+- Corrected the temporary Program Files payload version used by the real-initdb SCM fixture. The service deliberately accepts only numeric semantic-version directory names; the earlier GUID-derived suffix contained hexadecimal letters and would have been rejected by the service's fixed-path preflight.
+- The fixture now generates a nine-digit numeric patch component with `RandomNumberGenerator.GetInt32`.
+- No production service behavior changed.
+
 ## 0.1.263 — 2026-11-25
 
 - Normalized doubled literal backslashes in the PowerShell SCM fixture. PowerShell does not use backslash as a string escape, so the checksum/PID regexes must contain one regex escape and the staged PostgreSQL paths must contain one path separator.
