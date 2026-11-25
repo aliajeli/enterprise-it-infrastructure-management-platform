@@ -230,8 +230,8 @@ exit 42
   } while ([DateTime]::UtcNow -lt $reexecDeadline)
   if ($reexecPid -le 0) { throw "PostgreSQL restricted initdb re-exec child was not observed during the smoke hold." }
 
-  foreach ($pid in @($initdbPid,$reexecPid)) {
-    $processInfo = @(Get-CimInstance -ClassName Win32_Process -Filter ("ProcessId = " + $pid) -ErrorAction Stop)
+  foreach ($targetPid in @($initdbPid,$reexecPid)) {
+    $processInfo = @(Get-CimInstance -ClassName Win32_Process -Filter ("ProcessId = " + $targetPid) -ErrorAction Stop)
     if ($processInfo.Count -ne 1 -or [string]$processInfo[0].CommandLine -match [regex]::Escape($bootstrapMarker)) { throw "Synthetic credential appeared in an initdb command line." }
   }
 
@@ -245,8 +245,8 @@ public static class EnterpriseItServiceInitDbAccessProbe {
 }
 "@
 $denied=0
-foreach($pid in @(__INITDB_PARENT_PID__,__INITDB_REEXEC_PID__)){
- $h=[EnterpriseItServiceInitDbAccessProbe]::OpenProcess(0x40,$false,$pid)
+foreach($targetPid in @(__INITDB_PARENT_PID__,__INITDB_REEXEC_PID__)){
+ $h=[EnterpriseItServiceInitDbAccessProbe]::OpenProcess(0x40,$false,$targetPid)
  if($h -ne [IntPtr]::Zero){$null=[EnterpriseItServiceInitDbAccessProbe]::CloseHandle($h);exit 41}
  if([Runtime.InteropServices.Marshal]::GetLastWin32Error() -eq 5){$denied++}else{exit 42}
 }

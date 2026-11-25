@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.262 — 2026-11-25
+
+- Corrected the new service-owned initdb acceptance fixture's PowerShell syntax: use single regex escapes for SHA-256 and PID parsing, normalized the staged PostgreSQL path separators, and avoid assigning to PowerShell's read-only automatic `$PID` variable in both parent/child process probes.
+- This is a test-fixture correction; no production service behavior changed.
+
 ## 0.1.261 — 2026-11-25
 
 - Extended the Windows SCM acceptance fixture to stage checksum-verified PostgreSQL 18.7 binaries beneath the versioned Program Files service root and invoke the real production bootstrap client using a synthetic SecureString credential.

@@ -1,3 +1,11 @@
+## 0.1.262 — correct PowerShell process-probe fixture syntax — 2026-11-25
+
+The 0.1.261 commit adds a hosted SCM test for real PostgreSQL 18.7 initdb running under the service identity, with a separate Standard User attempting `PROCESS_DUP_HANDLE` on the parent and restricted re-exec child during a test-only stdin hold. Before relying on its CI result, corrected several PowerShell fixture details found by static inspection: .NET regex patterns now contain a single regex escape for word boundaries and decimal PID matching; staged payload paths use normalized separators; and both the outer script and embedded Standard User script use `$targetPid` rather than PowerShell's read-only automatic `$PID` variable.
+
+No security result is claimed for the new initdb integration until exact-head Windows CI passes. The 0.1.260 SCM/pipe ACL result remains the last passing service acceptance. The 0.1.261/0.1.262 service-owned initdb process-isolation and plaintext-marker checks remain pending. The smoke-only pause is activated only by a protected marker in the disposable ProgramData fixture; production behavior remains unchanged when absent.
+
+Production initializer/orchestrator remain fail-closed. Actual virtual-account Windows Server acceptance, database roles/grants, PostgreSQL service configuration/start, migrations, DPAPI runtime credential provisioning, backup/restore, upgrade/rollback and signed installer/release remain open. No PR merge or Release authorized.
+
 ## 0.1.261 — real service-owned PostgreSQL 18.7 initdb and Standard User handle isolation — 2026-11-25
 
 The 0.1.260 exact-head run [45570713167](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45570713167) passed the dedicated bootstrap service SCM step, including service startup, Administrator preflight, malformed-frame rejection, and Standard User denial at the installer-facing named pipe. PostgreSQL staging and initializer guard tests also passed. This closes the SCM/pipe ACL gate on the hosted runner, but not the initdb process-object boundary.
