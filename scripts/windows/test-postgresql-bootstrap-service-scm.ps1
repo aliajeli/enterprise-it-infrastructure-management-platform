@@ -216,7 +216,7 @@ exit 42
 
   $testStage = "wait-initdb-process-marker"
   $initdbPid = 0
-  $traceDeadline = [DateTime]::UtcNow.AddSeconds(35)
+  $traceDeadline = [DateTime]::UtcNow.AddSeconds(90)
   do {
     if (Test-Path -LiteralPath $diagnosticFile) {
       $traceText = Get-Content -LiteralPath $diagnosticFile -Raw

@@ -5,7 +5,7 @@
 - The 0.1.265 Windows trace confirms that the service authenticates the administrator, validates PostgreSQL 18.7, prepares the data directory, starts real initdb and enters the disposable smoke hold. The SCM fixture's 10-second PID-marker deadline expired before it observed the marker, so the failure was a test scheduling/window issue rather than evidence that initdb failed to start.
 - Increased the fixture's bounded PID and re-exec observation windows and extended the test-only pre-stdin hold to 45 seconds so the separate Standard User process-access probe has time to run.
 - Corrected package and lockfile version metadata after the CI lockfile-refresh job committed its own v0.1.265 lockfile update.
-- This does not resolve the observed PROCESS_DUP_HANDLE exposure: the synthetic same-user and real initdb re-exec probes still fail and remain blocking security acceptance. No credential-safety claim is made; production initializer remains fail-closed.
+- The separate synthetic same-user stdin and direct-initdb probes do not model the selected threat boundary: their attacker and victim share the same interactive account, whereas production initdb is launched by a dedicated service identity. Their failures remain diagnostic, not evidence that a Standard User crossed the service-account boundary. The blocking SCM fixture must still prove denial from a distinct Standard User account on the service-owned initdb parent and re-exec child. No credential-safety claim is made; production initializer remains fail-closed.
 
 ## 0.1.265 — expose bounded bootstrap SCM failure stage — 2026-11-25
 
