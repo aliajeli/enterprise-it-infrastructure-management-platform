@@ -22,9 +22,9 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("PostgreSQL bootstrap worker entered ExecuteAsync.");
+        _logger.LogWarning("Bootstrap lifecycle trace: worker entered ExecuteAsync.");
         RequireServiceIdentity();
-        _logger.LogInformation("PostgreSQL bootstrap service identity check passed.");
+        _logger.LogWarning("Bootstrap lifecycle trace: service identity check passed.");
         while (!stoppingToken.IsCancellationRequested)
         {
             await using var pipe = CreateServerPipe();
@@ -52,7 +52,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("PostgreSQL bootstrap worker observed host shutdown cancellation.");
+                _logger.LogWarning("Bootstrap lifecycle trace: host shutdown cancellation observed.");
                 break;
             }
             catch (Exception)
@@ -64,7 +64,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
                 catch { /* client may already have disconnected */ }
             }
         }
-        _logger.LogInformation("PostgreSQL bootstrap worker exited its request loop.");
+        _logger.LogWarning("Bootstrap lifecycle trace: request loop exited.");
     }
 
     private static NamedPipeServerStream CreateServerPipe()

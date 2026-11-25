@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.248 — 2026-11-25
+
+- Raised fixed bootstrap lifecycle trace events to Warning so the Windows Event Log provider's default threshold does not filter them. The 0.1.247 run still showed only normal SCM state transitions and no worker lifecycle messages.
+- No credentials, request bytes, process output or exception text are logged. Exact-head CI will establish whether ExecuteAsync is entered and whether the host cancels it.
+
 ## 0.1.247 — 2026-11-25
 
 - Added fixed, non-secret lifecycle events for bootstrap worker entry, service-SID validation, host-shutdown cancellation and request-loop exit. The 0.1.246 SCM fixture observed a clean service stop (exit code 0) without a .NET crash event, so the next run must establish whether the host is cancelling the BackgroundService or it exits normally.

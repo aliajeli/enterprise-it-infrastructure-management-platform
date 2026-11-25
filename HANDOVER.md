@@ -1,3 +1,11 @@
+## 0.1.248 — make bootstrap lifecycle trace visible in Event Log — 2026-11-25
+
+The 0.1.247 exact-head run [45562139441](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45562139441) still observed a clean service stop (SCM exit code 0). The captured Application log did not contain the `LogInformation` lifecycle messages, while SCM showed normal Running/Stopped transitions. The Windows Event Log provider's default minimum level is likely filtering Information messages.
+
+Raised the four fixed lifecycle trace messages to Warning so they should pass the provider's default threshold: worker entered ExecuteAsync, service identity check passed, host shutdown cancellation observed, and request loop exited. These messages contain no secrets or client data. The next run should reveal whether the BackgroundService is entered and whether its stopping token is cancelled. If no messages appear again, verify EventLog provider registration and service execution separately.
+
+The service remains unaccepted. Do not relax the service SID authorization or named-pipe DACL. Production virtual-account startup, service-owned initdb process-object isolation, real PostgreSQL 18.7 initdb, secret-leakage checks, timeout/cancel/crash cleanup, data ACL/ownership, roles, migrations and initializer integration remain open. Production initializer/orchestrator stay fail-closed. No PR merge or Release authorized.
+
 ## 0.1.247 — trace clean bootstrap service shutdown — 2026-11-25
 
 The 0.1.246 exact-head run [45561529201](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45561529201) still observed the service stop before the SCM fixture could connect to the named pipe. This time SCM reported `WIN32_EXIT_CODE=0`, and the captured Application/System events contained no .NET Runtime crash (1026) or unexpected termination (7034); the only service events were normal Running/Stopped transitions. The test's early-stop diagnostics were therefore useful but did not reveal who requested shutdown.
