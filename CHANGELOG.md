@@ -1,3 +1,9 @@
+## 0.1.277 — validate refreshed lockfile root version — 2026-11-25
+
+- CI for 0.1.276 caught that the lockfile header was 0.1.276 while `packages[""].version` remained 0.1.275. The repository's lockfile-refresh job subsequently regenerated the lockfile and committed the corrected 0.1.276 root metadata.
+- Advanced the root package and both lockfile root version fields together to 0.1.277. No workspace versions, third-party dependencies, or application code changed.
+- A fresh exact-head validation run is required; the earlier 0.1.276 platform-validation result remains failed and is not treated as passing.
+
 ## 0.1.276 — document hosted bootstrap acceptance result — 2026-11-25
 
 - Recorded successful exact-head CI run [45591200695](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45591200695): the service-owned PostgreSQL 18.7 initdb SCM fixture passed distinct Standard User pipe and process-handle denial, SCRAM/PG_VERSION verification, plaintext-marker scan and cleanup; PostgreSQL staging/provisioning guards and the broader platform validation also passed.

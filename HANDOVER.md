@@ -1,3 +1,9 @@
+## 0.1.277 — lockfile root-version parity and revalidation — 2026-11-25
+
+The 0.1.276 run [45595648717](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45595648717) caught a mismatch between `package.json` (0.1.276) and `package-lock.json` `packages[""].version` (0.1.275). The lockfile refresh workflow regenerated the lockfile and committed the corrected 0.1.276 root metadata as `67229c7b65a5e1bcb19b16126fe2bff9cb0b6d5f`. This follow-up advances the package manifest and both lockfile root version fields to 0.1.277. No application source or dependency versions changed.
+
+The 0.1.276 platform-validation job failed on the stale lockfile state and is not considered a passing run. Exact-head CI for 0.1.277 must revalidate lockfile parity and all platform gates. The 0.1.275 hosted bootstrap SCM acceptance remains the latest passing security integration result; production initializer remains fail-closed pending supported Windows Server virtual-account acceptance.
+
 ## 0.1.276 — record completed hosted bootstrap acceptance — 2026-11-25
 
 Run [45591200695](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45591200695) completed successfully for commit `5ae87695ef716fd5dafed0b231112e50f2ebe95c`.
