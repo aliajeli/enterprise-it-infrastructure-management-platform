@@ -8,7 +8,7 @@ try {
   if (-not ([Security.Principal.WindowsPrincipal]::new($id)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw "Elevated runner required." }
 } finally { $id.Dispose() }
 $serviceName = "EnterpriseITPostgreSQLBootstrap"
-$serviceAccount = "NT SERVICE\$serviceName"
+$serviceAccount = "NT AUTHORITY\LocalService"
 $pipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v1"
 if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw "Refusing to adopt an existing service." }
 $build = [IO.Path]::GetFullPath($BuildOutput)
@@ -36,6 +36,8 @@ try {
   $createdService = $true
   & sc.exe sidtype $serviceName unrestricted | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Service SID configuration failed." }
+  $serviceConfig = (& sc.exe qc $serviceName 2>&1 | Out-String)
+  if ($LASTEXITCODE -ne 0 -or $serviceConfig -notlike "*NT AUTHORITY\LocalService*") { throw "Hosted SCM fixture is not running as LocalService." }
   $sid = (& sc.exe qsidtype $serviceName 2>&1 | Out-String)
   if ($LASTEXITCODE -ne 0 -or $sid -notmatch "UNRESTRICTED") { throw "Service SID is not unrestricted." }
   & sc.exe start $serviceName | Out-Null
@@ -44,6 +46,7 @@ try {
   do { Start-Sleep -Milliseconds 250; $state = (Get-Service $serviceName).Status } while ($state -ne "Running" -and [DateTime]::UtcNow -lt $until)
   if ($state -ne "Running") { throw "Service did not remain running under its virtual account." }
 
+  # Hosted runners reject custom NT SERVICE logon accounts (SCM 1057). LocalService plus the unrestricted per-service SID exercises the same service-SID authorization and pipe ACL; production virtual-account assignment remains a Windows Server acceptance gate.
   # Authorized administrator positive control; deliberately malformed frame, no secret.
   $adminPipe = [IO.Pipes.NamedPipeClientStream]::new(".",$pipeName,[IO.Pipes.PipeDirection]::InOut)
   try {

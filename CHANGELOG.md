@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.243 — 2026-11-25
+
+- Corrected the hosted-Windows SCM fixture to use LocalService plus the unrestricted service SID. The existing API SCM smoke documents that hosted runners reject custom `NT SERVICE\...` logon-account assignment with SCM error 1057; the bootstrap service still requires and verifies its own enabled service SID, which is the SID used by its pipe DACL.
+- The fixture now verifies SCM reports LocalService and the service SID is unrestricted. This does not validate production virtual-account logon; that remains an explicit supported-Windows-Server acceptance gate.
+
 ## 0.1.242 — 2026-11-25
 
 - Added hosted-Windows SCM integration for the dedicated PostgreSQL bootstrap service: virtual-account registration, unrestricted service SID, startup verification, authorized-admin pipe positive control and same-session Standard User pipe denial. Only a malformed frame is sent; no credential or initdb is used.
