@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.257 — 2026-11-25
+
+- Fixed the SCM integration test's administrator positive-control read. `NamedPipeClientStream.ReadTimeout` is not supported on this Windows stream implementation; the test now awaits `ReadAsync` with a bounded .NET `Task.WaitAsync(TimeSpan)`.
+- The 0.1.256 exact-head run successfully built the service, passed service-host lifecycle checks, kept the dedicated bootstrap service running under SCM, and connected to its named pipe. It failed only when the test attempted to set the unsupported timeout property; Standard User pipe-denial assertion was not reached.
+- No production credential transport behavior changed.
+
 ## 0.1.256 — 2026-11-25
 
 - Fixed bootstrap service identity validation. Exact-head Windows SCM trace proved the expected per-service SID was present in `WindowsIdentity.Groups` (`service-sid-in-groups:True`), but the subsequent `WindowsPrincipal.IsInRole(SecurityIdentifier)` call threw and terminated the host. The redundant second token-membership query is removed; validation now accepts the expected service SID found in the service token's group SID collection (or as the token user SID).

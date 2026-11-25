@@ -103,10 +103,11 @@ try {
     } else { Write-Host "No bootstrap trace file was created." }
       throw "Bootstrap named pipe did not become available; inspect bounded SCM/event diagnostics above."
     }
-    $adminPipe.ReadTimeout = 5000
     $adminPipe.Write([byte[]](0,0,0,0),0,4); $adminPipe.Flush()
     $response = [byte[]]::new(1)
-    if ($adminPipe.Read($response,0,1) -ne 1 -or $response[0] -ne 1) { throw "Admin pipe positive control failed." }
+    $readTask = $adminPipe.ReadAsync($response,0,1)
+    $readCount = $readTask.WaitAsync([TimeSpan]::FromSeconds(5)).GetAwaiter().GetResult()
+    if ($readCount -ne 1 -or $response[0] -ne 1) { throw "Admin pipe positive control failed." }
   } finally { $adminPipe.Dispose() }
 
   $probe = @'

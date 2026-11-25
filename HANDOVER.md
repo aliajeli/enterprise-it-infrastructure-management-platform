@@ -1,3 +1,13 @@
+## 0.1.257 — fix named-pipe integration test timeout API — 2026-11-25
+
+The 0.1.256 exact-head run [45568985258](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45568985258) compiled the bootstrap service, passed the API/Web/Worker/Edge Windows service-host lifecycle checks, and reached the PostgreSQL bootstrap SCM fixture. The service stayed running, and the elevated administrator positive-control successfully connected to the named pipe. The fixture then failed at `$adminPipe.ReadTimeout = 5000` with PowerShell/.NET: `Timeouts are not supported on this stream.` This is a test harness API misuse, not a service or pipe ACL failure. The Standard User denial probe had not yet run.
+
+Replaced the unsupported `ReadTimeout` property with a bounded asynchronous read: `ReadAsync(...).WaitAsync(TimeSpan.FromSeconds(5))`. Checked the production `invoke-postgresql-bootstrap.ps1` client and confirmed it does not set this unsupported property. The next exact-head run must pass the malformed-frame admin positive control, then prove a separate non-admin local user cannot connect, while the service remains Running and cleanup removes the service/account/files.
+
+The service identity check now accepts the service SID present in the token groups after SCM configures `SERVICE_SID_TYPE_UNRESTRICTED`; the previous redundant `WindowsPrincipal.IsInRole(SecurityIdentifier)` call was the observed exception point even though the service SID was present. This exact membership path still needs the SCM/pipe tests to pass. Legacy same-user process-handle probes remain non-blocking diagnostics because they execute initdb under the interactive runner identity, not the dedicated non-interactive service account; they do not establish production Scenario 1 isolation.
+
+No real PostgreSQL initdb request or credential was sent through the service. Production initializer/orchestrator remain fail-closed. Service-owned initdb process-object isolation against a separate Standard User, secret-leakage checks, cancellation/crash cleanup, ProgramData data ACL/ownership, PostgreSQL roles/grants, migrations, installer integration, and supported Windows Server virtual-account acceptance remain open. No PR merge or Release authorized.
+
 ## 0.1.256 — remove failing redundant service-token role query — 2026-11-25
 
 The latest exact-head Windows CI run [45565672157](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45565672157) produced decisive trace evidence in the bootstrap SCM fixture:
