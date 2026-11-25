@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.239 — 2026-11-25
+
+- Restored the supported System.IO.Pipes.AccessControl 5.0.0 package for PipeSecurity/NamedPipeServerStreamAcl APIs (the package does not publish a 10.0.0 release). Improved the self-contained publisher's failure diagnostics so the exact dotnet publish output is preserved for the failed host.
+- This is a build correction only; service startup and real credential transport still require dedicated CI acceptance.
+
 ## 0.1.238 — 2026-11-25
 
 - Removed the unavailable System.IO.Pipes.AccessControl 10.0.0 package reference; the Windows target uses the framework-provided API surface. Corrected service-host staging rollback to use .NET Array.Reverse rather than an unsupported Select-Object parameter.

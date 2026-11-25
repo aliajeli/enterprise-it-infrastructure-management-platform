@@ -1921,3 +1921,10 @@ An earlier application-repository inspection reported an empty clone before the 
 - Run [45558186216](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45558186216) on candidate 0.1.234 found that NuGet does not publish `System.IO.Pipes.AccessControl` 10.0.0; removed the unnecessary package reference so the Windows target resolves the framework API.
 - The self-contained seven-host publish job exposed an existing rollback bug: `Select-Object -Reverse` is not a supported parameter. Replaced it with `[Array]::Reverse` over the promoted-path array.
 - These are build/packaging corrections only. The initdb pipe/handle security failures from the prior CI remain open; the service candidate is not production-approved or wired into the initializer.
+
+
+## 2026-11-25 — pipe ACL package compatibility and publish diagnostics (v0.1.239)
+
+- NuGet's supported `System.IO.Pipes.AccessControl` package version is 5.0.0 and its target compatibility includes .NET 10; there is no 10.0.0 package. Restored the 5.0.0 package for the named-pipe ACL APIs.
+- The self-contained host staging script now captures the failed `dotnet publish` output in its error so the next Windows CI run exposes the precise project/build error rather than only a generic service name.
+- The prior exact-head run is still in progress and cannot validate this correction. No initializer or production migration path is enabled.

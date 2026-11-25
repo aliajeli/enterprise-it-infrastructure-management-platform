@@ -38,8 +38,8 @@ if($MyInvocation.InvocationName -ne "."){
   # Publish every host before touching the immutable installation directory.
   foreach($item in $plan.Services){
    $output=Join-Path $publishRoot $item.Service
-   dotnet publish $item.Project --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false --output $output
-   if($LASTEXITCODE -ne 0){throw "Self-contained publish failed for $($item.Service)."}
+   $publishOutput=& dotnet publish $item.Project --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false --output $output 2>&1 | Out-String
+   if($LASTEXITCODE -ne 0){throw "Self-contained publish failed for $($item.Service): $publishOutput"}
    $source=Join-Path $output $item.Executable
    if(-not(Test-Path -LiteralPath $source -PathType Leaf)){throw "Expected single-file executable was not produced for $($item.Service)."}
    Copy-Item -LiteralPath $source -Destination (Join-Path $promotionRoot $item.Executable)
