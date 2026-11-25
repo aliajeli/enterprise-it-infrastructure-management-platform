@@ -1887,3 +1887,11 @@ An earlier application-repository inspection reported an empty clone before the 
 - Windows CI for v0.1.125 exposed a PowerShell ParserError in the ZIP path validation block before installer tests could execute.
 - Replaced the complete malformed block with syntactically complete checks for Windows-invalid segments, reserved DOS names, duplicate entries, Unix symlinks and DOS reparse-point attributes.
 - Version metadata synchronized at 0.1.126. Installer validation remains unaccepted until exact-head Windows CI succeeds.
+
+
+## 2026-11-25 — Bootstrap credential threat-model decision (v0.1.232)
+- Owner selected the threat model in which Standard Users and ordinary processes are untrusted, while Local Administrators and SYSTEM are trusted. Do not claim confidentiality against a hostile elevated administrator with `SeDebugPrivilege`.
+- The current same-user pipe experiment runs the client under the caller identity and is not the production architecture. Do not weaken its PID/client checks or enable it for real credentials.
+- Required next implementation is a dedicated Windows PostgreSQL Bootstrap Service under its own virtual service identity. It must own the installer-facing IPC endpoint, authorize only trusted installer/SYSTEM callers, launch `initdb` under the bootstrap service token, and authenticate the actual restricted/re-exec child by enabled service SID rather than assuming PID equality.
+- Standard-user denial, real PostgreSQL 18.7 `initdb` transport, child-token validation, no-secret leakage, timeout/crash cleanup and supported Windows Server acceptance remain mandatory. Initializer remains fail-closed until all gates pass.
+- Validation workflow now includes `arena/**` push branches; this permits exact-branch CI but does not itself constitute a passing run.

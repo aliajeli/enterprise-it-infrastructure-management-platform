@@ -80,3 +80,14 @@ The exact API and Worker table/sequence/function grants must be derived from Pri
 - No complete installer repair/uninstall or signed release.
 
 Until these gates pass, the five-service Windows deployment remains a foundation, not a production-ready installer or a completed milestone.
+
+
+## Owner-selected threat model and implementation direction (0.1.232)
+
+The owner selected **Scenario 1**: Standard Users and ordinary unprivileged processes are untrusted; Local Administrators and SYSTEM are trusted. The system is not required to preserve secret confidentiality against a hostile elevated administrator with `SeDebugPrivilege`. This does not permit unnecessary exposure through files, command lines, environment variables, logs, transcripts or error output.
+
+The current experimental pipe is not suitable for production: it runs `initdb` as a child of the invoking process, grants the current user SID, and fails closed when PostgreSQL's re-exec child PID differs. Do not infer that parent PID or executable path authenticates the client, and do not send a secret on that basis.
+
+The candidate architecture is a dedicated `EnterpriseITPostgreSQLBootstrap` Windows Service with a dedicated virtual service identity and enabled service SID. The elevated installer sends a bounded request to an installer-facing pipe whose DACL admits only SYSTEM and Administrators. The service validates the caller token, performs fixed-path and cluster-state preflight, then starts `initdb` under its own service token. The `initdb` password channel must be a separate service-owned pipe restricted to the bootstrap service SID; the connected client must be authenticated by querying its process token and requiring the enabled bootstrap service SID. PID equality is not an authorization condition because PostgreSQL may re-exec under a restricted token. The installer-facing protocol must never return the secret.
+
+This architecture is a design direction, not an implementation or approval. Before enabling it, tests must demonstrate (1) real PostgreSQL 18.7 `initdb` accepts the selected Windows pipe path and reads the complete secret, (2) the restricted child retains the enabled service SID, (3) a separate Standard User cannot connect, inspect or duplicate relevant handles, (4) no secret appears in process arguments, environment, logs, errors or artifacts, and (5) timeout, cancellation, service crash and retry leave no initialized partial cluster falsely reported as success. If any condition cannot be proved, initialization stays fail-closed.

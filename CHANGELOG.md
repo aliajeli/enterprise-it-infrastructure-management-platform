@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.232 — 2026-11-25
+
+- Enabled push validation for `arena/**` development branches so security and Windows integration changes receive CI feedback before review. This does not approve credential transport or enable PostgreSQL initialization.
+
 ## 0.1.231 — 2026-11-24
 
 - Recorded the hosted synthetic process-object boundary experiment and the continuing PostgreSQL credential transport blockers.
