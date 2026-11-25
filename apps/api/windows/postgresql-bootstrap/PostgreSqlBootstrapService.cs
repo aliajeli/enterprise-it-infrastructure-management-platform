@@ -6,6 +6,9 @@ using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
+using System.ComponentModel;
+using Microsoft.Win32.SafeHandles;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Hosting;
 
 namespace EnterpriseIT.PostgreSQLBootstrap;
@@ -152,35 +155,97 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         return authorized;
     }
 
+    private const uint GroupEnabled = 0x00000004;
+    private const uint GroupUseForDenyOnly = 0x00000010;
+    private const int TokenGroupsInformation = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SidAndAttributes
+    {
+        public IntPtr Sid;
+        public uint Attributes;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct TokenGroupsHeader
+    {
+        public uint GroupCount;
+        public SidAndAttributes FirstGroup;
+    }
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetTokenInformation(
+        SafeAccessTokenHandle tokenHandle,
+        int tokenInformationClass,
+        IntPtr tokenInformation,
+        int tokenInformationLength,
+        out int returnLength);
+
+    private static (bool Enabled, bool DenyOnly) ReadServiceSidAttributes(
+        SafeAccessTokenHandle token, SecurityIdentifier expected)
+    {
+        _ = GetTokenInformation(token, TokenGroupsInformation, IntPtr.Zero, 0, out var required);
+        var error = Marshal.GetLastWin32Error();
+        if (required <= 0 || error != 122) // ERROR_INSUFFICIENT_BUFFER
+            throw new Win32Exception(error, "Unable to query service token groups.");
+
+        var buffer = Marshal.AllocHGlobal(required);
+        try
+        {
+            if (!GetTokenInformation(token, TokenGroupsInformation, buffer, required, out var returned))
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Unable to read service token groups.");
+            if (returned < required)
+                throw new InvalidDataException("Windows returned a truncated token-groups buffer.");
+
+            var firstGroupOffset = Marshal.OffsetOf<TokenGroupsHeader>(
+                nameof(TokenGroupsHeader.FirstGroup)).ToInt32();
+            var entrySize = Marshal.SizeOf<SidAndAttributes>();
+            var groupCount = Marshal.ReadInt32(buffer);
+            if (groupCount < 0 || groupCount > (returned - firstGroupOffset) / entrySize)
+                throw new InvalidDataException("Windows returned an invalid token-groups count.");
+
+            var found = false;
+            var enabled = false;
+            var denyOnly = false;
+            for (var index = 0; index < groupCount; index++)
+            {
+                var entryAddress = IntPtr.Add(buffer, firstGroupOffset + index * entrySize);
+                var entry = Marshal.PtrToStructure<SidAndAttributes>(entryAddress);
+                if (entry.Sid == IntPtr.Zero || !expected.Equals(new SecurityIdentifier(entry.Sid)))
+                    continue;
+
+                found = true;
+                enabled |= (entry.Attributes & GroupEnabled) != 0;
+                denyOnly |= (entry.Attributes & GroupUseForDenyOnly) != 0;
+            }
+
+            return (found && enabled && !denyOnly, found && denyOnly);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
     private void RequireServiceIdentity()
     {
         WriteTrace("identity-check-entered");
         try
         {
-            WriteTrace("before-token-query");
             using var identity = WindowsIdentity.GetCurrent(TokenAccessLevels.Query);
-            WriteTrace("token-query-succeeded");
-
             var expected = CreateServiceSid(ServiceName);
-            WriteTrace("computed-service-sid:" + expected.Value);
-
             var userSid = identity.User as SecurityIdentifier;
-            WriteTrace("token-user-sid:" + (userSid?.Value ?? "none"));
+            var primaryIdentityMatch = userSid is not null && expected.Equals(userSid);
+            var groupAttributes = ReadServiceSidAttributes(identity.AccessToken, expected);
 
-            var groups = identity.Groups;
-            WriteTrace("token-groups-read");
-            var groupMatch = groups?.OfType<SecurityIdentifier>().Any(expected.Equals) == true;
-            WriteTrace("service-sid-in-groups:" + groupMatch);
+            WriteTrace("service-sid-primary-identity-match:" + primaryIdentityMatch);
+            WriteTrace("service-sid-enabled:" + groupAttributes.Enabled);
+            WriteTrace("service-sid-deny-only:" + groupAttributes.DenyOnly);
 
-            // The service SID is explicitly enabled in the SCM token by
-            // SERVICE_SID_TYPE_UNRESTRICTED. WindowsIdentity.Groups already
-            // exposes the token's group SIDs; calling WindowsPrincipal.IsInRole
-            // here performs an additional CheckTokenMembership operation that
-            // can fail for service tokens even when the SID is present.
-            var hasSid = (userSid is not null && expected.Equals(userSid)) || groupMatch;
-            WriteTrace("service-sid-validation-passed:" + hasSid);
-            if (!hasSid)
-                throw new UnauthorizedAccessException("Bootstrap service SID is not present in the service token.");
+            if (!primaryIdentityMatch && !groupAttributes.Enabled)
+                throw new UnauthorizedAccessException(
+                    "Bootstrap service SID is absent, disabled, or deny-only in the service token.");
         }
         catch
         {

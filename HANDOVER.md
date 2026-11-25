@@ -1,3 +1,14 @@
+## 0.1.273 — native service SID token-attribute validation — 2026-11-25
+
+The bootstrap service no longer treats mere SID presence in WindowsIdentity.Groups as sufficient. It queries TokenGroups through GetTokenInformation and requires the expected service SID to have SE_GROUP_ENABLED set and SE_GROUP_USE_FOR_DENY_ONLY clear. Failure to query or validate the token attributes terminates the worker before it opens the installer pipe. The SCM fixture now explicitly requires both diagnostic facts before proceeding.
+
+This addresses the enabled-versus-deny-only ambiguity in the previous implementation. Exact-head Windows CI must validate native structure parsing and the positive LocalService + unrestricted service SID case. A negative deny-only token fixture is not yet present, so the rejection branch still needs a dedicated test where a token containing the expected SID as deny-only can be constructed safely.
+
+The hosted runner still cannot register the production virtual account. Run the existing acceptance on a supported Windows Server using:
+`pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-service-scm.ps1 -ServiceAccount 'NT SERVICE\\EnterpriseITPostgreSQLBootstrap'`
+
+Keep the initializer fail-closed until that real virtual-account acceptance passes. No production credential transfer, PostgreSQL role provisioning, migrations, installer release, firewall/NAT changes, or PR merges are authorized.
+
 ## 0.1.266 — SCM initdb observation window — 2026-11-25
 
 The 0.1.265 exact-head trace proves the service reached PostgreSQL 18.7 version validation, prepared the data directory, started initdb (PID recorded only as a non-secret diagnostic), and entered the disposable pre-stdin hold. The SCM test nevertheless timed out waiting for the PID marker, indicating its 10-second observation deadline was too short relative to hosted-runner scheduling. Increased the marker/re-exec observation windows and extended the test-only hold to 45 seconds.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.273 — verify enabled service SID token attributes — 2026-11-25
+
+- Replaced SID-presence-only validation with a native `GetTokenInformation(TokenGroups)` check. The bootstrap service now requires its Service SID to carry `SE_GROUP_ENABLED` and rejects `SE_GROUP_USE_FOR_DENY_ONLY`; inability to inspect token attributes fails closed.
+- Extended the SCM acceptance fixture to require explicit `service-sid-enabled:True` and `service-sid-deny-only:False` diagnostics before continuing to the pipe and initdb tests.
+- This hosted-runner validation still uses LocalService plus the unrestricted service SID. Actual dedicated virtual-account acceptance on supported Windows Server remains mandatory; production initializer remains fail-closed.
+
 ## 0.1.270 — make SCM PID marker parsing independent of regex/line endings — 2026-11-25
 
 - Replaced the fragile PowerShell regex parser with ordinal prefix matching and integer parsing over [IO.File]::ReadAllLines output. This avoids raw-text CRLF handling and regex escaping entirely.

@@ -95,6 +95,18 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "SCM start failed." }
   $until = [DateTime]::UtcNow.AddSeconds(20); $state = "Stopped"
   do { Start-Sleep -Milliseconds 250; $state = (Get-Service $serviceName).Status } while ($state -ne "Running" -and [DateTime]::UtcNow -lt $until)
+  if ($state -eq "Running") {
+    $identityTraceDeadline = [DateTime]::UtcNow.AddSeconds(5)
+    do {
+      $identityTrace = if (Test-Path -LiteralPath $diagnosticFile) { [IO.File]::ReadAllLines($diagnosticFile) } else { @() }
+      if ($identityTrace -contains "service-sid-enabled:True" -and $identityTrace -contains "service-sid-deny-only:False") { break }
+      Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $identityTraceDeadline)
+    if ($identityTrace -notcontains "service-sid-enabled:True" -or $identityTrace -notcontains "service-sid-deny-only:False") {
+      throw "SCM service token did not prove an enabled, non-deny-only service SID."
+    }
+    Write-Host "Service token attributes passed: service SID is enabled and not deny-only."
+  }
   if ($state -ne "Running") {
     $query = (& sc.exe queryex $serviceName 2>&1 | Out-String)
     Write-Host ("Bootstrap SCM state: " + $state)
