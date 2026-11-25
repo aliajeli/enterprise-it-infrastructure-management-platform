@@ -8,7 +8,7 @@ $ErrorActionPreference="Stop"
 if(-not $IsWindows){throw "PostgreSQL bootstrap is Windows-only."}
 if($SuperuserPassword.Length -lt $MinimumPasswordLength -or $SuperuserPassword.Length -gt 1024){throw "Bootstrap password length is invalid."}
 $serviceName="EnterpriseITPostgreSQLBootstrap"
-$pipeName="EnterpriseIT.PostgreSQL.Bootstrap.v1"
+$pipeName="EnterpriseIT.PostgreSQL.Bootstrap.v2"
 $service=Get-Service -Name $serviceName -ErrorAction Stop
 $startedHere=$false
 $ptr=[IntPtr]::Zero;$chars=$null;$bytes=$null;$frame=$null
@@ -33,10 +33,17 @@ try{
  $client=[IO.Pipes.NamedPipeClientStream]::new(".", $pipeName, [IO.Pipes.PipeDirection]::InOut, [IO.Pipes.PipeOptions]::None, [Security.Principal.TokenImpersonationLevel]::Impersonation)
  try{
   $client.Connect(30000)
+  # Authenticate the server-side client token before transmitting any secret.
+  $preflight=[byte[]]::new(1)
+  $preflightTask=$client.ReadAsync($preflight,0,1)
+  $preflightCount=$preflightTask.WaitAsync([TimeSpan]::FromSeconds(10)).GetAwaiter().GetResult()
+  if($preflightCount -ne 1 -or $preflight[0] -ne 0){throw "PostgreSQL bootstrap service rejected the caller before credential transmission."}
   $client.Write($frame,0,$frame.Length)
   $client.Flush()
-  $status=$client.ReadByte()
-  if($status -ne 0){throw "PostgreSQL bootstrap service rejected or failed the request. No credential details were returned."}
+  $response=[byte[]]::new(1)
+  $responseTask=$client.ReadAsync($response,0,1)
+  $responseCount=$responseTask.WaitAsync([TimeSpan]::FromMinutes(3.5)).GetAwaiter().GetResult()
+  if($responseCount -ne 1 -or $response[0] -ne 0){throw "PostgreSQL bootstrap service rejected or failed the request. No credential details were returned."}
  }finally{$client.Dispose()}
  [pscustomobject]@{status="initialized";service=$serviceName;credentialTransport="restricted-local-named-pipe";plaintextFileCreated=$false;serviceStopped=$startedHere}|ConvertTo-Json -Depth 3
 }finally{

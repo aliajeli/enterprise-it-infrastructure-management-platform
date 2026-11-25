@@ -10,7 +10,7 @@ try {
 $serviceName = "EnterpriseITPostgreSQLBootstrap"
 $serviceStartedAt = Get-Date
 $serviceAccount = "NT AUTHORITY\LocalService"
-$pipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v1"
+$pipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v2"
 $diagnosticRoot = Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18"
 $diagnosticFile = Join-Path $diagnosticRoot "bootstrap-smoke.log"
 if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw "Refusing to adopt an existing service." }
@@ -79,7 +79,7 @@ try {
 
   # Hosted runners reject custom NT SERVICE logon accounts (SCM 1057). LocalService plus the unrestricted per-service SID exercises the same service-SID authorization and pipe ACL; production virtual-account assignment remains a Windows Server acceptance gate.
   # Authorized administrator positive control; deliberately malformed frame, no secret.
-  $adminPipe = [IO.Pipes.NamedPipeClientStream]::new(".",$pipeName,[IO.Pipes.PipeDirection]::InOut)
+  $adminPipe = [IO.Pipes.NamedPipeClientStream]::new(".",$pipeName,[IO.Pipes.PipeDirection]::InOut,[IO.Pipes.PipeOptions]::None,[Security.Principal.TokenImpersonationLevel]::Impersonation)
   try {
     try {
       $adminPipe.Connect(15000)
@@ -103,11 +103,15 @@ try {
     } else { Write-Host "No bootstrap trace file was created." }
       throw "Bootstrap named pipe did not become available; inspect bounded SCM/event diagnostics above."
     }
+    $preflight = [byte[]]::new(1)
+    $preflightTask = $adminPipe.ReadAsync($preflight,0,1)
+    $preflightCount = $preflightTask.WaitAsync([TimeSpan]::FromSeconds(5)).GetAwaiter().GetResult()
+    if ($preflightCount -ne 1 -or $preflight[0] -ne 0) { throw "Administrator token was rejected before request framing." }
     $adminPipe.Write([byte[]](0,0,0,0),0,4); $adminPipe.Flush()
     $response = [byte[]]::new(1)
     $readTask = $adminPipe.ReadAsync($response,0,1)
     $readCount = $readTask.WaitAsync([TimeSpan]::FromSeconds(5)).GetAwaiter().GetResult()
-    if ($readCount -ne 1 -or $response[0] -ne 1) { throw "Admin pipe positive control failed." }
+    if ($readCount -ne 1 -or $response[0] -ne 1) { throw "Admin pipe malformed-frame rejection control failed." }
   } finally { $adminPipe.Dispose() }
 
   $probe = @'
@@ -131,7 +135,7 @@ exit 42
     throw "Standard User pipe denial was not established."
   }
   if ((Get-Service $serviceName).Status -ne "Running") { throw "Service stopped after access test." }
-  Write-Host "SCM startup and same-session Standard User pipe denial passed; no initdb or credential was used."
+  Write-Host "SCM startup, administrator token preflight, malformed-frame rejection and same-session Standard User pipe denial passed; no initdb or credential was used."
 } finally {
   if ($null -ne $child) { try { if (-not $child.HasExited) { $child.Kill(); $child.WaitForExit(10000) | Out-Null } } catch {}; $child.Dispose() }
   if ($createdService) {

@@ -15,7 +15,7 @@ internal sealed record BootstrapDiagnosticOptions(bool Enabled);
 internal sealed class PostgreSqlBootstrapService : BackgroundService
 {
     internal const string ServiceName = "EnterpriseITPostgreSQLBootstrap";
-    internal const string PipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v1";
+    internal const string PipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v2";
     private const int MaximumPasswordBytes = 4096;
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(3);
     private readonly bool _diagnosticsEnabled;
@@ -34,11 +34,18 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             try
             {
                 await pipe.WaitForConnectionAsync(stoppingToken);
+                WriteTrace("client-connected");
                 if (!IsAuthorizedInstaller(pipe))
                 {
+                    WriteTrace("client-authorization-denied");
                     await WriteStatusAsync(pipe, 1, stoppingToken);
                     continue;
                 }
+
+                // Explicit preflight acknowledgement: the client must not send
+                // credential bytes until the service has authenticated its token.
+                WriteTrace("client-authorization-passed");
+                await WriteStatusAsync(pipe, 0, stoppingToken);
 
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
                 timeout.CancelAfter(RequestTimeout);

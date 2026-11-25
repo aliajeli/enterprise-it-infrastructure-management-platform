@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.258 — 2026-11-25
+
+- Introduced an explicit installer-pipe authorization preflight (protocol v2). The service sends status 0 only after validating the impersonated client token; status 1 rejects the caller. The installer waits for status 0 before writing any credential bytes, then waits separately for the final initialization result.
+- Updated the SCM fixture to request `TokenImpersonationLevel.Impersonation` explicitly, matching the production client. The 0.1.257 fixture connected but the server closed the pipe before its write; the test used the default client impersonation level, which is insufficient for reliable server-side token impersonation.
+- Added fixed, non-secret authorization trace markers. No credential is sent by the SCM malformed-frame test.
+
 ## 0.1.257 — 2026-11-25
 
 - Fixed the SCM integration test's administrator positive-control read. `NamedPipeClientStream.ReadTimeout` is not supported on this Windows stream implementation; the test now awaits `ReadAsync` with a bounded .NET `Task.WaitAsync(TimeSpan)`.
