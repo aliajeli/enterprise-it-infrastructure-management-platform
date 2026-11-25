@@ -2190,3 +2190,7 @@ An earlier application-repository inspection reported an empty clone before the 
 - Follow-up source inspection found the initial line-reader pattern contained an unintended literal carriage return. Corrected the fixture to parse each line returned by `[IO.File]::ReadAllLines` with a single-line PID pattern; the API strips CRLF/LF terminators before matching.
 - This only repairs the test fixture. No process DACL, service identity, credential transport or authorization behavior changed. The actual SCM distinct-account Standard User handle-denial and real initdb completion checks remain mandatory.
 - Production initializer remains fail-closed; no credential-security acceptance is claimed.
+## 2026-11-25 — deterministic SCM PID marker parsing (v0.1.270)
+- Replaced the SCM fixture's fragile raw-text/multiline PID regex with ordinal prefix matching and integer parsing over `[IO.File]::ReadAllLines`. This avoids CRLF and regex escape ambiguity.
+- CI run [45579008567](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45579008567) confirmed the service emitted the initdb PID trace marker; the test fixture failed to extract it. The corrected parser is intended to unblock the real distinct-account Standard User process-access test.
+- No service process ACL, identity, authorization or credential transport behavior changed. Production initializer remains fail-closed until the actual SCM handle-denial test, initdb completion, SCRAM and no-secret checks pass.

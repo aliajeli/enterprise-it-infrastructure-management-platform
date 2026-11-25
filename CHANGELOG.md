@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.270 — make SCM PID marker parsing independent of regex/line endings — 2026-11-25
+
+- Replaced the fragile PowerShell regex parser with ordinal prefix matching and integer parsing over [IO.File]::ReadAllLines output. This avoids raw-text CRLF handling and regex escaping entirely.
+- The service trace already confirmed successful initdb launch in run 45579008567; the previous test parser corrections were malformed during scripted editing and are superseded by this simpler implementation.
+- No production service, process ACL, authorization, or credential transport behavior changed. The distinct-account Standard User PROCESS_DUP_HANDLE check remains mandatory; initializer remains fail-closed.
+
+
 ## 0.1.269 — correct line-based PID marker parser — 2026-11-25
 
 - Follow-up source inspection caught an accidental literal carriage-return escape in the first line-reader correction. Replaced it with a single-line PID regex; [IO.File]::ReadAllLines already removes CRLF/LF terminators.

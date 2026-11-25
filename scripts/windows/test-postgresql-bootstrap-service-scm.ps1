@@ -222,7 +222,17 @@ exit 42
       # Read complete lines so CRLF and LF traces are parsed identically.
       # Raw multiline regex matching can leave a carriage return before LF.
       foreach ($traceLine in [IO.File]::ReadAllLines($diagnosticFile)) {
-        if ($traceLine -match '^initdb-process-started:(\d+)
+        $prefix = "initdb-process-started:"
+        if ($traceLine.StartsWith($prefix,[StringComparison]::Ordinal)) {
+          $candidatePid = 0
+          $pidText = $traceLine.Substring($prefix.Length)
+          if ([int]::TryParse($pidText,[ref]$candidatePid) -and $candidatePid -gt 0) {
+            $initdbPid = $candidatePid
+            break
+          }
+        }
+      }
+      if ($initdbPid -gt 0) { break }
     }
     Start-Sleep -Milliseconds 100
   } while ([DateTime]::UtcNow -lt $traceDeadline)
