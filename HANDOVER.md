@@ -1,3 +1,11 @@
+## 0.1.247 — trace clean bootstrap service shutdown — 2026-11-25
+
+The 0.1.246 exact-head run [45561529201](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45561529201) still observed the service stop before the SCM fixture could connect to the named pipe. This time SCM reported `WIN32_EXIT_CODE=0`, and the captured Application/System events contained no .NET Runtime crash (1026) or unexpected termination (7034); the only service events were normal Running/Stopped transitions. The test's early-stop diagnostics were therefore useful but did not reveal who requested shutdown.
+
+Added fixed, non-secret lifecycle log events around BackgroundService entry, successful service-SID validation, host-shutdown cancellation and request-loop exit. The log text contains no credential, request bytes, process output, exception text or user-supplied paths. The next hosted run should show whether the worker enters, whether service identity validation passes, and whether its stopping token is cancelled before the named pipe can be created.
+
+Do not weaken the service identity check or pipe DACL without evidence. The hosted test still uses LocalService plus the unrestricted per-service SID because custom virtual-account logon is not supported by the runner. Production virtual-account startup on supported Windows Server remains separate acceptance. All initdb/credential transport, process-object isolation, PostgreSQL 18.7, secret-leakage, cleanup, data ACL/ownership, roles, migrations and initializer integration gates remain open. Production initializer/orchestrator stay fail-closed. No PR merge or Release authorized.
+
 ## 0.1.246 — diagnose bootstrap service early termination — 2026-11-25
 
 The 0.1.245 exact-head run [45561151889](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45561151889) compiled the bootstrap service, but the SCM integration fixture observed that it did not remain in Running state during the 20-second startup window. The test failed before attempting the pipe connection, so it did not establish whether the 0.1.245 public-constructor correction resolved the DI activation exception. The previous run's Event ID 1026 identified the internal-constructor DI error; this run did not yet emit event details at the early-stop branch.

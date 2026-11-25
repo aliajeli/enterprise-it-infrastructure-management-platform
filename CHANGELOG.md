@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.247 — 2026-11-25
+
+- Added fixed, non-secret lifecycle events for bootstrap worker entry, service-SID validation, host-shutdown cancellation and request-loop exit. The 0.1.246 SCM fixture observed a clean service stop (exit code 0) without a .NET crash event, so the next run must establish whether the host is cancelling the BackgroundService or it exits normally.
+- No credential, client data, process output or exception text is logged. Exact-head CI required.
+
 ## 0.1.246 — 2026-11-25
 
 - Extended the hosted SCM fixture to capture bounded Application/.NET Runtime and Service Control Manager events when the bootstrap service stops before pipe readiness, not only when pipe connection times out. The 0.1.245 run stopped before reaching the pipe-connect diagnostic.
