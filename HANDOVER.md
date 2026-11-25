@@ -1,3 +1,16 @@
+## 0.1.256 — remove failing redundant service-token role query — 2026-11-25
+
+The latest exact-head Windows CI run [45565672157](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45565672157) produced decisive trace evidence in the bootstrap SCM fixture:
+
+- Token query succeeded; token user SID was `S-1-5-19` (LocalService).
+- The SCM-computed service SID exactly matched the service SID from `sc.exe showsid`.
+- `WindowsIdentity.Groups` contained that service SID (`service-sid-in-groups:True`).
+- Immediately afterward, `WindowsPrincipal.IsInRole(expected)` threw, causing the BackgroundService host to stop before creating the named pipe.
+
+Removed the redundant `WindowsPrincipal.IsInRole(SecurityIdentifier)` call from service self-identity validation. With `SERVICE_SID_TYPE_UNRESTRICTED`, SCM enables the per-service SID in the process token; the already observed token group membership is the authorization fact required here. Validation now accepts the expected service SID in the token group SID collection, or as the token user SID. The installer-client authorization path still uses `WindowsPrincipal` to check Administrator membership and is unchanged.
+
+Next exact-head CI must prove: service remains running, admin malformed-frame positive control works, same-session Standard User cannot connect, service remains running after denial, and cleanup succeeds. The hosted fixture runs as LocalService with unrestricted service SID; real `NT SERVICE\EnterpriseITPostgreSQLBootstrap` logon on supported Windows Server remains a separate acceptance gate. Other process-handle and actual initdb re-exec probes are still failing in this run family and must be investigated independently. No credential transfer, initializer activation, PR merge or Release is authorized until all gates pass.
+
 ## 0.1.255 — isolate token acquisition versus service SID computation — 2026-11-25
 
 The 0.1.254 exact-head run [45565159334](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45565159334) compiled and started the worker, but its protected trace still contained only `worker-entered`. The deterministic SID calculation and token membership markers were not reached. The test did print SCM's service SID, confirming the service exists and SCM can derive its SID.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.256 — 2026-11-25
+
+- Fixed bootstrap service identity validation. Exact-head Windows SCM trace proved the expected per-service SID was present in `WindowsIdentity.Groups` (`service-sid-in-groups:True`), but the subsequent `WindowsPrincipal.IsInRole(SecurityIdentifier)` call threw and terminated the host. The redundant second token-membership query is removed; validation now accepts the expected service SID found in the service token's group SID collection (or as the token user SID).
+- Re-run the Windows SCM and same-session Standard User pipe-denial test. This correction is evidence-based; successful service startup and authorization are not yet claimed.
+
 ## 0.1.255 — 2026-11-25
 
 - Added stepwise protected trace markers around token acquisition, deterministic service-SID derivation, token user SID access, group enumeration and WindowsPrincipal membership. The 0.1.254 run stopped after worker entry without reaching the first post-token marker; this isolates the failing operation.

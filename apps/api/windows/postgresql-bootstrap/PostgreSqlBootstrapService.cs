@@ -165,10 +165,13 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             var groupMatch = groups?.OfType<SecurityIdentifier>().Any(expected.Equals) == true;
             WriteTrace("service-sid-in-groups:" + groupMatch);
 
-            var roleMatch = new WindowsPrincipal(identity).IsInRole(expected);
-            WriteTrace("service-sid-is-in-role:" + roleMatch);
-
-            var hasSid = (userSid is not null && expected.Equals(userSid)) || roleMatch;
+            // The service SID is explicitly enabled in the SCM token by
+            // SERVICE_SID_TYPE_UNRESTRICTED. WindowsIdentity.Groups already
+            // exposes the token's group SIDs; calling WindowsPrincipal.IsInRole
+            // here performs an additional CheckTokenMembership operation that
+            // can fail for service tokens even when the SID is present.
+            var hasSid = (userSid is not null && expected.Equals(userSid)) || groupMatch;
+            WriteTrace("service-sid-validation-passed:" + hasSid);
             if (!hasSid)
                 throw new UnauthorizedAccessException("Bootstrap service SID is not present in the service token.");
         }
