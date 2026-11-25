@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.241 — 2026-11-25
+
+- Removed the explicit System.IO.Pipes.AccessControl package reference after Windows CI confirmed the API is already included by the .NET 10 target and treats redundant references as NU1510 errors. This is a build correction only.
+
 ## 0.1.240 — 2026-11-25
 
 - Fixed Windows bootstrap service compilation: imported the service namespace in the top-level host, guarded nullable Windows token user SIDs, and set the pipe owner to the dedicated service SID rather than requiring the service to assign ownership to SYSTEM.

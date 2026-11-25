@@ -1936,3 +1936,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - The named-pipe object owner is now the dedicated bootstrap service SID, avoiding a privilege-dependent attempt to set SYSTEM as owner. The DACL still grants SYSTEM and Administrators and includes the service SID for server access.
 - All inherited `PG*` environment variables are removed before launching initdb; only the explicit non-secret PostgreSQL prompt environment is reintroduced. Cluster post-check now requires SCRAM policy text in `pg_hba.conf`.
 - These changes require exact-head CI. The process isolation and real service-account transport tests remain outstanding.
+
+
+## 2026-11-25 — remove redundant pipe ACL package reference (v0.1.241)
+
+- Windows publish run [45558957641](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45558957641) confirmed `System.IO.Pipes.AccessControl` is already part of the .NET 10 target framework and an explicit 5.0.0 reference fails because NU1510 is treated as an error. Removed the package reference; retain the framework-provided APIs.
+- The same run's process isolation probes still fail as expected for the legacy caller-owned transport. The new service's exact-head build and publish remain pending.
