@@ -1,3 +1,9 @@
+## 0.1.282 — native ACL-at-create for Vault CI fixtures — 2026-11-25
+
+The 0.1.281 exact-head Windows API runtime smoke exposed an API compatibility error: .NET 10 lacks the legacy DirectoryInfo.Create(DirectorySecurity) overload used by the fixtures. Replaced that call in both elevated-admin and LocalSystem fixture setup with a small P/Invoke wrapper around CreateDirectoryW and SECURITY_ATTRIBUTES. The protected SYSTEM/Administrators security descriptor is supplied atomically at directory creation; no create-then-tighten ACL race is introduced.
+
+Production Vault implementation, owner/DACL policy, ancestor trust checks, fail-closed behavior, and the adversarial Everyone Modify test are unchanged. Run exact-head Windows CI and inspect both Vault provisioning test suites. Hosted CI success will not substitute for supported Windows Server Virtual Service Account acceptance. Credential persistence, production bootstrap activation, discovery/monitoring handlers, and installer activation remain gated.
+
 ## 0.1.281 — Vault CI fixture ancestor ACL correction — 2026-11-25
 
 The 0.1.280 Windows API runtime smoke failed because the fixture root was placed beneath the host ProgramData directory, whose own ACL is evaluated as an ancestor by the hardened provisioner. The failure was a fixture trust-chain mismatch, not a reason to weaken the production policy.

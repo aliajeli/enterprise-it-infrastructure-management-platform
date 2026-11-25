@@ -2,6 +2,41 @@
 # Place the disposable fixture directly below the OS ProgramData directory so
 # the test exercises a production-like trusted ancestor chain, not runner TEMP ACLs.
 $ErrorActionPreference='Stop'
+
+if(-not('EnterpriseIT.VaultFixtureDirectory' -as [type])){
+ Add-Type -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+namespace EnterpriseIT {
+ public static class VaultFixtureDirectory {
+  [StructLayout(LayoutKind.Sequential)]
+  private struct SECURITY_ATTRIBUTES {
+   public int nLength;
+   public IntPtr lpSecurityDescriptor;
+   [MarshalAs(UnmanagedType.Bool)] public bool bInheritHandle;
+  }
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+  [return: MarshalAs(UnmanagedType.Bool)]
+  private static extern bool CreateDirectoryW(string path, ref SECURITY_ATTRIBUTES attributes);
+  public static void Create(string path, byte[] securityDescriptor) {
+   IntPtr descriptor=Marshal.AllocHGlobal(securityDescriptor.Length);
+   try {
+    Marshal.Copy(securityDescriptor,0,descriptor,securityDescriptor.Length);
+    SECURITY_ATTRIBUTES attributes=new SECURITY_ATTRIBUTES();
+    attributes.nLength=Marshal.SizeOf(typeof(SECURITY_ATTRIBUTES));
+    attributes.lpSecurityDescriptor=descriptor;
+    attributes.bInheritHandle=false;
+    if(!CreateDirectoryW(path,ref attributes)) throw new Win32Exception(Marshal.GetLastWin32Error());
+   } finally { Marshal.FreeHGlobal(descriptor); }
+  }
+ }
+}
+'@
+}
+function New-ProtectedDirectory([string]$Path,[Security.AccessControl.DirectorySecurity]$Security){
+ [EnterpriseIT.VaultFixtureDirectory]::Create($Path,$Security.GetSecurityDescriptorBinaryForm())
+}
 $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 if($identity.User.Value -eq 'S-1-5-18'){throw 'Administrator smoke must not run as LocalSystem.'}
 $volumeRoot=[IO.Path]::GetPathRoot($env:SystemRoot)
@@ -18,9 +53,9 @@ foreach($sid in @('S-1-5-18','S-1-5-32-544')){
 $rootCreated=$false
 try{
  # Create each fixture directory with its protected ACL at creation time.
- ([IO.DirectoryInfo]::new($smokeRoot)).Create($acl)
+ New-ProtectedDirectory -Path $smokeRoot -Security $acl
  $rootCreated=$true
- ([IO.DirectoryInfo]::new($pd)).Create($acl)
+ New-ProtectedDirectory -Path $pd -Security $acl
  $sidText=(& sc.exe showsid EnterpriseITApi 2>&1|Out-String)
  if($LASTEXITCODE -ne 0){throw 'Could not resolve API service SID.'}
  $match=[regex]::Match($sidText,'S-1-5-80-(?:\d+-){4}\d+')

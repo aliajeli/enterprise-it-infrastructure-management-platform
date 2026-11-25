@@ -1,3 +1,10 @@
+## 0.1.282 — use native CreateDirectory security attributes in Vault fixtures — 2026-11-25
+
+- Fixed the 0.1.281 Windows API runtime smoke failure: .NET 10 does not expose the legacy DirectoryInfo.Create(DirectorySecurity) overload used by the fixture.
+- Vault test roots are now created through CreateDirectoryW with a SECURITY_ATTRIBUTES structure carrying the protected SYSTEM/Administrators security descriptor. The DACL is applied atomically at object creation; no permissive create-then-tighten window is introduced.
+- Production Vault code and ACL policy are unchanged. The Everyone Modify intermediate-ancestor negative test remains mandatory.
+- Exact-head Windows CI must pass the elevated-admin and LocalSystem Vault provisioning suites before this fixture correction is accepted. Windows Server Virtual Service Account acceptance remains separate.
+
 ## 0.1.281 — create Vault test ancestors with trusted ACLs — 2026-11-25
 
 - Corrected the 0.1.280 Windows Vault fixture failure: disposable roots now live directly beneath the system volume root and are created with a protected SYSTEM/Administrators DACL at creation time. The provisioner can validate the fixture ancestor without relying on runner TEMP or the host ProgramData ACL.

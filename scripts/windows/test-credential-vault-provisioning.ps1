@@ -1,5 +1,40 @@
 param([Parameter(Mandatory=$true)][string]$FaultHelperPath)
 $ErrorActionPreference="Stop"
+
+if(-not('EnterpriseIT.VaultFixtureDirectory' -as [type])){
+ Add-Type -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+namespace EnterpriseIT {
+ public static class VaultFixtureDirectory {
+  [StructLayout(LayoutKind.Sequential)]
+  private struct SECURITY_ATTRIBUTES {
+   public int nLength;
+   public IntPtr lpSecurityDescriptor;
+   [MarshalAs(UnmanagedType.Bool)] public bool bInheritHandle;
+  }
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+  [return: MarshalAs(UnmanagedType.Bool)]
+  private static extern bool CreateDirectoryW(string path, ref SECURITY_ATTRIBUTES attributes);
+  public static void Create(string path, byte[] securityDescriptor) {
+   IntPtr descriptor=Marshal.AllocHGlobal(securityDescriptor.Length);
+   try {
+    Marshal.Copy(securityDescriptor,0,descriptor,securityDescriptor.Length);
+    SECURITY_ATTRIBUTES attributes=new SECURITY_ATTRIBUTES();
+    attributes.nLength=Marshal.SizeOf(typeof(SECURITY_ATTRIBUTES));
+    attributes.lpSecurityDescriptor=descriptor;
+    attributes.bInheritHandle=false;
+    if(!CreateDirectoryW(path,ref attributes)) throw new Win32Exception(Marshal.GetLastWin32Error());
+   } finally { Marshal.FreeHGlobal(descriptor); }
+  }
+ }
+}
+'@
+}
+function New-ProtectedDirectory([string]$Path,[Security.AccessControl.DirectorySecurity]$Security){
+ [EnterpriseIT.VaultFixtureDirectory]::Create($Path,$Security.GetSecurityDescriptorBinaryForm())
+}
 # Credential Vault provisioner policy/integration tests.
 # Run as LocalSystem in an isolated CI fixture so exact ACLs can be independently
 # inspected and adversarial fixtures created without changing production ACLs.
@@ -52,9 +87,9 @@ function New-TestRoot([string]$Name){
  }
  $rootCreated=$false
  try{
-  ([IO.DirectoryInfo]::new($root)).Create($acl)
+  New-ProtectedDirectory -Path $root -Security $acl
   $rootCreated=$true
-  ([IO.DirectoryInfo]::new($pd)).Create($acl)
+  New-ProtectedDirectory -Path $pd -Security $acl
   return [pscustomobject]@{Root=$root;ProgramData=$pd}
  }catch{
   if($rootCreated -and (Test-Path -LiteralPath $root -PathType Container)){
