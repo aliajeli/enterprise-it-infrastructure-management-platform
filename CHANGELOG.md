@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.275 — reject deny-only SID even if duplicate enabled entry exists
+
+- Tightened the service-identity predicate so any matching deny-only Service SID entry rejects the token unless the expected SID is the token's primary user identity. This prevents a pathological duplicate-group representation from passing merely because another matching entry is enabled.
+
 ## 0.1.274 — accept virtual account primary SID identity
 
 - Adjusted the SCM token assertion to accept either the expected Service SID as the token's primary user SID (the virtual-account case) or as an enabled, non-deny-only token group (the LocalService CI proxy case). The service still rejects deny-only membership and fails closed when the SID is neither.

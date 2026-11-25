@@ -1,3 +1,7 @@
+## 0.1.275 — reject deny-only Service SID entries
+
+Tightened the authorization predicate: when the expected Service SID is not the token's primary user SID, the service now requires an enabled group entry and rejects the token if any matching entry is marked SE_GROUP_USE_FOR_DENY_ONLY. This avoids accepting a token with conflicting duplicate SID attributes. Exact-head CI is required; the real Windows Server virtual-account acceptance remains outstanding.
+
 ## 0.1.274 — support virtual-account primary SID token layout — 2026-11-25
 
 The 0.1.273 SCM fixture initially required the service SID to appear as an enabled token group. That is correct for the hosted LocalService proxy, but a virtual service account may present the same SID as the token's primary user SID. The acceptance assertion now permits either primary-identity equality or an enabled group SID, and still requires the deny-only diagnostic to be false. The service implementation continues to fail closed unless one of those two valid token forms is present.

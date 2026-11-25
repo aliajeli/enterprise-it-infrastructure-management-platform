@@ -243,7 +243,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             WriteTrace("service-sid-enabled:" + groupAttributes.Enabled);
             WriteTrace("service-sid-deny-only:" + groupAttributes.DenyOnly);
 
-            if (!primaryIdentityMatch && !groupAttributes.Enabled)
+            if (!primaryIdentityMatch && (!groupAttributes.Enabled || groupAttributes.DenyOnly))
                 throw new UnauthorizedAccessException(
                     "Bootstrap service SID is absent, disabled, or deny-only in the service token.");
         }
