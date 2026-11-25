@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.268 — parse SCM initdb PID trace across Windows line endings — 2026-11-25
+
+- Exact-head CI for 0.1.267 proved the service identity and Administrator pipe preflight, PostgreSQL 18.7 validation, data-root preparation, and initdb process launch all succeeded. The trace contained the PID marker, but the PowerShell fixture failed to parse it when reading the raw CRLF trace.
+- Replaced raw-text multiline regex parsing with line-based file reading and an explicit optional carriage-return match. This makes PID observation deterministic for CRLF and LF without changing service authorization, process security, credential transport, or the 45-second smoke hold.
+- Legacy same-user and direct-pipe diagnostics remain non-blocking under the selected threat model; the distinct-account Standard User SCM process-handle denial remains a blocking acceptance test.
+- Production initializer remains fail-closed. This is a test-fixture correction, not a credential-security acceptance claim.
+
+
 ## 0.1.266 — allow real initdb SCM probe scheduling window — 2026-11-25
 
 - The 0.1.265 Windows trace confirms that the service authenticates the administrator, validates PostgreSQL 18.7, prepares the data directory, starts real initdb and enters the disposable smoke hold. The SCM fixture's 10-second PID-marker deadline expired before it observed the marker, so the failure was a test scheduling/window issue rather than evidence that initdb failed to start.

@@ -2180,3 +2180,9 @@ An earlier application-repository inspection reported an empty clone before the 
 - Increased the marker observation deadline to 90 seconds to accommodate cold SCM/service startup and initdb validation. The 45-second smoke hold, separate Standard User account, PROCESS_DUP_HANDLE denial checks on the actual service-owned parent/re-exec child, real cluster initialization, SCRAM check, and plaintext scan remain intact.
 - Same-user caller-owned synthetic/direct-initdb probes are diagnostics, not substitutes for the distinct-account service boundary in the selected threat model. Their failures are not reclassified as successful security tests.
 - This is a test-window correction only. The credential path remains fail-closed until the exact-head SCM integration and supported Windows Server acceptance pass.
+
+## 2026-11-25 — SCM PID trace parsing correction (v0.1.268)
+- Run [45579008567](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45579008567) showed the bootstrap service passed token identity validation, Administrator named-pipe preflight, PostgreSQL 18.7 version validation and initdb launch. The trace included `initdb-process-started:<PID>`, but the SCM fixture did not match it while reading raw Windows CRLF text.
+- Replaced raw-text multiline regex parsing with `[IO.File]::ReadAllLines` and a line-level PID pattern that tolerates CRLF/LF. The service and security checks are unchanged; the 45-second smoke hold remains bounded.
+- Same-user diagnostic jobs remain informational/non-blocking. The SCM fixture still must prove that a distinct Standard User is denied `PROCESS_DUP_HANDLE` on both actual service-owned initdb parent and re-exec child, complete real initialization, SCRAM verification and no-secret scan.
+- No credential-safety acceptance is claimed. The production initializer remains fail-closed pending exact-head CI and supported Windows Server acceptance.
