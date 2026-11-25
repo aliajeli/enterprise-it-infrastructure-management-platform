@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.261 — 2026-11-25
+
+- Extended the Windows SCM acceptance fixture to stage checksum-verified PostgreSQL 18.7 binaries beneath the versioned Program Files service root and invoke the real production bootstrap client using a synthetic SecureString credential.
+- Added a smoke-only 15-second initdb hold, activated exclusively by a protected ProgramData marker, so a separate local Standard User can attempt PROCESS_DUP_HANDLE against both the service-launched initdb parent and its restricted re-exec child before stdin is written.
+- The fixture verifies cluster PG_VERSION 18, SCRAM pg_hba.conf, no synthetic marker in ProgramData files or initdb command lines, and service liveness. The hold and PID trace are disabled unless the protected smoke marker is present.
+- Hosted CI still uses LocalService plus the unrestricted per-service SID; actual NT SERVICE virtual-account acceptance on supported Windows Server remains mandatory.
+
 ## 0.1.260 — 2026-11-25
 
 - Shortened the Standard User SCM probe command and switched it from `-EncodedCommand` to a bounded inline `-Command`. The 0.1.259 run passed Administrator preflight and malformed-frame rejection, but the credentialed child process could not start because the encoded command line exceeded the conservative CreateProcessWithLogonW command-line limit.

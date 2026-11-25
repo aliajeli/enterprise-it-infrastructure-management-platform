@@ -25,11 +25,37 @@ $plain = [Convert]::ToBase64String($random) + "Aa1!"
 [Array]::Clear($random,0,$random.Length)
 $secure = ConvertTo-SecureString $plain -AsPlainText -Force
 $plain = $null
-$createdRoot = $false; $createdUser = $false; $createdService = $false; $createdDiagnosticRoot = $false; $child = $null; $remaining = $null
+$createdRoot = $false; $createdUser = $false; $createdService = $false; $createdDiagnosticRoot = $false; $createdPgDownloadRoot = $false; $child = $null; $remaining = $null; $bootstrapSecure = $null; $bootstrapPtr = [IntPtr]::Zero; $bootstrapChars = $null; $bootstrapBytes = $null; $bootstrapFrame = $null; $initdbPipe = $null
 try {
   New-Item -ItemType Directory -Path $root -Force | Out-Null
   $createdRoot = $true
   Get-ChildItem -LiteralPath $build -Force | Copy-Item -Destination $root -Recurse -Force
+
+  # Stage the real, checksum-verified PostgreSQL 18.7 payload beneath the
+  # versioned service root so the service itself launches initdb.
+  $pgDownloadRoot = Join-Path $env:RUNNER_TEMP ("enterpriseit-bootstrap-pg-" + [guid]::NewGuid().ToString("N"))
+  New-Item -ItemType Directory -Path $pgDownloadRoot -Force | Out-Null
+  $createdPgDownloadRoot = $true
+  $pgArchive = Join-Path $pgDownloadRoot "postgresql-18.7-1-windows-x64-binaries.zip"
+  $pgChecksum = $pgArchive + ".sha256"
+  $pgExtract = Join-Path $pgDownloadRoot "extract"
+  $pgUrl = "https://get.enterprisedb.com/postgresql/postgresql-18.7-1-windows-x64-binaries.zip"
+  Invoke-WebRequest -Uri $pgUrl -OutFile $pgArchive -UseBasicParsing
+  Invoke-WebRequest -Uri ($pgUrl + ".sha256") -OutFile $pgChecksum -UseBasicParsing
+  $pgExpected = [regex]::Match((Get-Content -LiteralPath $pgChecksum -Raw),"(?i)\\b[a-f0-9]{64}\\b").Value
+  if ($pgExpected.Length -ne 64 -or (Get-FileHash -LiteralPath $pgArchive -Algorithm SHA256).Hash -ine $pgExpected) { throw "PostgreSQL 18.7 fixture archive checksum mismatch." }
+  Expand-Archive -LiteralPath $pgArchive -DestinationPath $pgExtract
+  $pgInitDbFiles = @(Get-ChildItem -LiteralPath $pgExtract -Filter "initdb.exe" -File -Recurse)
+  if ($pgInitDbFiles.Count -ne 1) { throw "Expected exactly one initdb.exe in the PostgreSQL fixture archive." }
+  $pgBinRoot = Split-Path -Parent $pgInitDbFiles[0].FullName
+  if ((Split-Path -Leaf $pgBinRoot) -ne "bin") { throw "PostgreSQL fixture initdb is not beneath a bin directory." }
+  $pgRoot = Split-Path -Parent $pgBinRoot
+  if ((Split-Path -Leaf $pgRoot) -ne "pgsql") { throw "Unexpected PostgreSQL fixture payload layout." }
+  $pgDestination = Join-Path $root "postgresql\\pgsql"
+  New-Item -ItemType Directory -Path $pgDestination -Force | Out-Null
+  Copy-Item -Path (Join-Path $pgRoot "*") -Destination $pgDestination -Recurse -Force
+  if (-not (Test-Path -LiteralPath (Join-Path $pgDestination "bin\\initdb.exe") -PathType Leaf)) { throw "Staged PostgreSQL initdb payload is incomplete." }
+
   New-LocalUser -Name $userName -Password $secure -AccountExpires ([DateTime]::Now.AddHours(1)) -Description "Disposable bootstrap pipe ACL fixture" | Out-Null
   $createdUser = $true
   $credential = [PSCredential]::new("$env:COMPUTERNAME\$userName",$secure)
@@ -53,6 +79,10 @@ try {
   Write-Host ("SCM service SID: " + $serviceSid)
   & icacls.exe $diagnosticRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" "*S-1-5-19:(OI)(CI)(M)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap diagnostic directory." }
+  # This marker activates a bounded 15-second initdb hold only in this
+  # disposable smoke fixture, allowing a separate Standard User to probe
+  # PROCESS_DUP_HANDLE on the real initdb parent and restricted re-exec child.
+  New-Item -ItemType File -Path (Join-Path $diagnosticRoot "bootstrap-smoke.pause-initdb") -Force | Out-Null
   & sc.exe start $serviceName | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "SCM start failed." }
   $until = [DateTime]::UtcNow.AddSeconds(20); $state = "Stopped"
@@ -149,7 +179,116 @@ exit 42
     throw "Standard User pipe denial was not established."
   }
   if ((Get-Service $serviceName).Status -ne "Running") { throw "Service stopped after access test." }
-  Write-Host "SCM startup, administrator token preflight, malformed-frame rejection and same-session Standard User pipe denial passed; no initdb or credential was used."
+  $child.Dispose(); $child = $null
+
+  # Send a synthetic credential through the production protocol. The service
+  # will launch the real PostgreSQL 18.7 initdb as LocalService + its service
+  # SID, then hold before stdin transmission so the Standard User can probe
+  # both the parent and PostgreSQL's restricted re-exec child.
+  $bootstrapMarker = "ci-bootstrap-" + [guid]::NewGuid().ToString("N") + "-Aa1!"
+  $bootstrapSecure = ConvertTo-SecureString $bootstrapMarker -AsPlainText -Force
+  $bootstrapPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($bootstrapSecure)
+  $bootstrapChars = [char[]]::new($bootstrapSecure.Length)
+  [Runtime.InteropServices.Marshal]::Copy($bootstrapPtr,$bootstrapChars,0,$bootstrapChars.Length)
+  $bootstrapBytes = [Text.UTF8Encoding]::new($false,$true).GetBytes($bootstrapChars)
+  $bootstrapFrame = [byte[]]::new(4 + $bootstrapBytes.Length)
+  $lengthPrefix = [BitConverter]::GetBytes([int]$bootstrapBytes.Length)
+  [Array]::Reverse($lengthPrefix)
+  [Array]::Copy($lengthPrefix,0,$bootstrapFrame,0,4)
+  [Array]::Copy($bootstrapBytes,0,$bootstrapFrame,4,$bootstrapBytes.Length)
+
+  $initdbPipe = [IO.Pipes.NamedPipeClientStream]::new(".",$pipeName,[IO.Pipes.PipeDirection]::InOut,[IO.Pipes.PipeOptions]::None,[Security.Principal.TokenImpersonationLevel]::Impersonation)
+  $initdbPipe.Connect(15000)
+  $initdbPreflight = [byte[]]::new(1)
+  $initdbPreflightTask = $initdbPipe.ReadAsync($initdbPreflight,0,1)
+  $initdbPreflightCount = $initdbPreflightTask.WaitAsync([TimeSpan]::FromSeconds(5)).GetAwaiter().GetResult()
+  if ($initdbPreflightCount -ne 1 -or $initdbPreflight[0] -ne 0) { throw "Administrator was rejected before real initdb credential transmission." }
+  $initdbPipe.Write($bootstrapFrame,0,$bootstrapFrame.Length)
+  $initdbPipe.Flush()
+  $initdbFinal = [byte[]]::new(1)
+  $initdbFinalTask = $initdbPipe.ReadAsync($initdbFinal,0,1)
+
+  $initdbPid = 0
+  $traceDeadline = [DateTime]::UtcNow.AddSeconds(10)
+  do {
+    if (Test-Path -LiteralPath $diagnosticFile) {
+      $traceText = Get-Content -LiteralPath $diagnosticFile -Raw
+      $pidMatch = [regex]::Match($traceText,"(?m)^initdb-process-started:(\\d+)$")
+      if ($pidMatch.Success) { $initdbPid = [int]$pidMatch.Groups[1].Value; break }
+    }
+    Start-Sleep -Milliseconds 100
+  } while ([DateTime]::UtcNow -lt $traceDeadline)
+  if ($initdbPid -le 0) { throw "Service did not publish the non-secret initdb process marker during the smoke hold." }
+
+  $reexecPid = 0
+  $reexecDeadline = [DateTime]::UtcNow.AddSeconds(8)
+  do {
+    $reexecChildren = @(Get-CimInstance -ClassName Win32_Process -Filter ("ParentProcessId = " + $initdbPid) -ErrorAction Stop | Where-Object { $_.Name -ieq "initdb.exe" })
+    if ($reexecChildren.Count -gt 1) { throw "Ambiguous PostgreSQL initdb re-exec child." }
+    if ($reexecChildren.Count -eq 1) { $reexecPid = [int]$reexecChildren[0].ProcessId; break }
+    Start-Sleep -Milliseconds 150
+  } while ([DateTime]::UtcNow -lt $reexecDeadline)
+  if ($reexecPid -le 0) { throw "PostgreSQL restricted initdb re-exec child was not observed during the smoke hold." }
+
+  foreach ($pid in @($initdbPid,$reexecPid)) {
+    $processInfo = @(Get-CimInstance -ClassName Win32_Process -Filter ("ProcessId = " + $pid) -ErrorAction Stop)
+    if ($processInfo.Count -ne 1 -or [string]$processInfo[0].CommandLine -match [regex]::Escape($bootstrapMarker)) { throw "Synthetic credential appeared in an initdb command line." }
+  }
+
+  $handleProbe = @'
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class EnterpriseItServiceInitDbAccessProbe {
+ [DllImport("kernel32.dll",SetLastError=true)] public static extern IntPtr OpenProcess(uint access,bool inherit,int pid);
+ [DllImport("kernel32.dll")] [return:MarshalAs(UnmanagedType.Bool)] public static extern bool CloseHandle(IntPtr handle);
+}
+"@
+$denied=0
+foreach($pid in @(__INITDB_PARENT_PID__,__INITDB_REEXEC_PID__)){
+ $h=[EnterpriseItServiceInitDbAccessProbe]::OpenProcess(0x40,$false,$pid)
+ if($h -ne [IntPtr]::Zero){$null=[EnterpriseItServiceInitDbAccessProbe]::CloseHandle($h);exit 41}
+ if([Runtime.InteropServices.Marshal]::GetLastWin32Error() -eq 5){$denied++}else{exit 42}
+}
+if($denied -eq 2){exit 0};exit 43
+'@
+  $handleProbe = $handleProbe.Replace("__INITDB_PARENT_PID__",[string]$initdbPid).Replace("__INITDB_REEXEC_PID__",[string]$reexecPid)
+  $handleProbeStart = [Diagnostics.ProcessStartInfo]::new()
+  $handleProbeStart.FileName = Join-Path $PSHOME "pwsh.exe"
+  foreach ($argument in @("-NoLogo","-NoProfile","-NonInteractive","-Command",$handleProbe)) { $handleProbeStart.ArgumentList.Add($argument) }
+  $handleProbeStart.UseShellExecute = $false
+  $handleProbeStart.CreateNoWindow = $true
+  $handleProbeStart.RedirectStandardInput = $true
+  $handleProbeStart.RedirectStandardOutput = $true
+  $handleProbeStart.RedirectStandardError = $true
+  $handleProbeStart.Domain = $env:COMPUTERNAME
+  $handleProbeStart.UserName = $userName
+  $handleProbeStart.Password = $secure
+  $handleProbeStart.LoadUserProfile = $false
+  $child = [Diagnostics.Process]::Start($handleProbeStart)
+  if ($null -eq $child) { throw "Standard User initdb process-access probe could not be created." }
+  if (-not $child.WaitForExit(10000)) { $child.Kill($true); throw "Standard User initdb process-access probe timed out." }
+  if ($child.ExitCode -ne 0) {
+    if ($child.ExitCode -eq 41) { throw "Standard User obtained PROCESS_DUP_HANDLE on a service-owned initdb process." }
+    throw "Standard User PROCESS_DUP_HANDLE denial was not established for both initdb processes."
+  }
+  $child.Dispose(); $child = $null
+
+  $finalCount = $initdbFinalTask.WaitAsync([TimeSpan]::FromMinutes(3.5)).GetAwaiter().GetResult()
+  if ($finalCount -ne 1 -or $initdbFinal[0] -ne 0) { throw "Service-owned real PostgreSQL 18.7 initdb did not complete successfully." }
+  $dataRoot = Join-Path $diagnosticRoot "data"
+  if (-not (Test-Path -LiteralPath (Join-Path $dataRoot "PG_VERSION") -PathType Leaf) -or (Get-Content -LiteralPath (Join-Path $dataRoot "PG_VERSION") -Raw).Trim() -ne "18") { throw "Service-owned initdb did not create a PostgreSQL 18 cluster." }
+  if ((Get-Content -LiteralPath (Join-Path $dataRoot "pg_hba.conf") -Raw) -notmatch "scram-sha-256") { throw "Service-owned initdb did not produce SCRAM authentication policy." }
+
+  foreach ($file in @(Get-ChildItem -LiteralPath $diagnosticRoot -File -Recurse)) {
+    $diskBytes = [IO.File]::ReadAllBytes($file.FullName)
+    try {
+      if ([Text.Encoding]::UTF8.GetString($diskBytes).Contains($bootstrapMarker)) { throw "Synthetic credential was found in a ProgramData file." }
+    } finally { [Array]::Clear($diskBytes,0,$diskBytes.Length) }
+  }
+  if ((Get-Service $serviceName).Status -ne "Running") { throw "Service stopped after real initdb operation." }
+  Write-Host "SCM, Administrator preflight, Standard User pipe denial, real PostgreSQL 18.7 service-owned initdb, Standard User PROCESS_DUP_HANDLE denial on parent/re-exec child, SCRAM and plaintext-marker scan passed."
+
 } finally {
   if ($null -ne $child) { try { if (-not $child.HasExited) { $child.Kill(); $child.WaitForExit(10000) | Out-Null } } catch {}; $child.Dispose() }
   if ($createdService) {
@@ -162,6 +301,14 @@ exit 42
   $secure.Dispose()
   if ($createdDiagnosticRoot -and (Test-Path -LiteralPath $diagnosticRoot)) { Remove-Item -LiteralPath $diagnosticRoot -Recurse -Force -ErrorAction SilentlyContinue }
   if ($createdRoot -and (Test-Path -LiteralPath $root)) { Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue }
+  if ($createdPgDownloadRoot -and (Test-Path -LiteralPath $pgDownloadRoot)) { Remove-Item -LiteralPath $pgDownloadRoot -Recurse -Force -ErrorAction SilentlyContinue }
+  if ($initdbPipe) { $initdbPipe.Dispose() }
+  if ($bootstrapPtr -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bootstrapPtr) }
+  if ($bootstrapChars) { [Array]::Clear($bootstrapChars,0,$bootstrapChars.Length) }
+  if ($bootstrapBytes) { [Array]::Clear($bootstrapBytes,0,$bootstrapBytes.Length) }
+  if ($bootstrapFrame) { [Array]::Clear($bootstrapFrame,0,$bootstrapFrame.Length) }
+  if ($bootstrapSecure) { $bootstrapSecure.Dispose() }
+  $bootstrapMarker = $null
   if ($null -ne $remaining) { throw "Service cleanup could not be confirmed." }
   if ($createdUser -and (Get-LocalUser $userName -ErrorAction SilentlyContinue)) { throw "Test-account cleanup could not be confirmed." }
 }

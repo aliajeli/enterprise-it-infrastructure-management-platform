@@ -226,7 +226,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         }
     }
 
-    private static async Task InitializeClusterAsync(byte[] password, CancellationToken cancellationToken)
+    private async Task InitializeClusterAsync(byte[] password, CancellationToken cancellationToken)
     {
         var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
         var installRoot = Path.GetFullPath(AppContext.BaseDirectory)
@@ -307,11 +307,22 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         if (!process.Start())
             throw new InvalidOperationException("PostgreSQL initdb did not start.");
 
+        WriteTrace("initdb-process-started:" + process.Id.ToString(CultureInfo.InvariantCulture));
         var stdoutDrain = DrainAndDiscardAsync(process.StandardOutput);
         var stderrDrain = DrainAndDiscardAsync(process.StandardError);
         var stdin = new byte[checked((password.Length + 1) * 2)];
         try
         {
+            var smokePauseMarker = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "EnterpriseIT", "PostgreSQL", "18", "bootstrap-smoke.pause-initdb");
+            if (_diagnosticsEnabled && File.Exists(smokePauseMarker))
+            {
+                WriteTrace("initdb-smoke-hold-entered");
+                await Task.Delay(TimeSpan.FromSeconds(15), cancellationToken);
+                WriteTrace("initdb-smoke-hold-released");
+            }
+
             Buffer.BlockCopy(password, 0, stdin, 0, password.Length);
             stdin[password.Length] = (byte)'\n';
             Buffer.BlockCopy(password, 0, stdin, password.Length + 1, password.Length);
