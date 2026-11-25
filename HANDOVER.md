@@ -1903,8 +1903,14 @@ An earlier application-repository inspection reported an empty clone before the 
 
 ## 2026-11-25 — dedicated PostgreSQL Bootstrap Service candidate (v0.1.234)
 
-- Added `apps/api/windows/postgresql-bootstrap`, a separate .NET 10 Windows Service intended to run as `NT SERVICE\\EnterpriseITPostgreSQLBootstrap`. Its installer-facing named pipe has a protected DACL granting access only to SYSTEM and local Administrators; the service validates the impersonated client token rather than trusting PID or executable name.
+- Added `apps/api/windows/postgresql-bootstrap`, a separate .NET 10 Windows Service intended to run as `NT SERVICE\EnterpriseITPostgreSQLBootstrap`. Its installer-facing named pipe has a protected DACL granting access only to SYSTEM and local Administrators; the service validates the impersonated client token rather than trusting PID or executable name.
 - The service receives one bounded UTF-8 credential frame, validates it, and launches the pinned PostgreSQL 18.7 `initdb.exe` itself. The password is supplied twice over redirected anonymous stdin for PostgreSQL's prompt path; it is not placed in command-line arguments, environment variables, files, logs, or child output. Temporary byte/character buffers are cleared.
 - Added `provision-postgresql-bootstrap-service.ps1` to register the virtual-account service, enable its service SID, and prepare the fixed ProgramData data path for the bootstrap and PostgreSQL service SIDs. Added `invoke-postgresql-bootstrap.ps1` to send a SecureString over the local pipe. Added the service to immutable seven-host staging and Windows CI build/publish.
 - Important limitations: the service currently implements cluster initialization only; it does not yet provision PostgreSQL roles, grants, server configuration, service startup, or migrations. The production initializer and orchestrator remain fail-closed and are not wired to this candidate.
 - Do not claim credential transfer is accepted until exact-head Windows CI and a dedicated integration job prove SCM execution under the virtual account, pipe authorization, same-user Standard User denial of PROCESS_DUP_HANDLE on the service-owned real initdb process, successful PostgreSQL 18.7 initialization, absence of secret leakage, timeout/cancel/crash cleanup, data ownership/ACLs, and supported Windows Server acceptance. No PR merge or Release is authorized.
+
+
+## 2026-11-25 — bootstrap provisioning transaction gate (v0.1.237)
+
+- Provisioning now uses one ShouldProcess approval covering SCM registration, service-SID enablement, and ACL changes. If approval is declined, no mutation is reported as successful.
+- Exact-head Windows CI remains the next validation gate. The service has not yet passed an end-to-end real initdb/standard-user process-object test and is not wired into the production initializer.

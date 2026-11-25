@@ -1,8 +1,20 @@
 # Changelog
 
+## 0.1.237 — 2026-11-25
+
+- Consolidated bootstrap service provisioning into one ShouldProcess approval before SCM and ACL mutation. This prevents a declined individual ACL prompt from being reported as a successful provisioning operation.
+
+## 0.1.236 — 2026-11-25
+
+- Fixed the bootstrap provisioning script's conditional structure and corrected the changelog heading. No runtime gate was enabled.
+
+## 0.1.235 — 2026-11-25
+
+- Tightened bootstrap service provisioning confirmation handling and documented that exact-head Windows CI and standard-user process-isolation tests remain required.
+
 ## 0.1.234 — 2026-11-25
 
-- Added a dedicated Windows PostgreSQL Bootstrap Service candidate under the virtual service identity `NT SERVICE\\EnterpriseITPostgreSQLBootstrap`.
+- Added a dedicated Windows PostgreSQL Bootstrap Service candidate under the virtual service identity `NT SERVICE\EnterpriseITPostgreSQLBootstrap`.
 - Added a SYSTEM/Administrators-only named-pipe request endpoint, Windows-token authorization, bounded binary credential framing, and service-owned PostgreSQL 18.7 initdb execution through redirected stdin. Credential bytes are excluded from argv, environment, files, logs, and process output.
 - Added service provisioning and a SecureString-based local client script; included the new executable in immutable Windows service-host staging and CI build/publish validation.
 - This is an implementation candidate, not an approved production path. Exact-head Windows CI, same-user Standard User handle-denial integration, real initdb service-account integration, service ACL/SCM lifecycle, cluster ownership/grants, role provisioning, migrations, and supported Windows Server acceptance remain mandatory. The existing initializer stays fail-closed.
