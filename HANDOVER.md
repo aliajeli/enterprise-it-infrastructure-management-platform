@@ -1,3 +1,11 @@
+## 0.1.245 — PostgreSQL bootstrap service DI activation correction — 2026-11-25
+
+The 0.1.244 exact-head hosted Windows run [45560738147](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45560738147) reached the new SCM integration test. The service briefly entered Running, then terminated with SCM exit code 1067 before creating its named pipe. Application/.NET Runtime Event ID 1026 showed the actual exception: `InvalidOperationException: A suitable constructor for type 'EnterpriseIT.PostgreSQLBootstrap.PostgreSqlBootstrapService' could not be located`. The BackgroundService implementation and constructor were both internal; the default Microsoft.Extensions.DependencyInjection activator requires a public constructor.
+
+Changed the service constructor to public so DI can instantiate the internal implementation type. This is a root-cause correction supported by the event log, not yet a passing result. The pipe owner remains the kernel-selected token owner, and the protected DACL remains limited to service SID, SYSTEM and Administrators. The new SCM test must pass the LocalService+unrestricted-service-SID hosted path, authorized-admin malformed-frame response, and same-session Standard User denial.
+
+Still open: production virtual-account acceptance on supported Windows Server, service-owned initdb `PROCESS_DUP_HANDLE` isolation, real PostgreSQL 18.7 initialization, secret-leakage tests, timeout/cancel/crash cleanup, data ACL/ownership, role/grant bootstrap, migrations and initializer/orchestrator integration. Keep production initializer fail-closed. No PR merge or Release authorized.
+
 ## 0.1.244 — named-pipe owner correction and startup diagnostics — 2026-11-25
 
 The 0.1.243 Windows SCM test compiled the bootstrap service but failed when the authorized administrator attempted to connect to its named pipe (15-second connection timeout). The service was briefly observed in Running state, but pipe readiness was not proven. The likely cause was the explicit `PipeSecurity.SetOwner(serviceSid)`: a service SID is normally an enabled authorization group, not necessarily an owner-enabled SID, so forcing it as the kernel object owner can make pipe creation fail.

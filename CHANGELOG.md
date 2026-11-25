@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.245 — 2026-11-25
+
+- Fixed hosted SCM startup: the bootstrap BackgroundService constructor was internal, so the default Microsoft DI activator could not resolve it and the service exited with an unhandled InvalidOperationException before creating its pipe. The constructor is now public for DI activation.
+- The exact-head Windows SCM integration test exposed the issue through bounded Application/.NET Runtime and Service Control Manager event diagnostics. Re-run the SCM/Standard User pipe test before claiming the service starts successfully.
+
 ## 0.1.244 — 2026-11-25
 
 - Removed explicit Named Pipe owner assignment to the service SID. A service SID is an authorization group and is not guaranteed to be owner-enabled in the process token; forcing it as the kernel object owner can prevent pipe creation. The kernel-selected owner now follows the service process's primary identity, while the protected DACL continues to grant only the dedicated service SID, SYSTEM and Administrators.

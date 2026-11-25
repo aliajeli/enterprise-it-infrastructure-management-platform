@@ -17,7 +17,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(3);
     private readonly ILogger<PostgreSqlBootstrapService> _logger;
 
-    internal PostgreSqlBootstrapService(ILogger<PostgreSqlBootstrapService> logger) =>
+    public PostgreSqlBootstrapService(ILogger<PostgreSqlBootstrapService> logger) =>
         _logger = logger;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
