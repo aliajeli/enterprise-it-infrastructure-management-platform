@@ -245,6 +245,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         if (!File.Exists(initdb))
             throw new FileNotFoundException("PostgreSQL initdb payload is missing.");
 
+        WriteTrace("initdb-version-check-started");
         using (var versionProcess = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -264,6 +265,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             var versionOutput = await versionProcess.StandardOutput.ReadToEndAsync(cancellationToken);
             _ = await versionProcess.StandardError.ReadToEndAsync(cancellationToken);
             await versionProcess.WaitForExitAsync(cancellationToken);
+            WriteTrace("initdb-version-check-finished:" + versionProcess.ExitCode.ToString(CultureInfo.InvariantCulture));
             if (versionProcess.ExitCode != 0 ||
                 !System.Text.RegularExpressions.Regex.IsMatch(
                     versionOutput.Trim(), @"^initdb \(PostgreSQL\) 18\.7(?:\s|$)"))
@@ -277,6 +279,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             throw new IOException("PostgreSQL data directory is not empty.");
 
         Directory.CreateDirectory(dataRoot);
+        WriteTrace("initdb-data-root-prepared");
         var start = new ProcessStartInfo
         {
             FileName = initdb,
@@ -304,6 +307,7 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         start.Environment["LC_ALL"] = "C";
 
         using var process = new Process { StartInfo = start };
+        WriteTrace("initdb-process-start-requested");
         if (!process.Start())
             throw new InvalidOperationException("PostgreSQL initdb did not start.");
 

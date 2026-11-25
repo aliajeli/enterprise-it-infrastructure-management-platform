@@ -25,7 +25,7 @@ $plain = [Convert]::ToBase64String($random) + "Aa1!"
 [Array]::Clear($random,0,$random.Length)
 $secure = ConvertTo-SecureString $plain -AsPlainText -Force
 $plain = $null
-$createdRoot = $false; $createdUser = $false; $createdService = $false; $createdDiagnosticRoot = $false; $createdPgDownloadRoot = $false; $child = $null; $remaining = $null; $bootstrapSecure = $null; $bootstrapPtr = [IntPtr]::Zero; $bootstrapChars = $null; $bootstrapBytes = $null; $bootstrapFrame = $null; $initdbPipe = $null
+$createdRoot = $false; $createdUser = $false; $createdService = $false; $createdDiagnosticRoot = $false; $createdPgDownloadRoot = $false; $child = $null; $remaining = $null; $bootstrapSecure = $null; $bootstrapPtr = [IntPtr]::Zero; $bootstrapChars = $null; $bootstrapBytes = $null; $bootstrapFrame = $null; $initdbPipe = $null; $testStage = "fixture-setup"
 try {
   New-Item -ItemType Directory -Path $root -Force | Out-Null
   $createdRoot = $true
@@ -109,6 +109,7 @@ try {
 
   # Hosted runners reject custom NT SERVICE logon accounts (SCM 1057). LocalService plus the unrestricted per-service SID exercises the same service-SID authorization and pipe ACL; production virtual-account assignment remains a Windows Server acceptance gate.
   # Authorized administrator positive control; deliberately malformed frame, no secret.
+  $testStage = "admin-pipe-connect"
   $adminPipe = [IO.Pipes.NamedPipeClientStream]::new(".",$pipeName,[IO.Pipes.PipeDirection]::InOut,[IO.Pipes.PipeOptions]::None,[Security.Principal.TokenImpersonationLevel]::Impersonation)
   try {
     try {
@@ -133,17 +134,21 @@ try {
     } else { Write-Host "No bootstrap trace file was created." }
       throw "Bootstrap named pipe did not become available; inspect bounded SCM/event diagnostics above."
     }
+    $testStage = "admin-preflight-read"
     $preflight = [byte[]]::new(1)
     $preflightTask = $adminPipe.ReadAsync($preflight,0,1)
     $preflightCount = $preflightTask.WaitAsync([TimeSpan]::FromSeconds(5)).GetAwaiter().GetResult()
     if ($preflightCount -ne 1 -or $preflight[0] -ne 0) { throw "Administrator token was rejected before request framing." }
+    $testStage = "admin-malformed-frame-write"
     $adminPipe.Write([byte[]](0,0,0,0),0,4); $adminPipe.Flush()
+    $testStage = "admin-malformed-frame-response"
     $response = [byte[]]::new(1)
     $readTask = $adminPipe.ReadAsync($response,0,1)
     $readCount = $readTask.WaitAsync([TimeSpan]::FromSeconds(5)).GetAwaiter().GetResult()
     if ($readCount -ne 1 -or $response[0] -ne 1) { throw "Admin pipe malformed-frame rejection control failed." }
   } finally { $adminPipe.Dispose() }
 
+  $testStage = "standard-user-pipe-denial"
   $probe = @'
 $name = "EnterpriseIT.PostgreSQL.Bootstrap.v2"
 $until = [DateTime]::UtcNow.AddSeconds(15)
@@ -185,6 +190,7 @@ exit 42
   # will launch the real PostgreSQL 18.7 initdb as LocalService + its service
   # SID, then hold before stdin transmission so the Standard User can probe
   # both the parent and PostgreSQL's restricted re-exec child.
+  $testStage = "credentialed-service-initdb"
   $bootstrapMarker = "ci-bootstrap-" + [guid]::NewGuid().ToString("N") + "-Aa1!"
   $bootstrapSecure = ConvertTo-SecureString $bootstrapMarker -AsPlainText -Force
   $bootstrapPtr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($bootstrapSecure)
@@ -208,6 +214,7 @@ exit 42
   $initdbFinal = [byte[]]::new(1)
   $initdbFinalTask = $initdbPipe.ReadAsync($initdbFinal,0,1)
 
+  $testStage = "wait-initdb-process-marker"
   $initdbPid = 0
   $traceDeadline = [DateTime]::UtcNow.AddSeconds(10)
   do {
@@ -220,6 +227,7 @@ exit 42
   } while ([DateTime]::UtcNow -lt $traceDeadline)
   if ($initdbPid -le 0) { throw "Service did not publish the non-secret initdb process marker during the smoke hold." }
 
+  $testStage = "wait-initdb-reexec-child"
   $reexecPid = 0
   $reexecDeadline = [DateTime]::UtcNow.AddSeconds(8)
   do {
@@ -235,6 +243,7 @@ exit 42
     if ($processInfo.Count -ne 1 -or [string]$processInfo[0].CommandLine -match [regex]::Escape($bootstrapMarker)) { throw "Synthetic credential appeared in an initdb command line." }
   }
 
+  $testStage = "standard-user-process-handle-denial"
   $handleProbe = @'
 Add-Type -TypeDefinition @"
 using System;
@@ -274,6 +283,7 @@ if($denied -eq 2){exit 0};exit 43
   }
   $child.Dispose(); $child = $null
 
+  $testStage = "wait-initdb-completion"
   $finalCount = $initdbFinalTask.WaitAsync([TimeSpan]::FromMinutes(3.5)).GetAwaiter().GetResult()
   if ($finalCount -ne 1 -or $initdbFinal[0] -ne 0) { throw "Service-owned real PostgreSQL 18.7 initdb did not complete successfully." }
   $dataRoot = Join-Path $diagnosticRoot "data"
@@ -289,6 +299,13 @@ if($denied -eq 2){exit 0};exit 43
   if ((Get-Service $serviceName).Status -ne "Running") { throw "Service stopped after real initdb operation." }
   Write-Host "SCM, Administrator preflight, Standard User pipe denial, real PostgreSQL 18.7 service-owned initdb, Standard User PROCESS_DUP_HANDLE denial on parent/re-exec child, SCRAM and plaintext-marker scan passed."
 
+} catch {
+  Write-Host ("Bootstrap SCM fixture failed at stage: " + $testStage)
+  if (Test-Path -LiteralPath $diagnosticFile) {
+    Get-Content -LiteralPath $diagnosticFile | ForEach-Object { Write-Host ("TRACE: " + $_) }
+  } else { Write-Host "No bootstrap trace file was created before fixture failure." }
+  try { Write-Host ((& sc.exe queryex $serviceName 2>&1 | Out-String)) } catch {}
+  throw
 } finally {
   if ($null -ne $child) { try { if (-not $child.HasExited) { $child.Kill(); $child.WaitForExit(10000) | Out-Null } } catch {}; $child.Dispose() }
   if ($createdService) {

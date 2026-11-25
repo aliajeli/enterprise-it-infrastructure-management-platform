@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.265 — expose bounded bootstrap SCM failure stage — 2026-11-25
+
+- The 0.1.264 exact-head run advanced beyond the administrator pipe preflight and Standard User pipe-denial checks, but failed because the service did not publish its non-secret initdb PID marker within the fixture deadline.
+- Added fixed service trace markers around PostgreSQL version validation, data-root preparation and initdb process launch. No exception text, command output, credential bytes or user-controlled paths are logged.
+- The SCM fixture now records the failing test stage, emits the protected non-secret trace before cleanup, and captures the service query state. This is diagnostic instrumentation only; no credential transport or authorization behavior was relaxed.
+- The service-owned initdb and Standard User PROCESS_DUP_HANDLE acceptance gates remain open pending exact-head Windows CI. Production initializer remains fail-closed.
+
 ## 0.1.264 — 2026-11-25
 
 - Corrected the temporary Program Files payload version used by the real-initdb SCM fixture. The service deliberately accepts only numeric semantic-version directory names; the earlier GUID-derived suffix contained hexadecimal letters and would have been rejected by the service's fixed-path preflight.
