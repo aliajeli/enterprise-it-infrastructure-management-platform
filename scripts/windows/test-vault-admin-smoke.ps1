@@ -84,6 +84,7 @@ try{
   # The provisioned Vault intentionally excludes Administrators from its exact
   # leaf DACL. Hand this GUID-scoped disposable tree to the following SYSTEM
   # fixture task for cleanup; never broaden the production-shaped Vault ACL.
-  $env:ENTERPRISEIT_VAULT_ADMIN_SMOKE_ROOT=$smokeRoot
+  if(-not $env:GITHUB_ENV){throw 'GitHub Actions environment handoff file is unavailable.'}
+  [IO.File]::AppendAllText($env:GITHUB_ENV,('ENTERPRISEIT_VAULT_ADMIN_SMOKE_ROOT='+$smokeRoot+[Environment]::NewLine),[Text.UTF8Encoding]::new($false))
  }
 }

@@ -1,3 +1,9 @@
+## 0.1.284 — Repair SYSTEM Vault fixture parser and cross-step handoff — 2026-11-25
+
+The 0.1.283 hosted run confirmed elevated Administrator Vault provision, verify, and idempotent retry succeeded. The subsequent SYSTEM fixture script failed to parse because its path-validation condition was split before the closing delimiter. The handoff was also process-local and would not persist between workflow steps.
+
+The parser condition is repaired and the GUID-scoped disposable root is now passed to the next workflow step through GITHUB_ENV. Cleanup remains restricted to the exact generated volume-root path and rejects reparse-point roots. No production Vault ACL was widened.
+
 ## 0.1.283 — SYSTEM-owned cleanup for protected Vault smoke fixture — 2026-11-25
 
 The 0.1.282 hosted Windows API runtime smoke passed elevated Administrator Vault provision/verify/idempotent retry, then failed in fixture cleanup because the exact Vault leaf DACL correctly excludes the Administrators group. The failure was cleanup under the wrong token, not a Vault provisioning denial.

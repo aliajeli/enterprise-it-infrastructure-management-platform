@@ -1,3 +1,11 @@
+## 0.1.284 — Repair SYSTEM Vault fixture parser and cross-step handoff — 2026-11-25
+
+The 0.1.283 CI run exposed two integration defects in the test harness: a missing closing delimiter in the generated PowerShell path-validation condition, and a process-local environment assignment that did not survive into the next GitHub Actions step.
+
+- Restored the complete GUID-scoped path validation condition in the SYSTEM fixture script.
+- Persisted the generated disposable fixture path through GitHub Actions GITHUB_ENV for the immediately following SYSTEM-only cleanup step.
+- The cleanup still rejects paths outside the system volume root, unexpected directory names, and reparse-point roots. Production Vault ACLs remain unchanged.
+
 ## 0.1.283 — SYSTEM-owned cleanup for protected Vault smoke fixture — 2026-11-25
 
 The 0.1.282 Windows API runtime smoke proved elevated Administrator provisioning, verify-only, and idempotent retry succeeded, then failed while the Administrator process recursively removed the disposable Vault. This was expected from the exact Vault leaf DACL, which intentionally grants only the API Service SID and LocalSystem; it was not a provisioning-policy failure.
