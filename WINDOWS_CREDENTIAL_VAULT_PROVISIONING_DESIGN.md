@@ -1,5 +1,8 @@
 # Windows Credential Vault Provisioning Design
 
+> **Implementation update (0.1.223): a candidate handle-relative provisioner and SYSTEM fixture tests exist; hosted CI passed policy, fault and limited concurrency tests. Actual service-SID transaction, ancestor trust, independent security review and supported Windows Server acceptance remain open. Orchestration mutation and real credential persistence remain disabled. Earlier design-only wording below is historical; see [HANDOVER](HANDOVER.md).**
+
+
 Status: design baseline; implementation and target-Windows acceptance are pending.
 
 ## Purpose and security boundary

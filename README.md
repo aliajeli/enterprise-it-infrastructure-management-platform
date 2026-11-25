@@ -6,6 +6,17 @@
 
 The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration and role policy are implemented in Draft PRs [#5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) and [#6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), both unmerged. M2 inventory API/schema and the first branch-aware inventory UI are implemented in Draft PRs [#7](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/7) and [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), both unmerged. The local preview path is documented below and in [PREVIEW_TEST_GUIDE.md](PREVIEW_TEST_GUIDE.md). M1 still requires clean Windows service integration and production encrypted backup/restore evidence. Device discovery, monitoring transports, hardware validation and production packaging remain future work. The platform is not production-ready.
 
+## Windows deployment: current state (0.1.223)
+
+**There is no production-ready or installable release yet.** This branch contains a development-only offline payload assembly and verification workflow, not a finished installer. Installer mutation, PostgreSQL initialization/bootstrap/migrations and service orchestration fail closed pending the security and ownership gates below. Offline archive inspection (`-WhatIf`) does not establish installability or authenticate a publisher; a trusted independent digest is required. Packaged ZIPs are not signed releases.
+
+- The Vault provisioner and helper have candidate source and hosted Windows fixture coverage, but need independent security review, a real service-SID transaction and supported Windows Server acceptance. Real credential persistence remains disabled.
+- Synthetic PostgreSQL stdin experiments work functionally but same-user handle interception is reproducible. The real initdb named-pipe client has an unexpected PID and is rejected before any password is sent. A separate non-admin test account did not protect the process from the elevated runner. **None is approved for production secrets.**
+- Cluster identity/ownership, role bootstrap/grants and production migration are unresolved; existing services, clusters, ACLs and data must never be silently adopted. Disposable migration tests are not production acceptance.
+- [CI 45480884339](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45480884339) for `f640873f3e178dad4064156b592b81f0c8ccb74a` (0.1.222) completed with overall failure: Windows archive/manifest/Vault, fast and full disposable migration/assembly, Linux and other functional tests passed; four security probes failed. Hosted CI is not clean Windows Server acceptance.
+
+Current handoff and evidence: [AGENT_HANDOFF.md](AGENT_HANDOFF.md), [HANDOVER.md](HANDOVER.md), [testing strategy](TESTING_STRATEGY.md), [PostgreSQL bootstrap contract](WINDOWS_POSTGRESQL_BOOTSTRAP_DESIGN.md), [Vault provisioning contract](WINDOWS_CREDENTIAL_VAULT_PROVISIONING_DESIGN.md) and [installer preflight](INSTALLER_PREFLIGHT.md). Historical specifications and reports remain point-in-time records, not current readiness claims. PRs #5–#9 remain Draft/open; the owner retains the merge and release decision. No network edge, MikroTik, NAT or firewall changes are authorized.
+
 ## Application baseline
 
 - **Web:** Next.js App Router, React, strict TypeScript and Tailwind CSS.
@@ -122,6 +133,12 @@ The development server binds to `127.0.0.1`. The initial dashboard is an impleme
 - [Testing strategy](TESTING_STRATEGY.md)
 - [Local preview and manual acceptance checklist](PREVIEW_TEST_GUIDE.md)
 - [Windows installer host preflight](INSTALLER_PREFLIGHT.md)
+- [Windows Credential Vault provisioning](WINDOWS_CREDENTIAL_VAULT_PROVISIONING_DESIGN.md)
+- [Windows DPAPI provider contract](WINDOWS_DPAPI_PROVIDER_DESIGN.md)
+- [Windows keyring storage contract](WINDOWS_KEYRING_STORAGE_DESIGN.md)
+- [Windows keyring filesystem and security review](WINDOWS_KEYRING_STORAGE_HARDENING_REVIEW.md)
+- [Windows PostgreSQL bootstrap and migration contract](WINDOWS_POSTGRESQL_BOOTSTRAP_DESIGN.md)
+- [PostgreSQL runtime privilege matrix](WINDOWS_POSTGRESQL_PRIVILEGE_MATRIX.md)
 - [Release process](RELEASE_PROCESS.md)
 - [Versioning policy](VERSIONING_POLICY.md)
 - [Decision log](DECISION_LOG.md)

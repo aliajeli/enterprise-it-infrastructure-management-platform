@@ -1,5 +1,8 @@
 # Windows Credential Key Protection — implementation design
 
+> **Implementation update (0.1.223): candidate DPAPI and keyring helpers and a TypeScript client exist with hosted fixture coverage, but they are not production-wired or independently approved, and recovery and real service-identity acceptance remain open. No real credentials should be entered. See [HANDOVER](HANDOVER.md).**
+
+
 **Status:** Design gate; no production DPAPI provider or recovery mechanism is implemented by this document.
 
 ## Security objectives

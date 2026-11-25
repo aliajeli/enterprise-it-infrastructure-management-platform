@@ -1,5 +1,8 @@
 # PostgreSQL runtime privilege inventory and migration ownership gate
 
+> **Current status (0.1.223): hosted disposable Windows migration and synthetic privilege fixtures passed, including SQLSTATE denial and failed-migration recovery tests; this is not production cluster identity, grants/bootstrap or migration approval. The inventory below remains source-derived and requires re-review for new schema or routes. See [HANDOVER](HANDOVER.md).**
+
+
 Status: source-derived privilege inventory and design gate. This document is not a grant script, role bootstrap implementation, migration runner, or installer acceptance result.
 
 ## Scope and evidence

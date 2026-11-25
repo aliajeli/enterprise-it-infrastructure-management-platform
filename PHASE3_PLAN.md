@@ -1,5 +1,8 @@
 # Phase 3 — Implementation plan
 
+> **Current continuation (0.1.223): the Windows offline payload is a tested development assembly, not an installer. Production initializer, bootstrap/migration, installer and service orchestration mutation remain blocked. See [README](README.md) and [HANDOVER](HANDOVER.md) for current evidence and gates; the milestones below retain their historical context.**
+
+
 **Status:** Active — owner authorization received 2026-11-19.  
 **Current main baseline:** `b7dc102bc7293817d10022176ac7fe5627d015ca` (2026-11-19).  
 **Execution rule:** implementation proceeds through reviewable milestones and pull requests. Owner-approved architecture decisions in `DECISION_LOG.md` are binding.

@@ -1,3 +1,11 @@
+## 0.1.223 documentation and preservation — 2026-11-24
+
+Reconciled README and active deployment/security/testing specifications with the exact completed 0.1.222 hosted CI result and current fail-closed gates. Historical reports remain dated evidence rather than current requirements or release claims. No credential transport, installer, migration or orchestration gate was opened. All existing changes, including the prior CI handover note, are retained on the current branch. No merge/release authorized.
+
+## 0.1.222 exact-head CI status — 2026-11-24
+
+[Run 45480884339](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45480884339) on `f640873f3e178dad4064156b592b81f0c8ccb74a`: the new manifest no-overwrite and archive path regression steps passed in Windows API runtime smoke, which completed successfully. Linux validation, fast disposable migration, Windows Web, self-contained publish, migration tooling and synthetic stdin functional jobs also passed. The same four security probes failed; full disposable assembly and migration passed. The run completed with overall failure. These results are not production acceptance; no gate was opened.
+
 ## 0.1.222 manifest and ZIP path guards — 2026-11-24
 
 Fixed a manifest overwrite race by creating its final file using CreateNew rather than check-then-WriteAllText. A failed write may leave incomplete metadata for inspection; this does not establish safety against untrusted parent-directory replacement or concurrent modification. ZIP inspection now rejects file/ancestor directory collisions in either order and the Windows-reserved COM/LPT superscript digit aliases. Added regression fixtures, including valid explicit directories. Installer mutation is still blocked and WhatIf still does not fully validate JSON or prove installability. Exact-head Windows CI required; secure credential transport, cluster ownership, production installer and Windows Server acceptance remain unresolved. No merge/release authorized.

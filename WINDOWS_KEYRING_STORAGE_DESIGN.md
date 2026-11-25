@@ -1,5 +1,8 @@
 # Windows Credential Keyring Storage Adapter — implementation contract
 
+> **Implementation update (0.1.223): candidate client/helper and handle-relative provisioning source exist, with hosted Windows fixtures; production wiring, ancestor trust, independent review and service-SID/Windows Server acceptance remain open. Earlier design-gate text is a requirements baseline, not a claim that all source is absent. See [HANDOVER](HANDOVER.md).**
+
+
 **Status:** Design gate; no production storage adapter is implemented by this document.  
 **Applies to:** Credential Vault keyring on Windows Server under the dedicated API service identity.  
 **Security posture:** Fail closed. Until the adapter and its Windows integration tests pass, the keyring remains test-only and real equipment credentials must not be entered.

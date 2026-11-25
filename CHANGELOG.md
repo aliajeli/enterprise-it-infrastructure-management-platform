@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.223 — 2026-11-24
+
+- Reconciled README, handoff and active deployment/security/testing documentation with the completed 0.1.222 validation and outstanding production gates.
+
 ## 0.1.222 — 2026-11-24
 
 - Made manifest file creation no-overwrite at the file open and hardened ZIP inspection against file/ancestor conflicts and superscript Windows device names. Added regression fixtures.

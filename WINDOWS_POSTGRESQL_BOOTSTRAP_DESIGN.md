@@ -1,5 +1,8 @@
 # Windows PostgreSQL first-install and migration contract
 
+> **Implementation update (0.1.223): hosted synthetic stdin works functionally but same-user handle interception is reproducible; the real named-pipe client PID mismatch fails closed, and a separate test user did not isolate it from an elevated runner. Neither transport is approved for production. Disposable migrations passed on hosted Windows but do not establish cluster identity, production grants, bootstrap, migration or supported-server acceptance. See [HANDOVER](HANDOVER.md).**
+
+
 Status: design/acceptance contract for the five-service Windows deployment workstream. This document does not claim that first-install database bootstrap or migrations are implemented.
 
 **Safety correction (0.1.180):** The prior initializer wrote a temporary plaintext password file despite an ACL; this contradicts the owner instruction prohibiting such files. Its mutation path is now disabled. `experimental-initdb-pipe.ps1` is an isolated, synthetic-test-only candidate, not a reviewed or approved production credential channel; it is not integrated into the initializer or orchestration. Real Windows PostgreSQL, unauthorized-client, logging, crash and secure-custody acceptance remain mandatory.

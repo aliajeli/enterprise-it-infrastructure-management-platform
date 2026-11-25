@@ -1,5 +1,8 @@
 # Deployment workflows — design only
 
+> **Current implementation status (0.1.223): the offline payload and read-only inspection are development fixtures, not an installer; mutating installer, database initialization/bootstrap/migration and orchestration are disabled. No unattended production deployment or release is authorized. See [README](README.md).**
+
+
 ## Agent via SMB and remote service control
 Target one, selection, branch or all registered computers using explicit domain credential selection (GIG clients; OKCS checkouts). Check name resolution/transport, authenticate, ADMIN$ access, remote service-control permissions, existing version/hash, package integrity and required upgrade; transfer to unique staging path, verify, stop and backup existing, install, restart, verify service plus outbound identity/heartbeat. Per-device and per-step status and precise actionable error, bounded concurrency/retry, durable job, audit, continuation policy. No trust relationship or WinRM required. Existing service account privileges, firewall and administrative shares must be verified on real systems. Never put credentials in shell or process args; use supported credential APIs and avoid process-wide conflicting SMB connections, test isolation.
 

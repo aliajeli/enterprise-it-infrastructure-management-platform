@@ -1,5 +1,8 @@
 # Decision log
 
+> **Current operational status (0.1.223): none of the historical deployment proposals authorizes opening production security gates, merging PRs #5–#9, publishing a release, or modifying network edge settings. See [README](README.md) and [HANDOVER](HANDOVER.md) for exact CI evidence and current blockers.**
+
+
 Historical proposals are retained for context. The owner-approved decisions in the final section override earlier conflicting proposals. Implementation details remain subject to technical validation.
 
 1. Separate persistent Node API/WebSocket/worker services and Next frontend on Windows, versus serverless/custom monolith. Benefit: durable work and clear ownership; cost: service supervision and packaged runtime complexity.
