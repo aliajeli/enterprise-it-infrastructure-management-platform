@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.274 — accept virtual account primary SID identity
+
+- Adjusted the SCM token assertion to accept either the expected Service SID as the token's primary user SID (the virtual-account case) or as an enabled, non-deny-only token group (the LocalService CI proxy case). The service still rejects deny-only membership and fails closed when the SID is neither.
+- No credential initializer activation; actual Windows Server virtual-account acceptance remains mandatory.
+
 ## 0.1.273 — verify enabled service SID token attributes — 2026-11-25
 
 - Replaced SID-presence-only validation with a native `GetTokenInformation(TokenGroups)` check. The bootstrap service now requires its Service SID to carry `SE_GROUP_ENABLED` and rejects `SE_GROUP_USE_FOR_DENY_ONLY`; inability to inspect token attributes fails closed.

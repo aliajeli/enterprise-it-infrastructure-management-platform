@@ -1,3 +1,9 @@
+## 0.1.274 — support virtual-account primary SID token layout — 2026-11-25
+
+The 0.1.273 SCM fixture initially required the service SID to appear as an enabled token group. That is correct for the hosted LocalService proxy, but a virtual service account may present the same SID as the token's primary user SID. The acceptance assertion now permits either primary-identity equality or an enabled group SID, and still requires the deny-only diagnostic to be false. The service implementation continues to fail closed unless one of those two valid token forms is present.
+
+Exact-head CI must confirm both compilation and the hosted LocalService group-SID path. Supported Windows Server acceptance remains necessary to confirm the actual virtual-account primary-SID path. The initializer remains fail-closed.
+
 ## 0.1.273 — native service SID token-attribute validation — 2026-11-25
 
 The bootstrap service no longer treats mere SID presence in WindowsIdentity.Groups as sufficient. It queries TokenGroups through GetTokenInformation and requires the expected service SID to have SE_GROUP_ENABLED set and SE_GROUP_USE_FOR_DENY_ONLY clear. Failure to query or validate the token attributes terminates the worker before it opens the installer pipe. The SCM fixture now explicitly requires both diagnostic facts before proceeding.
