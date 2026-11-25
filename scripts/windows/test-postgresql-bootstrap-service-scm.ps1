@@ -45,7 +45,22 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "SCM start failed." }
   $until = [DateTime]::UtcNow.AddSeconds(20); $state = "Stopped"
   do { Start-Sleep -Milliseconds 250; $state = (Get-Service $serviceName).Status } while ($state -ne "Running" -and [DateTime]::UtcNow -lt $until)
-  if ($state -ne "Running") { throw "Service did not remain running under its configured SCM identity." }
+  if ($state -ne "Running") {
+    $query = (& sc.exe queryex $serviceName 2>&1 | Out-String)
+    Write-Host ("Bootstrap SCM state: " + $state)
+    Write-Host $query
+    foreach ($logName in @("Application","System")) {
+      try {
+        $events = @(Get-WinEvent -FilterHashtable @{LogName=$logName;StartTime=$serviceStartedAt} -MaxEvents 8 -ErrorAction Stop)
+        foreach ($event in $events) {
+          $message = (($event.Message -replace "[\r\n]+"," ").Trim())
+          if ($message.Length -gt 1000) { $message = $message.Substring(0,1000) }
+          Write-Host ("EVENT {0} ID={1} SOURCE={2} MESSAGE={3}" -f $logName,$event.Id,$event.ProviderName,$message)
+        }
+      } catch { Write-Host ("No readable " + $logName + " events for the fixture window.") }
+    }
+    throw "Service did not remain running under its configured SCM identity; inspect bounded event diagnostics above."
+  }
 
   # Hosted runners reject custom NT SERVICE logon accounts (SCM 1057). LocalService plus the unrestricted per-service SID exercises the same service-SID authorization and pipe ACL; production virtual-account assignment remains a Windows Server acceptance gate.
   # Authorized administrator positive control; deliberately malformed frame, no secret.

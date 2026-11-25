@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.246 — 2026-11-25
+
+- Extended the hosted SCM fixture to capture bounded Application/.NET Runtime and Service Control Manager events when the bootstrap service stops before pipe readiness, not only when pipe connection times out. The 0.1.245 run stopped before reaching the pipe-connect diagnostic.
+- No production behavior changed. The next exact-head run must identify and correct the service startup failure before the service-SID pipe boundary can be accepted.
+
 ## 0.1.245 — 2026-11-25
 
 - Fixed hosted SCM startup: the bootstrap BackgroundService constructor was internal, so the default Microsoft DI activator could not resolve it and the service exited with an unhandled InvalidOperationException before creating its pipe. The constructor is now public for DI activation.

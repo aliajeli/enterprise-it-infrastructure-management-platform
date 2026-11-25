@@ -1,3 +1,11 @@
+## 0.1.246 — diagnose bootstrap service early termination — 2026-11-25
+
+The 0.1.245 exact-head run [45561151889](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45561151889) compiled the bootstrap service, but the SCM integration fixture observed that it did not remain in Running state during the 20-second startup window. The test failed before attempting the pipe connection, so it did not establish whether the 0.1.245 public-constructor correction resolved the DI activation exception. The previous run's Event ID 1026 identified the internal-constructor DI error; this run did not yet emit event details at the early-stop branch.
+
+The fixture now emits bounded Application/System events and `sc.exe queryex` output when the service stops before pipe readiness. This is test-only diagnostics; no credential is sent. The next exact-head run must use those events to identify whether the service SID token check, pipe security descriptor creation, or another startup operation is failing. Do not change authorization policy or relax the DACL without evidence.
+
+The protected pipe DACL remains service SID + SYSTEM + Administrators. The service remains a candidate only. Real production virtual-account startup, Standard User process-object isolation against service-owned initdb, PostgreSQL 18.7 initdb, secret-leakage, timeout/crash cleanup, data ACL/ownership, role/grant bootstrap, migrations and initializer/orchestrator integration remain open. Keep production initializer fail-closed. No PR merge or Release authorized.
+
 ## 0.1.245 — PostgreSQL bootstrap service DI activation correction — 2026-11-25
 
 The 0.1.244 exact-head hosted Windows run [45560738147](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45560738147) reached the new SCM integration test. The service briefly entered Running, then terminated with SCM exit code 1067 before creating its named pipe. Application/.NET Runtime Event ID 1026 showed the actual exception: `InvalidOperationException: A suitable constructor for type 'EnterpriseIT.PostgreSQLBootstrap.PostgreSqlBootstrapService' could not be located`. The BackgroundService implementation and constructor were both internal; the default Microsoft.Extensions.DependencyInjection activator requires a public constructor.
