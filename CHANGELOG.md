@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.231 — 2026-11-24
+
+- Recorded the hosted synthetic process-object boundary experiment and the continuing PostgreSQL credential transport blockers.
+
 ## 0.1.230 — 2026-11-24
 
 - Corrected the Windows DLL binding for process security descriptor inspection in the synthetic process-boundary diagnostic.
