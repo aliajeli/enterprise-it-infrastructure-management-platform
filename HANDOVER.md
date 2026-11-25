@@ -1,3 +1,13 @@
+## 0.1.251 — enable protected trace in the SCM fixture — 2026-11-25
+
+The 0.1.250 implementation added opt-in file tracing in the service and created a protected ProgramData directory in the test, but review of the committed fixture showed the `sc.exe create` binPath had not yet included `--smoke-diagnostics`. Without the switch, `BootstrapDiagnosticOptions.Enabled` remained false and no trace file could be produced.
+
+The SCM fixture now passes the non-secret `--smoke-diagnostics` argument after the quoted executable path. Production provisioning scripts remain unchanged and do not pass this switch. The trace path is fixed under `%ProgramData%\EnterpriseIT\PostgreSQL\18\bootstrap-smoke.log`; the test creates a protected ACL for SYSTEM, Administrators, LocalService and the bootstrap service SID. The trace writer records only fixed labels and catches I/O errors.
+
+The next exact-head CI is the first valid run of the protected file trace. It must establish whether ExecuteAsync is entered, whether service identity validation passes, and whether the host shutdown token is cancelled. No credential is sent in this SCM test.
+
+All production security gates remain open: virtual-account acceptance on supported Windows Server, service-owned initdb process-object isolation, real PostgreSQL 18.7 initialization, secret-leakage checks, timeout/cancel/crash cleanup, data ACL/ownership, roles, migrations and initializer integration. Keep production initializer/orchestrator fail-closed. No PR merge or Release authorized.
+
 ## 0.1.250 — replace EventLog logger with opt-in protected trace file — 2026-11-25
 
 The 0.1.249 exact-head run [45563030433](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45563030433) exposed a new failure: Application Event ID 1026 reported `AggregateException` while writing to a disposed `EventLogInternal` instance. The explicit EventLog provider therefore caused process termination and is removed entirely from the service host.

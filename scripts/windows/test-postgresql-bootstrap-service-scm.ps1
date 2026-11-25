@@ -34,7 +34,7 @@ try {
   $createdUser = $true
   $credential = [PSCredential]::new("$env:COMPUTERNAME\$userName",$secure)
   $exe = Join-Path $root "EnterpriseIT.PostgreSQLBootstrap.exe"
-  & sc.exe create $serviceName "binPath=" ('"' + $exe + '"') "obj=" $serviceAccount "start=" "demand" | Out-Null
+  & sc.exe create $serviceName "binPath=" ('"' + $exe + '" --smoke-diagnostics') "obj=" $serviceAccount "start=" "demand" | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "SCM create failed." }
   $createdService = $true
   & sc.exe sidtype $serviceName unrestricted | Out-Null

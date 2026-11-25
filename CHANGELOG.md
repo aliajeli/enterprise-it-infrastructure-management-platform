@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.251 — 2026-11-25
+
+- Corrected the SCM fixture to pass the opt-in `--smoke-diagnostics` argument to the service executable. The 0.1.250 commit created the protected ProgramData trace directory but its SCM binPath did not yet include the switch, so the trace writer would have remained disabled.
+- Production provisioning remains unchanged and does not enable diagnostic file output.
+
 ## 0.1.250 — 2026-11-25
 
 - Removed the explicit EventLog logger provider after exact-head CI showed its internal EventLog object could be disposed while a worker log was being written, causing an AggregateException and process termination.
