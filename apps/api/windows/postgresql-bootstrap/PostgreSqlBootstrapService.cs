@@ -71,7 +71,9 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             .Translate(typeof(SecurityIdentifier));
         var security = new PipeSecurity();
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-        security.SetOwner(serviceSid);
+        // Keep the kernel-selected owner from the service process token.
+        // Under the production virtual account this is the dedicated service identity;
+        // the service SID remains explicitly authorized by the protected DACL below.
         security.AddAccessRule(new PipeAccessRule(serviceSid, PipeAccessRights.FullControl,
             AccessControlType.Allow));
         security.AddAccessRule(new PipeAccessRule(systemSid, PipeAccessRights.FullControl,

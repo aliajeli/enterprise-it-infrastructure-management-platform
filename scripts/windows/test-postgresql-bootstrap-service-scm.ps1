@@ -8,6 +8,7 @@ try {
   if (-not ([Security.Principal.WindowsPrincipal]::new($id)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw "Elevated runner required." }
 } finally { $id.Dispose() }
 $serviceName = "EnterpriseITPostgreSQLBootstrap"
+$serviceStartedAt = Get-Date
 $serviceAccount = "NT AUTHORITY\LocalService"
 $pipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v1"
 if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw "Refusing to adopt an existing service." }
@@ -44,13 +45,32 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "SCM start failed." }
   $until = [DateTime]::UtcNow.AddSeconds(20); $state = "Stopped"
   do { Start-Sleep -Milliseconds 250; $state = (Get-Service $serviceName).Status } while ($state -ne "Running" -and [DateTime]::UtcNow -lt $until)
-  if ($state -ne "Running") { throw "Service did not remain running under its virtual account." }
+  if ($state -ne "Running") { throw "Service did not remain running under its configured SCM identity." }
 
   # Hosted runners reject custom NT SERVICE logon accounts (SCM 1057). LocalService plus the unrestricted per-service SID exercises the same service-SID authorization and pipe ACL; production virtual-account assignment remains a Windows Server acceptance gate.
   # Authorized administrator positive control; deliberately malformed frame, no secret.
   $adminPipe = [IO.Pipes.NamedPipeClientStream]::new(".",$pipeName,[IO.Pipes.PipeDirection]::InOut)
   try {
-    $adminPipe.Connect(10000); $adminPipe.ReadTimeout = 5000
+    try {
+      $adminPipe.Connect(15000)
+    } catch {
+      $currentState = (Get-Service -Name $serviceName -ErrorAction SilentlyContinue).Status
+      $query = (& sc.exe queryex $serviceName 2>&1 | Out-String)
+      Write-Host ("Bootstrap SCM state: " + $currentState)
+      Write-Host $query
+      foreach ($logName in @("Application","System")) {
+        try {
+          $events = @(Get-WinEvent -FilterHashtable @{LogName=$logName;StartTime=$serviceStartedAt} -MaxEvents 8 -ErrorAction Stop)
+          foreach ($event in $events) {
+            $message = (($event.Message -replace "[\r\n]+"," ").Trim())
+            if ($message.Length -gt 1000) { $message = $message.Substring(0,1000) }
+            Write-Host ("EVENT {0} ID={1} SOURCE={2} MESSAGE={3}" -f $logName,$event.Id,$event.ProviderName,$message)
+          }
+        } catch { Write-Host ("No readable " + $logName + " events for the fixture window.") }
+      }
+      throw "Bootstrap named pipe did not become available; inspect bounded SCM/event diagnostics above."
+    }
+    $adminPipe.ReadTimeout = 5000
     $adminPipe.Write([byte[]](0,0,0,0),0,4); $adminPipe.Flush()
     $response = [byte[]]::new(1)
     if ($adminPipe.Read($response,0,1) -ne 1 -or $response[0] -ne 1) { throw "Admin pipe positive control failed." }

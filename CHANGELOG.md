@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.244 — 2026-11-25
+
+- Removed explicit Named Pipe owner assignment to the service SID. A service SID is an authorization group and is not guaranteed to be owner-enabled in the process token; forcing it as the kernel object owner can prevent pipe creation. The kernel-selected owner now follows the service process's primary identity, while the protected DACL continues to grant only the dedicated service SID, SYSTEM and Administrators.
+- Added bounded SCM and Windows Event Log diagnostics when the hosted service pipe does not become available. No credential is sent before the pipe positive control succeeds.
+- Exact-head Windows CI must verify service startup and pipe creation. The production virtual-account owner behavior and full initdb/credential acceptance remain open.
+
 ## 0.1.243 — 2026-11-25
 
 - Corrected the hosted-Windows SCM fixture to use LocalService plus the unrestricted service SID. The existing API SCM smoke documents that hosted runners reject custom `NT SERVICE\...` logon-account assignment with SCM error 1057; the bootstrap service still requires and verifies its own enabled service SID, which is the SID used by its pipe DACL.
