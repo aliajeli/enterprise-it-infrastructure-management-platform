@@ -1,6 +1,6 @@
 # Deployment workflows — design only
 
-> **Current implementation status (0.1.223): the offline payload and read-only inspection are development fixtures, not an installer; mutating installer, database initialization/bootstrap/migration and orchestration are disabled. No unattended production deployment or release is authorized. See [README](README.md).**
+> **Current implementation status (0.1.225): the offline payload and read-only inspection are development fixtures, not an installer; mutating installer, database initialization/bootstrap/migration and orchestration are disabled. No unattended production deployment or release is authorized. See [README](README.md).**
 
 
 ## Agent via SMB and remote service control

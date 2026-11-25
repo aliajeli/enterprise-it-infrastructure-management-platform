@@ -1,6 +1,6 @@
 # Phase 3 — Implementation plan
 
-> **Current continuation (0.1.223): the Windows offline payload is a tested development assembly, not an installer. Production initializer, bootstrap/migration, installer and service orchestration mutation remain blocked. See [README](README.md) and [HANDOVER](HANDOVER.md) for current evidence and gates; the milestones below retain their historical context.**
+> **Current continuation (0.1.225): the Windows offline payload is a tested development assembly, not an installer. Production initializer, bootstrap/migration, installer and service orchestration mutation remain blocked. See [README](README.md) and [HANDOVER](HANDOVER.md) for current evidence and gates; the milestones below retain their historical context.**
 
 
 **Status:** Active — owner authorization received 2026-11-19.  

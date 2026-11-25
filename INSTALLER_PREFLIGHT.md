@@ -1,6 +1,6 @@
 # Windows installer host preflight — v0.1.50
 
-> **Current implementation status (0.1.223): preflight schema 2 separates `hostReady` from overall `ready`; supported-host checks do not authorize installation, and mutation remains disabled. ZIP inspection is not complete JSON validation or proof of authenticity/installability. See [README](README.md) and [HANDOVER](HANDOVER.md).**
+> **Current implementation status (0.1.225): preflight schema 2 separates `hostReady` from overall `ready`; supported-host checks do not authorize installation, and mutation remains disabled. ZIP inspection is not complete JSON validation or proof of authenticity/installability. See [README](README.md) and [HANDOVER](HANDOVER.md).**
 
 
 ## Purpose and scope

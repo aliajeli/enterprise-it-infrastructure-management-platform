@@ -1,6 +1,6 @@
 # Security architecture — proposed
 
-> **Current implementation status (0.1.223): application security and candidate Windows helper source and hosted tests exist, but production credential persistence, reviewed secure PostgreSQL credential transport, recovery and supported Windows Server acceptance remain incomplete. The opening unimplemented-control statement and dated inventory below are historical; see [README](README.md) and [HANDOVER](HANDOVER.md) for current status.**
+> **Current implementation status (0.1.225): application security and candidate Windows helper source and hosted tests exist, but production credential persistence, reviewed secure PostgreSQL credential transport, recovery and supported Windows Server acceptance remain incomplete. The opening unimplemented-control statement and dated inventory below are historical; see [README](README.md) and [HANDOVER](HANDOVER.md) for current status.**
 
 
 No controls are implemented or tested yet. Treat the previous token as compromised; owner reports it revoked. Do not store it in files, logs or Git. Revocation has not been independently reverified by this reconciliation.

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.225 — 2026-11-24
+
+- Recorded completed 0.1.224 hosted CI and updated deployment/test status; no production security gate was opened.
+
 ## 0.1.224 — 2026-11-24
 
 - Reduced exposure in the synthetic initdb pipe by delaying credential materialization until after the exact-PID guard, avoiding immutable managed plaintext strings and promptly clearing temporary buffers. This does not solve same-user handle interception or enable production use.

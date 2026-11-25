@@ -1,5 +1,5 @@
 
-> **Current status (0.1.223): subsequent candidate provisioner work and hosted SYSTEM fault/concurrency fixtures exist. Parent ACL trust, independent review, production wiring and actual service-SID/Windows Server acceptance remain open; the dated revisions below are historical. See [HANDOVER](HANDOVER.md).**
+> **Current status (0.1.225): subsequent candidate provisioner work and hosted SYSTEM fault/concurrency fixtures exist. Parent ACL trust, independent review, production wiring and actual service-SID/Windows Server acceptance remain open; the dated revisions below are historical. See [HANDOVER](HANDOVER.md).**
 
 ## Revision 0.1.145 — parent ACL boundary
 

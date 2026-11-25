@@ -1,5 +1,5 @@
 
-> **Current status (0.1.223): later provisioner source and hosted SYSTEM fault/concurrency fixtures do not close the parent trust, independent review, service-SID or supported Windows Server gates. The review entries below are dated observations, not proof of current production readiness. See [HANDOVER](HANDOVER.md).**
+> **Current status (0.1.225): later provisioner source and hosted SYSTEM fault/concurrency fixtures do not close the parent trust, independent review, service-SID or supported Windows Server gates. The review entries below are dated observations, not proof of current production readiness. See [HANDOVER](HANDOVER.md).**
 
 ## Implementation status update — 2026-11-23 (revision 0.1.145)
 
