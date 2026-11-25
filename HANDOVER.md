@@ -1,3 +1,19 @@
+## 0.1.276 — record completed hosted bootstrap acceptance — 2026-11-25
+
+Run [45591200695](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45591200695) completed successfully for commit `5ae87695ef716fd5dafed0b231112e50f2ebe95c`.
+
+The blocking Windows API runtime smoke passed the complete PostgreSQL bootstrap SCM fixture under the hosted LocalService + unrestricted per-service SID proxy: service-token SID validation, Administrator pipe preflight, distinct Standard User named-pipe denial, real PostgreSQL 18.7 initdb launched by the service, distinct Standard User `PROCESS_DUP_HANDLE` denial on both initdb parent and restricted re-exec child, PG_VERSION/SCRAM verification, synthetic plaintext-marker scan, and fixture cleanup. PostgreSQL staging/provisioning/initializer guards and the five-service orchestration/safety policy tests also passed. Platform validation, including PostgreSQL migrations, API/Worker privilege boundaries, dependency audit, lint, typecheck, unit tests, backup/restore smoke and production builds, passed.
+
+The independent same-user synthetic stdin and real-initdb handle probes still fail: a process running as the same account can obtain a duplicate-handle right. These are diagnostic experiments, not the selected boundary test; the accepted threat model trusts Local Administrator/SYSTEM and requires isolation from a distinct Standard User. Keep these failures visible and do not claim same-account isolation.
+
+The hosted runner still uses LocalService because it cannot register the production virtual service account. The actual `NT SERVICE\EnterpriseITPostgreSQLBootstrap` acceptance on a supported Windows Server remains mandatory. Run elevated on a disposable Windows Server with the service payload built, using only synthetic credentials and disposable data:
+
+```powershell
+pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-service-scm.ps1 -ServiceAccount 'NT SERVICE\EnterpriseITPostgreSQLBootstrap'
+```
+
+The production initializer remains fail-closed. No real credential use, PostgreSQL role/database provisioning, migration deployment, service activation, installer/release, firewall/NAT changes, or PR merge is authorized by this CI result.
+
 ## 0.1.275 — reject deny-only Service SID entries
 
 Tightened the authorization predicate: when the expected Service SID is not the token's primary user SID, the service now requires an enabled group entry and rejects the token if any matching entry is marked SE_GROUP_USE_FOR_DENY_ONLY. This avoids accepting a token with conflicting duplicate SID attributes. Exact-head CI is required; the real Windows Server virtual-account acceptance remains outstanding.

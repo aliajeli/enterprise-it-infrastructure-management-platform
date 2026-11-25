@@ -1,3 +1,9 @@
+## 0.1.276 — document hosted bootstrap acceptance result — 2026-11-25
+
+- Recorded successful exact-head CI run [45591200695](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45591200695): the service-owned PostgreSQL 18.7 initdb SCM fixture passed distinct Standard User pipe and process-handle denial, SCRAM/PG_VERSION verification, plaintext-marker scan and cleanup; PostgreSQL staging/provisioning guards and the broader platform validation also passed.
+- Explicitly retain the same-user diagnostic handle-probe failures as a separate boundary limitation under the selected threat model.
+- The hosted LocalService + service SID proxy is not the production virtual account. Supported Windows Server acceptance under `NT SERVICE\EnterpriseITPostgreSQLBootstrap` remains mandatory; the production initializer remains fail-closed.
+
 # Changelog
 
 ## 0.1.275 — reject deny-only SID even if duplicate enabled entry exists
