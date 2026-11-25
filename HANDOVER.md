@@ -1,3 +1,9 @@
+## 0.1.283 — SYSTEM-owned cleanup for protected Vault smoke fixture — 2026-11-25
+
+The 0.1.282 hosted Windows API runtime smoke passed elevated Administrator Vault provision/verify/idempotent retry, then failed in fixture cleanup because the exact Vault leaf DACL correctly excludes the Administrators group. The failure was cleanup under the wrong token, not a Vault provisioning denial.
+
+The elevated smoke now hands its GUID-scoped fixture path to the subsequent SYSTEM fixture task. That task validates the volume-root parent and strict generated-name pattern, rejects a reparse-point root, and removes only that exact disposable tree. No production ACL widening or fail-open behavior was introduced. Re-run exact-head Windows CI; Virtual Service Account acceptance on a supported Windows Server remains pending.
+
 ## 0.1.282 — native ACL-at-create for Vault CI fixtures — 2026-11-25
 
 The 0.1.281 exact-head Windows API runtime smoke exposed an API compatibility error: .NET 10 lacks the legacy DirectoryInfo.Create(DirectorySecurity) overload used by the fixtures. Replaced that call in both elevated-admin and LocalSystem fixture setup with a small P/Invoke wrapper around CreateDirectoryW and SECURITY_ATTRIBUTES. The protected SYSTEM/Administrators security descriptor is supplied atomically at directory creation; no create-then-tighten ACL race is introduced.

@@ -1,3 +1,11 @@
+## 0.1.283 — SYSTEM-owned cleanup for protected Vault smoke fixture — 2026-11-25
+
+The 0.1.282 Windows API runtime smoke proved elevated Administrator provisioning, verify-only, and idempotent retry succeeded, then failed while the Administrator process recursively removed the disposable Vault. This was expected from the exact Vault leaf DACL, which intentionally grants only the API Service SID and LocalSystem; it was not a provisioning-policy failure.
+
+- The elevated-admin smoke now hands its GUID-scoped, volume-root fixture to the following LocalSystem-only CI fixture task for cleanup.
+- The SYSTEM fixture validates the exact volume-root parent and generated directory-name pattern, rejects a reparse-point root, and removes only that disposable path.
+- No production Vault ACE is added or widened; no recursive cleanup is performed by the Administrator token; the adversarial ACL tests remain unchanged.
+
 ## 0.1.282 — use native CreateDirectory security attributes in Vault fixtures — 2026-11-25
 
 - Fixed the 0.1.281 Windows API runtime smoke failure: .NET 10 does not expose the legacy DirectoryInfo.Create(DirectorySecurity) overload used by the fixture.

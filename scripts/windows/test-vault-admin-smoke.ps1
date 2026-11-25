@@ -80,7 +80,10 @@ try{
 }finally{
  if($rootCreated -and (Test-Path -LiteralPath $smokeRoot -PathType Container)){
   $item=Get-Item -LiteralPath $smokeRoot -Force
-  if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Refusing to clean a reparse-point smoke root.'}
-  Remove-Item -LiteralPath $smokeRoot -Recurse -Force -ErrorAction Stop
+  if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Refusing to hand off a reparse-point smoke root.'}
+  # The provisioned Vault intentionally excludes Administrators from its exact
+  # leaf DACL. Hand this GUID-scoped disposable tree to the following SYSTEM
+  # fixture task for cleanup; never broaden the production-shaped Vault ACL.
+  $env:ENTERPRISEIT_VAULT_ADMIN_SMOKE_ROOT=$smokeRoot
  }
 }
