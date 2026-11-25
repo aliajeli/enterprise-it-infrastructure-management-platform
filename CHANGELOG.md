@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.259 — 2026-11-25
+
+- Replaced the SCM fixture's `Start-Process -Credential` Standard User launcher with `ProcessStartInfo` credential properties and `Process.Start`, matching the isolated-account process probe that already passed on the hosted Windows runner.
+- The 0.1.258 exact-head run passed service startup, Administrator token preflight and malformed-frame rejection. It failed before the Standard User pipe-denial assertion because PowerShell's `Start-Process -Credential` returned Win32 error 87 (parameter incorrect); the service/pipe had not been shown to admit the Standard User.
+- No production authorization or credential-handling behavior changed.
+
 ## 0.1.258 — 2026-11-25
 
 - Introduced an explicit installer-pipe authorization preflight (protocol v2). The service sends status 0 only after validating the impersonated client token; status 1 rejects the caller. The installer waits for status 0 before writing any credential bytes, then waits separately for the final initialization result.

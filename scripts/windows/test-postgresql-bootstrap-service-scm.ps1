@@ -128,8 +128,22 @@ while ([DateTime]::UtcNow -lt $until) {
 exit 42
 '@
   $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($probe))
-  $child = Start-Process -FilePath (Join-Path $PSHOME "pwsh.exe") -Credential $credential -PassThru -ArgumentList @("-NoLogo","-NoProfile","-NonInteractive","-EncodedCommand",$encoded)
-  if (-not $child.WaitForExit(20000)) { $child.Kill(); throw "Standard User probe timed out." }
+  $probeStart = [Diagnostics.ProcessStartInfo]::new()
+  $probeStart.FileName = Join-Path $PSHOME "pwsh.exe"
+  foreach ($argument in @("-NoLogo","-NoProfile","-NonInteractive","-EncodedCommand",$encoded)) {
+    $probeStart.ArgumentList.Add($argument)
+  }
+  $probeStart.UseShellExecute = $false
+  $probeStart.CreateNoWindow = $true
+  $probeStart.RedirectStandardOutput = $true
+  $probeStart.RedirectStandardError = $true
+  $probeStart.Domain = $env:COMPUTERNAME
+  $probeStart.UserName = $userName
+  $probeStart.Password = $secure
+  $probeStart.LoadUserProfile = $false
+  $child = [Diagnostics.Process]::Start($probeStart)
+  if ($null -eq $child) { throw "Standard User probe process could not be created." }
+  if (-not $child.WaitForExit(20000)) { $child.Kill($true); throw "Standard User probe timed out." }
   if ($child.ExitCode -ne 0) {
     if ($child.ExitCode -eq 41) { throw "Standard User connected to the administrator-only pipe." }
     throw "Standard User pipe denial was not established."
