@@ -1,4 +1,4 @@
-# Builds six actual self-contained Windows executables in an isolated CI path.
+# Builds seven actual self-contained Windows executables in an isolated CI path.
 # This does not install or start services, and does not constitute an installer.
 $ErrorActionPreference='Stop'
 $pf=[IO.Path]::GetFullPath([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)).TrimEnd([IO.Path]::DirectorySeparatorChar)
@@ -12,7 +12,7 @@ try{
  $created=$true
  $script=Join-Path $PSScriptRoot 'stage-windows-service-hosts.ps1'
  & $script -InstallRoot $root -Confirm:$false | Out-Null
- $names=@('EnterpriseIT.ApiServiceHost.exe','EnterpriseIT.WebServiceHost.exe','EnterpriseIT.WorkerServiceHost.exe','EnterpriseIT.EdgeServiceHost.exe','CredentialVault.KeyringStorageHelper.exe','CredentialVault.DpapiHelper.exe')
+ $names=@('EnterpriseIT.ApiServiceHost.exe','EnterpriseIT.WebServiceHost.exe','EnterpriseIT.WorkerServiceHost.exe','EnterpriseIT.EdgeServiceHost.exe','CredentialVault.KeyringStorageHelper.exe','CredentialVault.DpapiHelper.exe','EnterpriseIT.PostgreSQLBootstrap.exe')
  foreach($name in $names){
   $path=Join-Path $root $name
   if(-not(Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -lt 1MB){throw "Missing or incomplete self-contained fixture: $name"}

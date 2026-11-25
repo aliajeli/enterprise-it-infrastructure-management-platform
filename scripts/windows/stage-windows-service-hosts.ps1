@@ -15,14 +15,15 @@ function Get-WindowsServiceHostStagePlan([string]$InstallRoot){
   [pscustomobject]@{Service="EnterpriseITWorker";Project=(Join-Path $repoRoot "apps\worker\windows\service-host\EnterpriseIT.WorkerServiceHost.csproj");Executable="EnterpriseIT.WorkerServiceHost.exe"},
   [pscustomobject]@{Service="EnterpriseITEdge";Project=(Join-Path $repoRoot "apps\edge\windows\service-host\EnterpriseIT.EdgeServiceHost.csproj");Executable="EnterpriseIT.EdgeServiceHost.exe"},
   [pscustomobject]@{Service="EnterpriseITKeyringStorageHelper";Project=(Join-Path $repoRoot "apps\api\windows\keyring-storage-helper\CredentialVault.KeyringStorageHelper.csproj");Executable="CredentialVault.KeyringStorageHelper.exe"},
-  [pscustomobject]@{Service="EnterpriseITDpapiHelper";Project=(Join-Path $repoRoot "apps\api\windows\dpapi-helper\CredentialVault.DpapiHelper.csproj");Executable="CredentialVault.DpapiHelper.exe"}
+  [pscustomobject]@{Service="EnterpriseITDpapiHelper";Project=(Join-Path $repoRoot "apps\api\windows\dpapi-helper\CredentialVault.DpapiHelper.csproj");Executable="CredentialVault.DpapiHelper.exe"},
+  [pscustomobject]@{Service="EnterpriseITPostgreSQLBootstrap";Project=(Join-Path $repoRoot "apps\api\windows\postgresql-bootstrap\EnterpriseIT.PostgreSQLBootstrap.csproj");Executable="EnterpriseIT.PostgreSQLBootstrap.exe"}
  )
  [pscustomobject]@{InstallRoot=$root;RuntimeIdentifier="win-x64";SelfContained=$true;PublishSingleFile=$true;Services=$items;Immutable=$true}
 }
 if($MyInvocation.InvocationName -ne "."){
  $plan=Get-WindowsServiceHostStagePlan -InstallRoot $InstallRoot
  if($WhatIfPreference){[pscustomobject]@{installRoot=$plan.InstallRoot;services=@($plan.Services|ForEach-Object{$_.Service});runtimeIdentifier=$plan.RuntimeIdentifier;selfContained=$true;dryRun=$true}|ConvertTo-Json -Depth 4;return}
- if(-not $PSCmdlet.ShouldProcess($plan.InstallRoot,"Publish and stage six self-contained Windows service hosts/helpers")){return}
+ if(-not $PSCmdlet.ShouldProcess($plan.InstallRoot,"Publish and stage seven self-contained Windows service hosts/helpers")){return}
  foreach($item in $plan.Services){
   if(-not(Test-Path -LiteralPath $item.Project -PathType Leaf)){throw "Service host project is missing: $($item.Project)"}
   $destination=Join-Path $plan.InstallRoot $item.Executable

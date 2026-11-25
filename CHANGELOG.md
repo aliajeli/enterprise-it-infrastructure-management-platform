@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.234 — 2026-11-25
+
+- Added a dedicated Windows PostgreSQL Bootstrap Service candidate under the virtual service identity `NT SERVICE\\EnterpriseITPostgreSQLBootstrap`.
+- Added a SYSTEM/Administrators-only named-pipe request endpoint, Windows-token authorization, bounded binary credential framing, and service-owned PostgreSQL 18.7 initdb execution through redirected stdin. Credential bytes are excluded from argv, environment, files, logs, and process output.
+- Added service provisioning and a SecureString-based local client script; included the new executable in immutable Windows service-host staging and CI build/publish validation.
+- This is an implementation candidate, not an approved production path. Exact-head Windows CI, same-user Standard User handle-denial integration, real initdb service-account integration, service ACL/SCM lifecycle, cluster ownership/grants, role provisioning, migrations, and supported Windows Server acceptance remain mandatory. The existing initializer stays fail-closed.
+
+# Changelog
+
 ## 0.1.233 — 2026-11-25
 
 - Corrected the isolated-account CI probe to honor the selected threat model: elevated Local Administrators are trusted, so their access is an expected positive control rather than a failure. Non-administrator access remains denied; this does not implement or approve the production bootstrap service.

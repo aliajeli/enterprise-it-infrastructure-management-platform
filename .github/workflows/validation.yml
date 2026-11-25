@@ -219,6 +219,13 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-edge-service-provisioning.ps1
 
+      - name: Build dedicated PostgreSQL bootstrap service
+        run: dotnet build apps/api/windows/postgresql-bootstrap/EnterpriseIT.PostgreSQLBootstrap.csproj --configuration Release
+
+      - name: Test PostgreSQL bootstrap service staging plan
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-windows-service-host-staging.ps1
+
       - name: Test PostgreSQL staging plan
         shell: pwsh
         run: |
