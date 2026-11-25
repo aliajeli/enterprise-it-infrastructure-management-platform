@@ -5,9 +5,10 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace EnterpriseIT.PostgreSQLBootstrap;
+
+internal sealed record BootstrapDiagnosticOptions(bool Enabled);
 
 internal sealed class PostgreSqlBootstrapService : BackgroundService
 {
@@ -15,16 +16,16 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
     internal const string PipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v1";
     private const int MaximumPasswordBytes = 4096;
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromMinutes(3);
-    private readonly ILogger<PostgreSqlBootstrapService> _logger;
+    private readonly bool _diagnosticsEnabled;
 
-    public PostgreSqlBootstrapService(ILogger<PostgreSqlBootstrapService> logger) =>
-        _logger = logger;
+    public PostgreSqlBootstrapService(BootstrapDiagnosticOptions diagnostics) =>
+        _diagnosticsEnabled = diagnostics.Enabled;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogWarning("Bootstrap lifecycle trace: worker entered ExecuteAsync.");
+        WriteTrace("worker-entered");
         RequireServiceIdentity();
-        _logger.LogWarning("Bootstrap lifecycle trace: service identity check passed.");
+        WriteTrace("service-identity-passed");
         while (!stoppingToken.IsCancellationRequested)
         {
             await using var pipe = CreateServerPipe();
@@ -52,19 +53,35 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                _logger.LogWarning("Bootstrap lifecycle trace: host shutdown cancellation observed.");
+                WriteTrace("host-shutdown-cancellation");
                 break;
             }
             catch (Exception)
             {
                 // Do not log exception text, process output, paths supplied by clients,
                 // or any request bytes. A fixed event is sufficient for diagnosis.
-                _logger.LogError("PostgreSQL bootstrap request failed; operation was rejected or aborted.");
+                WriteTrace("request-failed");
                 try { await WriteStatusAsync(pipe, 1, CancellationToken.None); }
                 catch { /* client may already have disconnected */ }
             }
         }
-        _logger.LogWarning("Bootstrap lifecycle trace: request loop exited.");
+        WriteTrace("request-loop-exited");
+    }
+
+    private void WriteTrace(string marker)
+    {
+        if (!_diagnosticsEnabled) return;
+        try
+        {
+            var tracePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                "EnterpriseIT", "PostgreSQL", "18", "bootstrap-smoke.log");
+            File.AppendAllText(tracePath, marker + Environment.NewLine, new UTF8Encoding(false));
+        }
+        catch
+        {
+            // Diagnostics must never alter service lifecycle or authorization behavior.
+        }
     }
 
     private static NamedPipeServerStream CreateServerPipe()

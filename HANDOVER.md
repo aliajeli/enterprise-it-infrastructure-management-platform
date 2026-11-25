@@ -1,3 +1,13 @@
+## 0.1.250 — replace EventLog logger with opt-in protected trace file — 2026-11-25
+
+The 0.1.249 exact-head run [45563030433](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45563030433) exposed a new failure: Application Event ID 1026 reported `AggregateException` while writing to a disposed `EventLogInternal` instance. The explicit EventLog provider therefore caused process termination and is removed entirely from the service host.
+
+For CI diagnosis only, the SCM fixture now passes the non-secret `--smoke-diagnostics` argument and creates a protected directory at `%ProgramData%\EnterpriseIT\PostgreSQL\18`. It grants Modify only to LocalService and the dedicated service SID, with FullControl for SYSTEM and Administrators. When the flag is present, the worker writes fixed labels to `bootstrap-smoke.log`: worker entry, service identity pass, host shutdown cancellation, request-loop exit and generic request failure. The writer catches all I/O exceptions so diagnostics cannot change authorization or lifecycle behavior. Production provisioning does not pass the flag, so it creates no trace file.
+
+The next exact-head CI must inspect the trace file to determine whether the worker enters, passes identity validation, and receives cancellation. If it still stops before creating the file, investigate Program/WindowsServiceLifetime startup. If the trace records cancellation, identify the shutdown source. The previous EventLog provider crash must not recur.
+
+Security remains unaccepted. No credential is used in this SCM test. Real virtual-account startup on supported Windows Server, service-owned initdb process-object isolation, PostgreSQL 18.7 initialization, secret-leakage checks, timeout/cancel/crash cleanup, data ACL/ownership, roles, migrations and initializer integration remain open. Production initializer/orchestrator stay fail-closed. No PR merge or Release authorized.
+
 ## 0.1.249 — explicit Event Log lifecycle provider — 2026-11-25
 
 The 0.1.248 exact-head run [45562565017](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45562565017) still observed the bootstrap service stop cleanly with SCM exit code 0. The four Warning-level worker lifecycle messages did not appear in the Application event query, so the Windows Event Log provider was not reliably configured/observable for this service.

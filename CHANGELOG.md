@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.250 — 2026-11-25
+
+- Removed the explicit EventLog logger provider after exact-head CI showed its internal EventLog object could be disposed while a worker log was being written, causing an AggregateException and process termination.
+- Replaced it with an opt-in CI-only lifecycle trace file under ProgramData. The SCM fixture passes a non-secret diagnostic switch and provisions a restrictive ACL for SYSTEM, Administrators, LocalService and the service SID. The service writes only fixed event labels and swallows diagnostic I/O failures so tracing cannot affect startup or authorization.
+- Production service provisioning does not pass the diagnostic switch; normal production runs create no trace file.
+
 ## 0.1.249 — 2026-11-25
 
 - Added an explicit Windows Event Log provider with the existing Application log as source, plus fixed host-start/normal-stop markers. Prior runs showed clean SCM shutdown but no ILogger lifecycle messages, so the provider was not reliably observable in the test.

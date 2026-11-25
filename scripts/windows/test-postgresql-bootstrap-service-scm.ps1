@@ -11,6 +11,8 @@ $serviceName = "EnterpriseITPostgreSQLBootstrap"
 $serviceStartedAt = Get-Date
 $serviceAccount = "NT AUTHORITY\LocalService"
 $pipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v1"
+$diagnosticRoot = Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18"
+$diagnosticFile = Join-Path $diagnosticRoot "bootstrap-smoke.log"
 if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) { throw "Refusing to adopt an existing service." }
 $build = [IO.Path]::GetFullPath($BuildOutput)
 if (-not (Test-Path -LiteralPath (Join-Path $build "EnterpriseIT.PostgreSQLBootstrap.exe") -PathType Leaf)) { throw "Build output missing." }
@@ -23,7 +25,7 @@ $plain = [Convert]::ToBase64String($random) + "Aa1!"
 [Array]::Clear($random,0,$random.Length)
 $secure = ConvertTo-SecureString $plain -AsPlainText -Force
 $plain = $null
-$createdRoot = $false; $createdUser = $false; $createdService = $false; $child = $null; $remaining = $null
+$createdRoot = $false; $createdUser = $false; $createdService = $false; $createdDiagnosticRoot = $false; $child = $null; $remaining = $null
 try {
   New-Item -ItemType Directory -Path $root -Force | Out-Null
   $createdRoot = $true
@@ -41,6 +43,15 @@ try {
   if ($LASTEXITCODE -ne 0 -or $serviceConfig -notlike "*NT AUTHORITY\LocalService*") { throw "Hosted SCM fixture is not running as LocalService." }
   $sid = (& sc.exe qsidtype $serviceName 2>&1 | Out-String)
   if ($LASTEXITCODE -ne 0 -or $sid -notmatch "UNRESTRICTED") { throw "Service SID is not unrestricted." }
+  if (Test-Path -LiteralPath $diagnosticRoot) { throw "Bootstrap diagnostic directory already exists; refusing to reuse it." }
+  New-Item -ItemType Directory -Path $diagnosticRoot -Force | Out-Null
+  $createdDiagnosticRoot = $true
+  $sidOutput = (& sc.exe showsid $serviceName 2>&1 | Out-String)
+  $sidMatch = [regex]::Match($sidOutput,"S-1-5-80-(?:\d+-){4}\d+")
+  if (-not $sidMatch.Success) { throw "SCM did not return a valid service SID for diagnostic ACL." }
+  $serviceSid = $sidMatch.Value
+  & icacls.exe $diagnosticRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" "*S-1-5-19:(OI)(CI)(M)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap diagnostic directory." }
   & sc.exe start $serviceName | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "SCM start failed." }
   $until = [DateTime]::UtcNow.AddSeconds(20); $state = "Stopped"
@@ -59,6 +70,9 @@ try {
         }
       } catch { Write-Host ("No readable " + $logName + " events for the fixture window.") }
     }
+    if (Test-Path -LiteralPath $diagnosticFile) {
+      Get-Content -LiteralPath $diagnosticFile | ForEach-Object { Write-Host ("TRACE: " + $_) }
+    } else { Write-Host "No bootstrap trace file was created." }
     throw "Service did not remain running under its configured SCM identity; inspect bounded event diagnostics above."
   }
 
@@ -83,6 +97,9 @@ try {
           }
         } catch { Write-Host ("No readable " + $logName + " events for the fixture window.") }
       }
+    if (Test-Path -LiteralPath $diagnosticFile) {
+      Get-Content -LiteralPath $diagnosticFile | ForEach-Object { Write-Host ("TRACE: " + $_) }
+    } else { Write-Host "No bootstrap trace file was created." }
       throw "Bootstrap named pipe did not become available; inspect bounded SCM/event diagnostics above."
     }
     $adminPipe.ReadTimeout = 5000
@@ -123,6 +140,7 @@ exit 42
   }
   if ($createdUser) { try { $u = Get-LocalUser $userName -ErrorAction Stop; Remove-LocalUser -SID $u.SID -ErrorAction Stop } catch {} }
   $secure.Dispose()
+  if ($createdDiagnosticRoot -and (Test-Path -LiteralPath $diagnosticRoot)) { Remove-Item -LiteralPath $diagnosticRoot -Recurse -Force -ErrorAction SilentlyContinue }
   if ($createdRoot -and (Test-Path -LiteralPath $root)) { Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue }
   if ($null -ne $remaining) { throw "Service cleanup could not be confirmed." }
   if ($createdUser -and (Get-LocalUser $userName -ErrorAction SilentlyContinue)) { throw "Test-account cleanup could not be confirmed." }
