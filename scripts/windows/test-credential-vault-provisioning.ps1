@@ -37,10 +37,12 @@ $serviceSid=$sidMatch.Value
 $badSid="S-1-5-21-1-2-3-1000"
 
 function New-TestRoot([string]$Name){
- $root=Join-Path $env:ProgramData ("EnterpriseIT-Vault-Provision-" + $Name + "-" + [guid]::NewGuid().ToString("N"))
+ $volumeRoot=[IO.Path]::GetPathRoot($env:SystemRoot)
+ if(-not $volumeRoot){throw 'Could not resolve the system volume root for Vault fixtures.'}
+ $root=Join-Path $volumeRoot ("EnterpriseIT-Vault-Provision-" + $Name + "-" + [guid]::NewGuid().ToString("N"))
  $pd=Join-Path $root "ProgramData"
- [IO.Directory]::CreateDirectory($pd)|Out-Null
- # Explicit protected fixture baseline; do not depend on the machine TEMP ACL.
+ # Apply a protected SYSTEM/Administrators ACL atomically when creating the
+ # intermediate root; the provisioner validates this ancestor before descent.
  $acl=[Security.AccessControl.DirectorySecurity]::new()
  $acl.SetAccessRuleProtection($true,$false)
  foreach($sid in @('S-1-5-18','S-1-5-32-544')){
@@ -48,8 +50,21 @@ function New-TestRoot([string]$Name){
   $rule=[Security.AccessControl.FileSystemAccessRule]::new($identity,'FullControl','ContainerInherit,ObjectInherit','None','Allow')
   $acl.AddAccessRule($rule)
  }
- Set-Acl -LiteralPath $pd -AclObject $acl
- return [pscustomobject]@{Root=$root;ProgramData=$pd}
+ $rootCreated=$false
+ try{
+  ([IO.DirectoryInfo]::new($root)).Create($acl)
+  $rootCreated=$true
+  ([IO.DirectoryInfo]::new($pd)).Create($acl)
+  return [pscustomobject]@{Root=$root;ProgramData=$pd}
+ }catch{
+  if($rootCreated -and (Test-Path -LiteralPath $root -PathType Container)){
+   $item=Get-Item -LiteralPath $root -Force
+   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+    Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
+   }
+  }
+  throw
+ }
 }
 
 function Get-VaultPaths([string]$ProgramData){

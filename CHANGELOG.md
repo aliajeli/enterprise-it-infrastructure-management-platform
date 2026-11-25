@@ -1,3 +1,10 @@
+## 0.1.281 — create Vault test ancestors with trusted ACLs — 2026-11-25
+
+- Corrected the 0.1.280 Windows Vault fixture failure: disposable roots now live directly beneath the system volume root and are created with a protected SYSTEM/Administrators DACL at creation time. The provisioner can validate the fixture ancestor without relying on runner TEMP or the host ProgramData ACL.
+- Kept the adversarial Everyone Modify ancestor test intact; it must still be rejected before EnterpriseIT child creation.
+- Wrapped the elevated-admin smoke fixture in scoped finally cleanup and guarded cleanup against reparse-point substitution. SYSTEM fixture creation also cleans up a partially created root on setup failure.
+- No production ACL policy, ownership rule, or fail-closed behavior was relaxed. Exact-head Windows CI is required; supported Windows Server Virtual Service Account acceptance remains separate.
+
 ## 0.1.280 — run Vault fixtures beneath trusted ProgramData — 2026-11-25
 
 - The 0.1.279 Windows Vault smoke correctly failed closed because its synthetic ProgramData path lived below the GitHub runner TEMP tree, whose ancestor ACL is not a production trust boundary and may grant broad write access.

@@ -1,3 +1,13 @@
+## 0.1.281 — Vault CI fixture ancestor ACL correction — 2026-11-25
+
+The 0.1.280 Windows API runtime smoke failed because the fixture root was placed beneath the host ProgramData directory, whose own ACL is evaluated as an ancestor by the hardened provisioner. The failure was a fixture trust-chain mismatch, not a reason to weaken the production policy.
+
+- Both elevated-admin and LocalSystem fixture roots now live directly under the system volume root with a protected SYSTEM/Administrators DACL applied at directory creation. The synthetic ProgramData child receives the same protected ACL.
+- The Everyone Modify intermediate-ancestor negative test remains unchanged and must continue to fail closed before creating EnterpriseIT.
+- Admin smoke cleanup is in finally and refuses reparse-point cleanup; SYSTEM fixture setup cleans its own partially created root on failure.
+- Exact-head Windows CI is required. This hosted test does not establish Windows Server Virtual Service Account acceptance.
+- Production credential persistence, PostgreSQL initializer activation, discovery/monitoring handlers, and installer activation remain disabled.
+
 ## 0.1.280 — place Vault CI fixtures under trusted ProgramData — 2026-11-25
 
 The 0.1.279 Windows API runtime smoke failed at the elevated-admin fixture with `programdata-acl-unsafe`. Inspection showed that both admin and SYSTEM fixtures placed their synthetic ProgramData root beneath runner TEMP. The new ancestor policy correctly evaluates every path component; runner TEMP is not a trusted production ancestor and can have broad write ACLs.
