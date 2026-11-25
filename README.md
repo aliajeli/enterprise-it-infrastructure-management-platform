@@ -6,7 +6,7 @@
 
 The project is being implemented in reviewable milestones. **M0 is complete.** The M1 identity/authentication/persistence foundation is merged in [PR #4](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/4). User/branch administration and role policy are implemented in Draft PRs [#5](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/5) and [#6](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/6), both unmerged. M2 inventory API/schema and the first branch-aware inventory UI are implemented in Draft PRs [#7](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/7) and [#8](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/pull/8), both unmerged. The local preview path is documented below and in [PREVIEW_TEST_GUIDE.md](PREVIEW_TEST_GUIDE.md). M1 still requires clean Windows service integration and production encrypted backup/restore evidence. Device discovery, monitoring transports, hardware validation and production packaging remain future work. The platform is not production-ready.
 
-## Windows deployment: current state (0.1.226)
+## Windows deployment: current state (0.1.227)
 
 **There is no production-ready or installable release yet.** This branch contains a development-only offline payload assembly and verification workflow, not a finished installer. Installer mutation, PostgreSQL initialization/bootstrap/migrations and service orchestration fail closed pending the security and ownership gates below. Offline archive inspection (`-WhatIf`) does not establish installability or authenticate a publisher; a trusted independent digest is required. Packaged ZIPs are not signed releases.
 

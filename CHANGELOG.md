@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.227 — 2026-11-24
+
+- Added bounded, synthetic-only diagnostic annotations for the process-object experiment.
+
 ## 0.1.226 — 2026-11-24
 
 - Added a no-secret, hosted-Windows-only process object DACL and debug-privilege diagnostic. It does not enable or establish an approved PostgreSQL credential transport.

@@ -564,7 +564,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Evaluate strict process DACL and debug privilege
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/windows/test-experimental-process-object-boundary.ps1
+        run: |
+          try {
+            & ./scripts/windows/test-experimental-process-object-boundary.ps1
+          } catch {
+            # Synthetic fixture only: contains no credential, marker or data.
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            if ($message.Length -gt 800) { $message = $message.Substring(0,800) }
+            Write-Output "::error title=Process object boundary experiment failed::$message"
+            exit 1
+          }
 
   windows-isolated-account-probe:
     name: Windows isolated account process access probe
