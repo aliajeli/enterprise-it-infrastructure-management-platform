@@ -1,15 +1,21 @@
 [CmdletBinding()]
-param([string]$BuildOutput=(Join-Path $PSScriptRoot "..\..\apps\api\windows\postgresql-bootstrap\bin\Release\net10.0-windows"))
+param(
+  [string]$BuildOutput=(Join-Path $PSScriptRoot "..\..\apps\api\windows\postgresql-bootstrap\bin\Release\net10.0-windows"),
+  [ValidateSet("NT AUTHORITY\LocalService","NT SERVICE\EnterpriseITPostgreSQLBootstrap")]
+  [string]$ServiceAccount="NT AUTHORITY\LocalService"
+)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-if (-not $IsWindows -or $env:GITHUB_ACTIONS -ne "true") { throw "Hosted Windows CI only." }
+if (-not $IsWindows) { throw "Windows-only acceptance test." }
+if ($env:GITHUB_ACTIONS -eq "true" -and $ServiceAccount -ne "NT AUTHORITY\LocalService") { throw "Hosted CI must use LocalService; run the virtual-account acceptance on a supported Windows Server." }
+if ($ServiceAccount -eq "NT SERVICE\EnterpriseITPostgreSQLBootstrap" -and (Get-CimInstance Win32_OperatingSystem).ProductType -eq 1) { throw "The dedicated virtual-account acceptance requires Windows Server, not a client Windows SKU." }
 $id = [Security.Principal.WindowsIdentity]::GetCurrent()
 try {
   if (-not ([Security.Principal.WindowsPrincipal]::new($id)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw "Elevated runner required." }
 } finally { $id.Dispose() }
 $serviceName = "EnterpriseITPostgreSQLBootstrap"
 $serviceStartedAt = Get-Date
-$serviceAccount = "NT AUTHORITY\LocalService"
+$serviceAccount = $ServiceAccount
 $pipeName = "EnterpriseIT.PostgreSQL.Bootstrap.v2"
 $diagnosticRoot = Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18"
 $diagnosticFile = Join-Path $diagnosticRoot "bootstrap-smoke.log"
@@ -33,7 +39,9 @@ try {
 
   # Stage the real, checksum-verified PostgreSQL 18.7 payload beneath the
   # versioned service root so the service itself launches initdb.
-  $pgDownloadRoot = Join-Path $env:RUNNER_TEMP ("enterpriseit-bootstrap-pg-" + [guid]::NewGuid().ToString("N"))
+  $tempBase = if (-not [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)) { $env:RUNNER_TEMP } else { $env:TEMP }
+  if ([string]::IsNullOrWhiteSpace($tempBase)) { throw "A temporary directory is required for the acceptance fixture." }
+  $pgDownloadRoot = Join-Path $tempBase ("enterpriseit-bootstrap-pg-" + [guid]::NewGuid().ToString("N"))
   New-Item -ItemType Directory -Path $pgDownloadRoot -Force | Out-Null
   $createdPgDownloadRoot = $true
   $pgArchive = Join-Path $pgDownloadRoot "postgresql-18.7-1-windows-x64-binaries.zip"
@@ -66,7 +74,7 @@ try {
   & sc.exe sidtype $serviceName unrestricted | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Service SID configuration failed." }
   $serviceConfig = (& sc.exe qc $serviceName 2>&1 | Out-String)
-  if ($LASTEXITCODE -ne 0 -or $serviceConfig -notlike "*NT AUTHORITY\LocalService*") { throw "Hosted SCM fixture is not running as LocalService." }
+  if ($LASTEXITCODE -ne 0 -or $serviceConfig -notlike ("*" + $serviceAccount + "*")) { throw "SCM service account does not match the requested acceptance identity." }
   $sid = (& sc.exe qsidtype $serviceName 2>&1 | Out-String)
   if ($LASTEXITCODE -ne 0 -or $sid -notmatch "UNRESTRICTED") { throw "Service SID is not unrestricted." }
   if (Test-Path -LiteralPath $diagnosticRoot) { throw "Bootstrap diagnostic directory already exists; refusing to reuse it." }
@@ -77,7 +85,7 @@ try {
   if (-not $sidMatch.Success) { throw "SCM did not return a valid service SID for diagnostic ACL." }
   $serviceSid = $sidMatch.Value
   Write-Host ("SCM service SID: " + $serviceSid)
-  & icacls.exe $diagnosticRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" "*S-1-5-19:(OI)(CI)(M)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
+  & icacls.exe $diagnosticRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap diagnostic directory." }
   # This marker activates a bounded 15-second initdb hold only in this
   # disposable smoke fixture, allowing a separate Standard User to probe
@@ -107,7 +115,7 @@ try {
     throw "Service did not remain running under its configured SCM identity; inspect bounded event diagnostics above."
   }
 
-  # Hosted runners reject custom NT SERVICE logon accounts (SCM 1057). LocalService plus the unrestricted per-service SID exercises the same service-SID authorization and pipe ACL; production virtual-account assignment remains a Windows Server acceptance gate.
+  # CI uses LocalService because hosted runners reject custom virtual-account logon (SCM 1057). On Windows Server, pass -ServiceAccount "NT SERVICE\\EnterpriseITPostgreSQLBootstrap" to exercise the actual production identity.
   # Authorized administrator positive control; deliberately malformed frame, no secret.
   $testStage = "admin-pipe-connect"
   $adminPipe = [IO.Pipes.NamedPipeClientStream]::new(".",$pipeName,[IO.Pipes.PipeDirection]::InOut,[IO.Pipes.PipeOptions]::None,[Security.Principal.TokenImpersonationLevel]::Impersonation)
@@ -187,8 +195,8 @@ exit 42
   $child.Dispose(); $child = $null
 
   # Send a synthetic credential through the production protocol. The service
-  # will launch the real PostgreSQL 18.7 initdb as LocalService + its service
-  # SID, then hold before stdin transmission so the Standard User can probe
+  # launches real PostgreSQL 18.7 initdb under the selected SCM identity and
+  # its service SID, then holds before stdin transmission so the Standard User can probe
   # both the parent and PostgreSQL's restricted re-exec child.
   $testStage = "credentialed-service-initdb"
   $bootstrapMarker = "ci-bootstrap-" + [guid]::NewGuid().ToString("N") + "-Aa1!"
