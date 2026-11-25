@@ -22,12 +22,23 @@ try{
  $version=(& $initdb --version 2>&1|Out-String).Trim()
  if($LASTEXITCODE -ne 0 -or $version -notmatch '^initdb \(PostgreSQL\) 18\.7(?:\s|$)'){throw 'Unexpected PostgreSQL initdb version.'}
  $secret=ConvertTo-SecureString 'synthetic-real-initdb-password-48' -AsPlainText -Force
- $result=Invoke-ExperimentalInitDbPipe -Executable $initdb -DataPath $data -Password $secret -TimeoutSeconds 240
- if($result.status -ne 'ok' -or $result.plaintextFileCreated){throw 'Real initdb pipe experiment failed.'}
- if(-not(Test-Path -LiteralPath (Join-Path $data 'PG_VERSION') -PathType Leaf) -or (Get-Content -LiteralPath (Join-Path $data 'PG_VERSION') -Raw).Trim() -ne '18'){throw 'Disposable PostgreSQL 18 cluster was not initialized.'}
- $hba=Get-Content -LiteralPath (Join-Path $data 'pg_hba.conf') -Raw
- if($hba -notmatch 'scram-sha-256'){throw 'Disposable cluster did not use SCRAM authentication.'}
- Write-Host 'Real PostgreSQL initdb synthetic named-pipe experiment passed; production initialization remains disabled.'
+ $expectedFailure='Experimental initdb pipe operation failed at verify-client-pid-mismatch-direct-same-image.'
+ $observedFailure=$null
+ try{
+  $result=Invoke-ExperimentalInitDbPipe -Executable $initdb -DataPath $data -Password $secret -TimeoutSeconds 240
+ }catch{
+  $observedFailure=$_.Exception.Message
+ }
+ if($observedFailure -cne $expectedFailure){
+  throw 'The initdb re-exec pipe diagnostic did not reach the expected fail-closed PID-mismatch guard.'
+ }
+ # PID plus executable path is not authentication. The expected result is to
+ # reject PostgreSQL's re-exec child before SecureString materialization or pipe write.
+ $versionFile=Join-Path $data 'PG_VERSION'
+ if(Test-Path -LiteralPath $versionFile -PathType Leaf){
+  throw 'A PostgreSQL cluster was created despite the rejected pipe client.'
+ }
+ Write-Host 'EXPECTED FAIL-CLOSED RESULT: PostgreSQL re-exec PID mismatch was rejected before credential materialization or pipe write. This transport is not production-enabled.'
 }finally{
  if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue}
 }

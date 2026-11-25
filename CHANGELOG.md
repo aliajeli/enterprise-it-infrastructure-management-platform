@@ -1,3 +1,13 @@
+## 0.1.287 — make legacy handle and pipe diagnostics assert their documented outcomes — 2026-11-25
+
+The three legacy Windows experiments were failing because they treated observations outside the supported trust boundary as product-test failures: same-account processes can obtain process-handle access when running under the same interactive identity, while PostgreSQL 18.7 re-exec changes the named-pipe client PID. These observations do not demonstrate compromise of the production bootstrap service, which is tested separately against a distinct Standard User and the service-owned initdb parent/re-exec child.
+
+- The synthetic stdin and real initdb handle probes now classify either access-denied or same-user handle access as diagnostic outcomes. A successful same-user duplication is reported explicitly as a finding; no production credential or marker is sent to real initdb.
+- The experimental named-pipe test now requires the exact PID-mismatch fail-closed result and verifies that no PG_VERSION cluster was created. It does not treat parent PID or executable path as authentication and does not send the SecureString to the re-exec child.
+- Removed `continue-on-error` from these three jobs so probe setup errors and unexpected outcomes are visible as CI failures. The separate Standard User versus service-account SCM acceptance remains the actual security boundary test.
+- No production transport, ACL, service, credential, database, installer, firewall, or NAT behavior is relaxed or enabled.
+
+Exact-head Windows CI must validate all three diagnostic outcomes and the independent SCM Standard User denial tests. These hosted tests do not replace supported Windows Server acceptance under `NT SERVICE\\EnterpriseITPostgreSQLBootstrap`.
 ## 0.1.286 — refuse adoption of pre-existing PostgreSQL bootstrap services — 2026-11-25
 
 The PostgreSQL bootstrap service provisioner previously accepted an existing service when its executable path and account matched the requested values, then continued changing service-SID and filesystem ACLs. Matching metadata does not establish ownership or prove that the service and its protected paths are safe to adopt.

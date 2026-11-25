@@ -530,14 +530,13 @@ jobs:
         run: pwsh -NoProfile -File scripts/windows/test-web-standalone-real.ps1
 
   windows-stdin-handle-isolation:
-    name: Windows synthetic stdin handle isolation probe
+    name: Windows same-user synthetic stdin handle diagnostic
     runs-on: windows-latest
-    continue-on-error: true # Superseded legacy caller-owned transport diagnostic; not service acceptance.
     timeout-minutes: 5
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-      - name: Probe same-user handle duplication
+      - name: Classify same-user synthetic handle duplication
         shell: pwsh
         run: |
           try {
@@ -608,14 +607,13 @@ jobs:
           }
 
   windows-initdb-restricted-child-access:
-    name: Windows real initdb restricted child access probe
+    name: Windows same-user real initdb handle diagnostic
     runs-on: windows-latest
-    continue-on-error: true # Superseded legacy caller-owned transport diagnostic; not service acceptance.
     timeout-minutes: 15
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-      - name: Probe same-user access to actual initdb re-exec
+      - name: Classify same-user access to actual initdb re-exec
         shell: pwsh
         run: |
           try {
@@ -627,14 +625,13 @@ jobs:
           }
 
   windows-postgres-initdb:
-    name: Windows disposable PostgreSQL initdb pipe experiment
+    name: Windows initdb re-exec pipe fail-closed diagnostic
     runs-on: windows-latest
-    continue-on-error: true # Superseded legacy caller-owned transport diagnostic; not service acceptance.
     timeout-minutes: 20
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-      - name: Test real PostgreSQL initdb with synthetic named-pipe credential
+      - name: Require fail-closed rejection of PID-mismatched initdb re-exec pipe client
         shell: pwsh
         run: |
           try {
