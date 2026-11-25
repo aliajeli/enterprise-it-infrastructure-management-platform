@@ -1752,3 +1752,8 @@
 - Corrected the malformed PowerShell regex block in offline installer ZIP entry validation discovered by Windows CI.
 - Restored reserved-device-name, duplicate-path, Unix symlink and DOS reparse-point checks before extraction.
 - Root package and lockfile metadata advanced together. Exact-head Windows CI is required before accepting installer validation.
+
+## 0.1.271 — PostgreSQL bootstrap SCM fixture duplicate-tail removal
+- Exact-head Windows CI for v0.1.270 found a PowerShell ParserError at line 343: stale duplicated fragments remained after the complete SCM fixture's finally block.
+- Removed only the duplicated tail; retained the complete fixture, ordinal PID-marker parsing, distinct Standard User pipe-denial and PROCESS_DUP_HANDLE checks, real PostgreSQL 18.7 initdb completion, SCRAM verification, plaintext scan and cleanup.
+- This is a fixture syntax correction only. No process ACL, service identity, credential transport or production initializer behavior changed. Exact-head Windows CI must execute the SCM test before credential-transfer acceptance can be considered.

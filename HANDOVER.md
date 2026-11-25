@@ -2194,3 +2194,7 @@ An earlier application-repository inspection reported an empty clone before the 
 - Replaced the SCM fixture's fragile raw-text/multiline PID regex with ordinal prefix matching and integer parsing over `[IO.File]::ReadAllLines`. This avoids CRLF and regex escape ambiguity.
 - CI run [45579008567](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45579008567) confirmed the service emitted the initdb PID trace marker; the test fixture failed to extract it. The corrected parser is intended to unblock the real distinct-account Standard User process-access test.
 - No service process ACL, identity, authorization or credential transport behavior changed. Production initializer remains fail-closed until the actual SCM handle-denial test, initdb completion, SCRAM and no-secret checks pass.
+## 0.1.271 — PostgreSQL bootstrap SCM fixture duplicate-tail removal
+- Exact-head Windows CI for v0.1.270 found a PowerShell ParserError at line 343: stale duplicated fragments remained after the complete SCM fixture's finally block.
+- Removed only the duplicated tail; retained the complete fixture, ordinal PID-marker parsing, distinct Standard User pipe-denial and PROCESS_DUP_HANDLE checks, real PostgreSQL 18.7 initdb completion, SCRAM verification, plaintext scan and cleanup.
+- This is a fixture syntax correction only. No process ACL, service identity, credential transport or production initializer behavior changed. Exact-head Windows CI must execute the SCM test before credential-transfer acceptance can be considered.
