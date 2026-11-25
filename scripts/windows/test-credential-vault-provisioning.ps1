@@ -181,6 +181,30 @@ try{
  Remove-Item -LiteralPath $link -Force -ErrorAction Stop
 }finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
 
+# An ordinary intermediate ancestor with broad write access is untrusted.
+# The provisioner must reject it before creating EnterpriseIT under ProgramData.
+$t=New-TestRoot "ancestor-broad-write"
+try{
+ $rootAcl=Get-Acl -LiteralPath $t.Root
+ $everyone=[Security.Principal.SecurityIdentifier]::new('S-1-1-0')
+ $broadWrite=[Security.AccessControl.FileSystemAccessRule]::new(
+  $everyone,
+  [Security.AccessControl.FileSystemRights]::Modify,
+  [Security.AccessControl.InheritanceFlags]::ContainerInherit,
+  [Security.AccessControl.PropagationFlags]::None,
+  [Security.AccessControl.AccessControlType]::Allow)
+ $rootAcl.SetAccessRuleProtection($true,$false)
+ $rootAcl.AddAccessRule($broadWrite)
+ Set-Acl -LiteralPath $t.Root -AclObject $rootAcl
+ $r=Invoke-Provisioner @('--provision-vault','--service-sid',$serviceSid,'--program-data-root',$t.ProgramData)
+ if($r.ExitCode -eq 0 -or $r.StdErr -notmatch 'programdata-acl-unsafe'){
+  throw "Broad-write ancestor must be rejected: $($r.StdErr)"
+ }
+ if(Test-Path -LiteralPath (Join-Path $t.ProgramData 'EnterpriseIT')){
+  throw 'Untrusted ancestor rejection must happen before child creation.'
+ }
+}finally{Remove-Item -LiteralPath $t.Root -Recurse -Force -ErrorAction SilentlyContinue}
+
 # 7. Lock file as directory rejected
 $t=New-TestRoot "lock-dir"
 try{

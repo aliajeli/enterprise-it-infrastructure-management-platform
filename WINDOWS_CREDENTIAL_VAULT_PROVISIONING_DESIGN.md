@@ -3,7 +3,7 @@
 > **Implementation update (0.1.225): a candidate handle-relative provisioner and SYSTEM fixture tests exist; hosted CI passed policy, fault and limited concurrency tests. Actual service-SID transaction, ancestor trust, independent security review and supported Windows Server acceptance remain open. Orchestration mutation and real credential persistence remain disabled. Earlier design-only wording below is historical; see [HANDOVER](HANDOVER.md).**
 
 
-Status: design baseline; implementation and target-Windows acceptance are pending.
+Status: implementation exists in the Windows helper; hosted fixture coverage is partial, and target-Windows acceptance remains pending. See the current implementation status below.
 
 ## Purpose and security boundary
 
@@ -13,9 +13,10 @@ file already exist. It validates the opened objects by handle, including a prote
 DACL with exactly two allow ACEs (the API service SID and LocalSystem), full-control
 masks, and an owner equal to the API service SID. It also rejects reparse points.
 
-The current installer/orchestrator does not create this store. The orchestration
-preflight is a presence/reparse guard, not a provisioner. This document defines the
-required provisioning contract; it does not claim that provisioning is implemented.
+The elevated helper implements handle-relative create-new provisioning and verify-only
+validation. The orchestration mutation path remains disabled pending PostgreSQL cluster
+ownership and secure bootstrap acceptance. This document records the security contract
+and distinguishes source/CI evidence from target-Windows acceptance.
 
 ## Required ordering
 
@@ -118,13 +119,13 @@ verification mismatch:
 
 ## Current implementation status
 
-- Runtime helper handle-based owner/DACL and reparse checks: implemented in source;
-  supported Windows Server adversarial acceptance remains pending.
-- Orchestration presence and reparse preflight: implemented and regression-tested.
-- Elevated Vault directory/lock provisioner: not implemented.
-- Parent trust/ACL validation for the provisioner: not implemented.
-- Node keyring adapter registration and durable credential persistence: not enabled.
-- Installer/release integration and clean-VM acceptance: not complete.
+- Runtime helper handle-based owner/DACL, file identity, volume and reparse checks: implemented in source; supported Windows Server adversarial acceptance remains pending.
+- Elevated Vault directory/lock provisioner: implemented in `VaultProvisioner.cs` using handle-relative create-new operations, explicit SDDL, exact leaf ACL verification, idempotent validation and identity-limited rollback.
+- Parent trust: ProgramData ACL policy and EnterpriseIT parent ACL policy are implemented; the current hardening change checks each opened ProgramData ancestor and evaluates ordinary and object-specific allow ACEs for broad-principal write grants. This requires exact-head Windows CI and clean Windows Server validation.
+- Hosted SYSTEM fixtures cover fresh provisioning, idempotency, wrong ACL, reparse points, ancestor junctions, broad-write ancestor rejection, rollback faults and limited concurrency. These fixtures are not equivalent to a production installer token or actual API virtual-account acceptance.
+- Orchestration's mutation path remains disabled pending PostgreSQL cluster ownership and secure bootstrap acceptance.
+- Node keyring adapter registration and durable credential persistence are not enabled.
+- Installer/release integration and clean-VM acceptance are not complete.
 
 Do not mark the Credential Vault, Windows installer, or deployment phase complete
 until the required tests and target-OS acceptance gates have passed.

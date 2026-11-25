@@ -1,3 +1,15 @@
+## 0.1.278 — ProgramData ancestor ACL trust enforcement — 2026-11-25
+
+The Arena branch remains the sole continuation branch. Parent commit: `0b489e9785c3279e5ef32466c8e9285df4186a50`; root package version advances from 0.1.277 to 0.1.278.
+
+- Corrected the native Vault provisioner's parent-chain trust gap: every opened intermediate directory between the volume root and ProgramData now receives the broad-write ACL policy check before a child is created.
+- Broad-principal write detection now inspects `QualifiedAce`, covering ordinary and object-specific allow ACEs.
+- Added a SYSTEM fixture that places an Everyone Modify ACE on an intermediate parent and asserts rejection before the EnterpriseIT child is created.
+- Existing ACLs are never repaired; no existing object is adopted, replaced, or deleted by this change.
+- The helper still uses explicit security descriptors, create-new semantics, handle-relative opens, exact Vault leaf ACL verification and identity-limited rollback.
+- This source/test change requires exact-head Windows CI. It does not establish clean Windows Server acceptance under the actual elevated installer token or runtime access under `NT SERVICE\\EnterpriseITApi`.
+- PostgreSQL bootstrap/migrations, durable credential persistence, service orchestration, and installer activation remain fail-closed. No PR merge, release, router/firewall/NAT change, or production credential use.
+
 ## 0.1.277 — lockfile root-version parity and revalidation — 2026-11-25
 
 The 0.1.276 run [45595648717](https://github.com/aliajeli/enterprise-it-infrastructure-management-platform/actions/runs/45595648717) caught a mismatch between `package.json` (0.1.276) and `package-lock.json` `packages[""].version` (0.1.275). The lockfile refresh workflow regenerated the lockfile and committed the corrected 0.1.276 root metadata as `67229c7b65a5e1bcb19b16126fe2bff9cb0b6d5f`. This follow-up advances the package manifest and both lockfile root version fields to 0.1.277. No application source or dependency versions changed.

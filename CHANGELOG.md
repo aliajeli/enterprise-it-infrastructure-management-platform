@@ -1,3 +1,10 @@
+## 0.1.278 — validate every ProgramData ancestor ACL — 2026-11-25
+
+- Hardened the native Credential Vault provisioner to evaluate the ACL of every opened intermediate directory between the volume root and ProgramData before creating any child objects.
+- Expanded broad-principal write detection to qualified allow ACEs, covering both ordinary and object-specific ACE representations rather than silently skipping ObjectAce entries.
+- Added a Windows SYSTEM fixture that places an explicit Everyone Modify ACE on an intermediate parent and requires fail-closed rejection before EnterpriseIT is created.
+- No ACL is repaired or loosened; no existing object is adopted or overwritten. Exact-head Windows CI and supported Windows Server acceptance remain required. PostgreSQL bootstrap, durable credential persistence, service orchestration and installer activation remain disabled.
+
 ## 0.1.277 — validate refreshed lockfile root version — 2026-11-25
 
 - CI for 0.1.276 caught that the lockfile header was 0.1.276 while `packages[""].version` remained 0.1.275. The repository's lockfile-refresh job subsequently regenerated the lockfile and committed the corrected 0.1.276 root metadata.

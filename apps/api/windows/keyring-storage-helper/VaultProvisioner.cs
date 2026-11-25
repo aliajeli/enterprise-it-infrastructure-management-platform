@@ -272,6 +272,10 @@ internal static class VaultProvisioner
                     var identity = ReadAndVerifyDirectory(next, isLast ? "programdata" : "programdata-ancestor");
                     if (identity.VolumeSerialNumber != volumeIdentity.VolumeSerialNumber)
                         throw new ProvisioningException("volume-mismatch");
+                    // Every existing ancestor is part of the trust boundary. A safe
+                    // ProgramData leaf is insufficient if a parent can be replaced or
+                    // redirected by a broad principal before child creation.
+                    if (!isLast) VerifyProgramDataAcl(next);
                     parent = next;
                 }
                 if (pd is null) throw new ProvisioningException("invalid-programdata-root");
@@ -737,10 +741,13 @@ internal static class VaultProvisioner
             0x40000000;  // GENERIC_WRITE
         foreach (GenericAce ace in sd.DiscretionaryAcl)
         {
-            if (ace is not CommonAce common) continue;
-            if (common.AceQualifier != AceQualifier.AccessAllowed) continue;
-            if (!broadWriteSids.Contains(common.SecurityIdentifier.Value)) continue;
-            var mask = unchecked((uint)common.AccessMask);
+            // QualifiedAce covers both ordinary and object-specific allow ACEs.
+            // Ignoring ObjectAce would let an object-specific broad-principal write
+            // grant bypass this parent-trust check.
+            if (ace is not QualifiedAce qualified) continue;
+            if (qualified.AceQualifier != AceQualifier.AccessAllowed) continue;
+            if (!broadWriteSids.Contains(qualified.SecurityIdentifier.Value)) continue;
+            var mask = unchecked((uint)qualified.AccessMask);
             if ((mask & dangerousWriteMask) != 0)
                 throw new ProvisioningException("programdata-acl-unsafe");
         }
