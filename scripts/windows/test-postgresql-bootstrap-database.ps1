@@ -27,12 +27,14 @@ $argvEnvSet=$false
 function Invoke-TestPsql {
  param([string]$PsqlExe,[string]$Sql,[string]$User="platform_admin",[string]$Database="postgres")
  $env:PGPASSWORD=$secretMarker
+ $env:PGCONNECT_TIMEOUT="10"
  try{
-  $output=@($Sql | & $PsqlExe -X -q -t -A -v ON_ERROR_STOP=1 --connect-timeout=10 --host=127.0.0.1 --port=5432 --username=$User --dbname=$Database -f - 2>$null)
+  $output=@($Sql | & $PsqlExe -X -q -t -A -v ON_ERROR_STOP=1 --host=127.0.0.1 --port=5432 --username=$User --dbname=$Database -f - 2>$null)
   if($LASTEXITCODE -ne 0){throw "Test psql failed with exit code $LASTEXITCODE."}
   return ($output -join [Environment]::NewLine)
  }finally{
   Remove-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue
+  Remove-Item -Path env:PGCONNECT_TIMEOUT -ErrorAction SilentlyContinue
  }
 }
 try{
@@ -133,11 +135,13 @@ try{
  # to surface here; a failure localizes the problem to connection/auth
  # rather than to the bootstrap SQL stages.
  $env:PGPASSWORD=$secretMarker
+ $env:PGCONNECT_TIMEOUT="10"
  try{
-  $preOut=@("SELECT 1;" | & $psql -X -q -t -A -v ON_ERROR_STOP=1 --connect-timeout=10 --host=127.0.0.1 --port=5432 --username=platform_admin --dbname=postgres -f - 2>&1)
+  $preOut=@("SELECT 1;" | & $psql -X -q -t -A -v ON_ERROR_STOP=1 --host=127.0.0.1 --port=5432 --username=platform_admin --dbname=postgres -f - 2>&1)
   $preCode=$LASTEXITCODE
  }finally{
   Remove-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue
+  Remove-Item -Path env:PGCONNECT_TIMEOUT -ErrorAction SilentlyContinue
  }
  if($preCode -ne 0 -or (($preOut -join " ") -notmatch "1")){
   throw "Fixture pre-flight connection failed (exit code $preCode): $((@($preOut)|Select-Object -Last 6) -join ' ; ')"

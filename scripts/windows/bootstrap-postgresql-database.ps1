@@ -80,16 +80,22 @@ function Invoke-BootstrapPsql {
  if($Sql.Length -gt 32768){throw "PostgreSQL bootstrap SQL payload is too large."}
  $hadPrevious=$null -ne (Get-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue)
  $previous=$env:PGPASSWORD
+ $hadPreviousTimeout=$null -ne (Get-Item -Path env:PGCONNECT_TIMEOUT -ErrorAction SilentlyContinue)
+ $previousTimeout=$env:PGCONNECT_TIMEOUT
  $output=@();$exitCode=-1
  try{
   # Connection secret only via the child environment (never argv, never a
   # file); SQL text only via stdin. stderr is discarded because PostgreSQL
-  # error text may quote the rejected statement.
+  # error text may quote the rejected statement. connect_timeout is a libpq
+  # parameter (PGCONNECT_TIMEOUT), not a psql option — psql rejects
+  # --connect-timeout outright.
   $env:PGPASSWORD=$ConnectionPassword
+  $env:PGCONNECT_TIMEOUT="10"
   $output=@($Sql | & $PsqlPath @Arguments 2>$null)
   $exitCode=$LASTEXITCODE
  }finally{
   if($hadPrevious){$env:PGPASSWORD=$previous}else{Remove-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue}
+  if($hadPreviousTimeout){$env:PGCONNECT_TIMEOUT=$previousTimeout}else{Remove-Item -Path env:PGCONNECT_TIMEOUT -ErrorAction SilentlyContinue}
  }
  if($exitCode -ne 0){throw "PostgreSQL bootstrap client failed at stage '$Stage' with exit code $exitCode."}
  return ($output -join [Environment]::NewLine)
@@ -99,7 +105,7 @@ $adminPasswordText=ConvertTo-BootstrapPasswordText -Secure $AdminPassword
 $migrationPasswordText=ConvertTo-BootstrapPasswordText -Secure $MigrationPassword
 $apiPasswordText=ConvertTo-BootstrapPasswordText -Secure $ApiPassword
 $workerPasswordText=ConvertTo-BootstrapPasswordText -Secure $WorkerPassword
-$connectionArguments=@("-X","-q","-t","-A","-v","ON_ERROR_STOP=1","--connect-timeout=10","--host=$PgHost","--port=$PgPort","--username=$superuser","--dbname=postgres","-f","-")
+$connectionArguments=@("-X","-q","-t","-A","-v","ON_ERROR_STOP=1","--host=$PgHost","--port=$PgPort","--username=$superuser","--dbname=postgres","-f","-")
 $allRoles=@($superuser,$AdminUser,$SchemaOwnerRole,$MigrationRole,$ApiRole,$WorkerRole)|Select-Object -Unique
 $rolesInClause=(@($allRoles|ForEach-Object{ConvertTo-SqlStringLiteral $_}) -join ",")
 $expectedLogin=@{}
