@@ -42,7 +42,10 @@ if($postgresSidValue -notmatch "^S-1-5-80-(?:\d+-){4}\d+$"){throw "PostgreSQL se
 if($LASTEXITCODE -ne 0){throw "Bootstrap payload ACL failed."}
 $dataParent=Split-Path $data -Parent
 New-Item -ItemType Directory -Path $dataParent -Force|Out-Null
-& icacls.exe $dataParent /grant:r ("*"+$bootstrapMatch.Value+":(OI)(CI)(M)") ("*"+$postgresSidValue+":(OI)(CI)(M)")|Out-Host
+# The parent is a traversal/container boundary, not a writable PostgreSQL
+# workspace. Only the bootstrap service may create a child; PostgreSQL receives
+# read/execute traversal here and Modify only on the data leaf below.
+& icacls.exe $dataParent /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*"+$bootstrapMatch.Value+":(OI)(CI)(RX)") ("*"+$postgresSidValue+":(OI)(CI)(RX)")|Out-Host
 if($LASTEXITCODE -ne 0){throw "PostgreSQL data parent ACL failed."}
 New-Item -ItemType Directory -Path $data -Force|Out-Null
 & icacls.exe $data /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*"+$bootstrapMatch.Value+":(OI)(CI)(M)") ("*"+$postgresSidValue+":(OI)(CI)(M)") /T|Out-Host

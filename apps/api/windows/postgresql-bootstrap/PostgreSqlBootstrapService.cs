@@ -337,14 +337,12 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
                 throw new InvalidDataException("Unsupported PostgreSQL initdb version.");
         }
 
-        var dataRoot = Path.GetFullPath(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "EnterpriseIT", "PostgreSQL", "18", "data"));
-        if (Directory.Exists(dataRoot) && Directory.EnumerateFileSystemEntries(dataRoot).Any())
-            throw new IOException("PostgreSQL data directory is not empty.");
-
-        Directory.CreateDirectory(dataRoot);
-        WriteTrace("initdb-data-root-prepared");
+        using var dataDirectory = PostgreSqlDataDirectoryHandleChain.OpenKnownDataRoot();
+        var dataRoot = dataDirectory.DisplayPath;
+        dataDirectory.VerifyStillBound();
+        // Do not create or adopt a path here. The privileged provisioner must
+        // create the fixed directory and establish its ACL before this service runs.
+        WriteTrace("initdb-data-root-handle-verified");
         var start = new ProcessStartInfo
         {
             FileName = initdb,
@@ -404,15 +402,20 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             await Task.WhenAll(stdoutDrain, stderrDrain).WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
             if (process.ExitCode != 0)
                 throw new InvalidOperationException("PostgreSQL initdb failed.");
-            var versionFile = Path.Combine(dataRoot, "PG_VERSION");
-            if (!File.Exists(versionFile) ||
-                !string.Equals((await File.ReadAllTextAsync(versionFile, cancellationToken)).Trim(), "18",
-                    StringComparison.Ordinal))
-                throw new InvalidDataException("PostgreSQL cluster verification failed.");
-            var hbaPath = Path.Combine(dataRoot, "pg_hba.conf");
-            if (!File.Exists(hbaPath) ||
-                !(await File.ReadAllTextAsync(hbaPath, cancellationToken)).Contains("scram-sha-256", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("PostgreSQL SCRAM authentication policy was not created.");
+            dataDirectory.VerifyStillBound();
+            using (var versionHandle = dataDirectory.OpenDataFileForRead("PG_VERSION"))
+            using (var versionReader = new StreamReader(new FileStream(versionHandle, FileAccess.Read, 4096, isAsync: false), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            {
+                if (!string.Equals((await versionReader.ReadToEndAsync(cancellationToken)).Trim(), "18", StringComparison.Ordinal))
+                    throw new InvalidDataException("PostgreSQL cluster verification failed.");
+            }
+            using (var hbaHandle = dataDirectory.OpenDataFileForRead("pg_hba.conf"))
+            using (var hbaReader = new StreamReader(new FileStream(hbaHandle, FileAccess.Read, 4096, isAsync: false), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            {
+                if (!(await hbaReader.ReadToEndAsync(cancellationToken)).Contains("scram-sha-256", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("PostgreSQL SCRAM authentication policy was not created.");
+            }
+            dataDirectory.VerifyStillBound();
         }
         catch
         {

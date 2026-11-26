@@ -1,3 +1,11 @@
+## 0.1.290 — pin PostgreSQL data path and separate parent ACL — 2026-11-26
+
+- Added a Windows Native handle chain for the fixed ProgramData PostgreSQL data directory. Components are opened relative to retained parent handles with reparse-point opening, directory/type checks, volume serial and 128-bit file-ID verification. Handles omit FILE_SHARE_DELETE to prevent path replacement while initialization is active.
+- PostgreSQL cluster marker files are opened relative to the pinned data-directory handle and reject directories and reparse points. The chain is reopened and identity-compared before and after initdb.
+- Removed runtime path-based creation/adoption of the PostgreSQL data directory; provisioning must establish it before the service starts.
+- Changed the parent ACL so PostgreSQL receives read/execute traversal only; Modify remains scoped to the data leaf. SYSTEM and Administrators retain Full Control.
+- This is a source-level hardening step, not Windows adversarial acceptance. Provisioner path-based directory creation/ACL application, ACL-at-create, transactional rollback, initdb executable path pinning, and exact-head Windows tests remain outstanding. Offline installation remains disabled.
+
 ## 0.1.289 — refuse adoption of pre-existing PostgreSQL service — 2026-11-26
 
 The PostgreSQL service provisioner previously accepted an existing service when its image path, data directory, and account matched the requested plan, then modified its service SID, recovery policy, and filesystem ACLs. Matching service metadata is not proof of ownership.

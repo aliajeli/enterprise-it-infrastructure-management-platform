@@ -1,3 +1,11 @@
+## 0.1.290 — pin PostgreSQL data path and separate parent ACL — 2026-11-26
+
+Added a dedicated Native handle chain for ProgramData\EnterpriseIT\PostgreSQL\18\data. Each component is opened handle-relative with FILE_OPEN_REPARSE_POINT and without FILE_SHARE_DELETE; directory attributes, reparse status, volume serial and 128-bit File ID are checked. The service opens PG_VERSION and pg_hba.conf relative to the pinned data handle and verifies the chain identity before and after initdb. Runtime directory creation/adoption was removed.
+
+The bootstrap provisioner now grants PostgreSQL RX on the data parent rather than Modify; Modify remains on the data leaf. SYSTEM and Administrators retain Full Control.
+
+Outstanding: the PowerShell provisioner still uses path-based New-Item/icacls, does not apply ACLs atomically at directory creation, and lacks transaction-like rollback. initdb.exe itself is still launched by path and needs payload-handle verification. Native Windows build and adversarial reparse/path-replacement tests have not yet run. Do not enable bootstrap or offline installation until those items and supported Windows Server acceptance pass.
+
 ## 0.1.289 — refuse adoption of pre-existing PostgreSQL service — 2026-11-26
 
 The PostgreSQL service provisioner previously adopted an existing service when its path, data directory, and service account matched the requested plan. These values do not establish ownership. Provisioning now fails closed for every pre-existing `EnterpriseITPostgreSQL` service before changing service SID, recovery settings, or filesystem ACLs. A Windows policy regression assertion prevents metadata-based adoption from returning.
