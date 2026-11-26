@@ -21,7 +21,8 @@ $secret=ConvertTo-SecureString $secretMarker -AsPlainText -Force
 $argvLog=Join-Path $env:RUNNER_TEMP ("eit-psql-argv-"+[guid]::NewGuid().ToString("N")+".log")
 $createdInstall=$false
 $createdTestRoot=$false
-$pgProcess=$null
+$pgStarted=$false
+$pgCtl=$null
 $argvEnvSet=$false
 function Invoke-TestPsql {
  param([string]$PsqlExe,[string]$Sql,[string]$User="platform_admin",[string]$Database="postgres")
@@ -86,17 +87,22 @@ try{
  [IO.File]::AppendAllText((Join-Path $data "pg_hba.conf"),("`nhost`tall`tall`t0.0.0.0/0`treject`nhost`tall`tall`t::/0`treject`n"),[Text.UTF8Encoding]::new($false))
 
  if(Get-NetTCPConnection -LocalPort 5432 -State Listen -ErrorAction SilentlyContinue){throw "TCP 5432 is occupied; cannot start the fixture cluster."}
- $postgres=Join-Path $installRoot "postgresql\pgsql\bin\postgres.exe"
- $pgProcess=Start-Process -FilePath $postgres -ArgumentList @("-D",$data) -PassThru -WindowStyle Hidden -RedirectStandardOutput (Join-Path $testRoot "postgres.out.log") -RedirectStandardError (Join-Path $testRoot "postgres.err.log")
+ $pgCtl=Join-Path $installRoot "postgresql\pgsql\bin\pg_ctl.exe"
+ $postgresLog=Join-Path $testRoot "postgres.log"
  $pgIsready=Join-Path $installRoot "postgresql\pgsql\bin\pg_isready.exe"
- $ready=$false
- for($i=0;$i -lt 60;$i++){
-  & $pgIsready -h 127.0.0.1 -p 5432 -t 2|Out-Null
-  if($LASTEXITCODE -eq 0){$ready=$true;break}
-  if($pgProcess.HasExited){throw "Fixture postgres exited before becoming ready."}
-  Start-Sleep -Seconds 1
+ # Start through pg_ctl exactly like the reviewed disposable initdb test:
+ # pg_ctl -w blocks until the server accepts connections, and the -l file
+ # captures any startup failure for the thrown diagnostic.
+ $startOutput=@(& $pgCtl -D $data -l $postgresLog -o "-h 127.0.0.1 -p 5432" -w -t 60 start 2>&1)
+ $startExit=$LASTEXITCODE
+ if($startExit -ne 0){
+  $logTail=""
+  if(Test-Path -LiteralPath $postgresLog){$logTail=(@(Get-Content -LiteralPath $postgresLog -ErrorAction SilentlyContinue|Select-Object -Last 8) -join " ; ")}
+  throw "Fixture postgres did not start (exit code $startExit). log tail: $logTail"
  }
- if(-not $ready){throw "Fixture cluster did not become ready on 127.0.0.1:5432."}
+ $pgStarted=$true
+ & $pgIsready -h 127.0.0.1 -p 5432 -t 2|Out-Null
+ if($LASTEXITCODE -ne 0){throw "Fixture cluster is not accepting connections on 127.0.0.1:5432."}
 
  $psql=Join-Path $installRoot "postgresql\pgsql\bin\psql.exe"
  # psql argv recorder: the capability must never pass a secret as a process
@@ -166,11 +172,14 @@ try{
  Write-Host "PostgreSQL database bootstrap capability tests passed."
 }finally{
  if($argvEnvSet){Remove-Item -Path env:EIT_PSQL_ARGV_LOG -ErrorAction SilentlyContinue}
- if($null -ne $pgProcess){
-  try{
-   if(-not $pgProcess.HasExited){Stop-Process -Id $pgProcess.Id -Force -ErrorAction SilentlyContinue;$pgProcess.WaitForExit(15000)|Out-Null}
-  }catch{}
-  $pgProcess.Dispose()
+ if($pgStarted){
+  try{& $pgCtl -D $data -m immediate -w -t 30 stop|Out-Null}catch{}
+  if(Test-Path -LiteralPath (Join-Path $data "postmaster.pid")){
+   try{
+    $serverPid=[int](Get-Content -LiteralPath (Join-Path $data "postmaster.pid") -TotalCount 1 -ErrorAction Stop)
+    Stop-Process -Id $serverPid -Force -ErrorAction SilentlyContinue
+   }catch{}
+  }
  }
  if($createdTestRoot -and (Test-Path -LiteralPath $testRoot)){
   for($attempt=0;$attempt -lt 5 -and (Test-Path -LiteralPath $testRoot);$attempt++){
