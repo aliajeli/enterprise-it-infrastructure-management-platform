@@ -228,7 +228,14 @@ jobs:
         run: dotnet build apps/api/windows/postgresql-bootstrap/EnterpriseIT.PostgreSQLBootstrap.csproj --configuration Release
       - name: Verify dedicated PostgreSQL bootstrap service under SCM and Standard User pipe denial
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-service-scm.ps1
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-bootstrap-service-scm.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL bootstrap SCM test failure::$message"
+            exit 1
+          }
 
       - name: Test PostgreSQL data directory native provisioning policy
         shell: pwsh

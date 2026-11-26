@@ -358,12 +358,22 @@ if($denied -eq 2){exit 0};exit 43
   Write-Host "SCM, Administrator preflight, Standard User pipe denial, real PostgreSQL 18.7 service-owned initdb, Standard User PROCESS_DUP_HANDLE denial on parent/re-exec child, SCRAM and plaintext-marker scan passed."
 
 } catch {
+  $failureMessage = $_.Exception.Message
   Write-Host ("Bootstrap SCM fixture failed at stage: " + $testStage)
   if (Test-Path -LiteralPath $diagnosticFile) {
     Get-Content -LiteralPath $diagnosticFile | ForEach-Object { Write-Host ("TRACE: " + $_) }
   } else { Write-Host "No bootstrap trace file was created before fixture failure." }
   try { Write-Host ((& sc.exe queryex $serviceName 2>&1 | Out-String)) } catch {}
-  throw
+  # Surface the failing stage and the non-secret diagnostic tail inside the
+  # exception so CI annotations remain sufficient when job logs are unreadable.
+  $traceTail = ""
+  try {
+    if (Test-Path -LiteralPath $diagnosticFile) {
+      $traceLines = @([IO.File]::ReadAllLines($diagnosticFile))
+      if ($traceLines.Count -gt 0) { $traceTail = (@($traceLines | Select-Object -Last 6) -join " ; ") }
+    }
+  } catch {}
+  throw "SCM fixture failed at stage '$testStage': $failureMessage | trace: $traceTail"
 } finally {
   if ($null -ne $child) { try { if (-not $child.HasExited) { $child.Kill(); $child.WaitForExit(10000) | Out-Null } } catch {}; $child.Dispose() }
   if ($createdService) {
