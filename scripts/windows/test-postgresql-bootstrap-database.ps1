@@ -128,6 +128,21 @@ try{
  Write-Output "::notice title=PostgreSQL database bootstrap test::fixture server ready on 127.0.0.1:5432"
 
  $psql=Join-Path $installRoot "postgresql\pgsql\bin\psql.exe"
+ # Pre-flight: prove the fixture accepts the initdb superuser credential
+ # before the capability runs. Its SQL carries no secret, so stderr is safe
+ # to surface here; a failure localizes the problem to connection/auth
+ # rather than to the bootstrap SQL stages.
+ $env:PGPASSWORD=$secretMarker
+ try{
+  $preOut=@("SELECT 1;" | & $psql -X -q -t -A -v ON_ERROR_STOP=1 --connect-timeout=10 --host=127.0.0.1 --port=5432 --username=platform_admin --dbname=postgres -f - 2>&1)
+  $preCode=$LASTEXITCODE
+ }finally{
+  Remove-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue
+ }
+ if($preCode -ne 0 -or (($preOut -join " ") -notmatch "1")){
+  throw "Fixture pre-flight connection failed (exit code $preCode): $((@($preOut)|Select-Object -Last 6) -join ' ; ')"
+ }
+ Write-Output "::notice title=PostgreSQL database bootstrap test::pre-flight connection accepted the initdb superuser credential"
  # psql argv recorder: the capability must never pass a secret as a process
  # argument. The wrapper forwards every invocation to the real client.
  $wrapper=Join-Path $testRoot "psql-wrapper.cmd"

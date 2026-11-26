@@ -72,7 +72,10 @@ function Invoke-BootstrapPsql {
   [Parameter(Mandatory=$true)][string]$PsqlPath,
   [Parameter(Mandatory=$true)][string]$ConnectionPassword,
   [Parameter(Mandatory=$true)][string[]]$Arguments,
-  [Parameter(Mandatory=$true)][string]$Sql
+  [Parameter(Mandatory=$true)][string]$Sql,
+  # Diagnostic label only: it never carries SQL text or secret material, but
+  # it identifies which client invocation failed in fail-closed throws.
+  [Parameter(Mandatory=$true)][string]$Stage
  )
  if($Sql.Length -gt 32768){throw "PostgreSQL bootstrap SQL payload is too large."}
  $hadPrevious=$null -ne (Get-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue)
@@ -88,7 +91,7 @@ function Invoke-BootstrapPsql {
  }finally{
   if($hadPrevious){$env:PGPASSWORD=$previous}else{Remove-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue}
  }
- if($exitCode -ne 0){throw "PostgreSQL bootstrap client failed with exit code $exitCode."}
+ if($exitCode -ne 0){throw "PostgreSQL bootstrap client failed at stage '$Stage' with exit code $exitCode."}
  return ($output -join [Environment]::NewLine)
 }
 
@@ -107,7 +110,7 @@ $expectedLogin[$MigrationRole]=$true
 $expectedLogin[$ApiRole]=$true
 $expectedLogin[$WorkerRole]=$true
 $detectSql="SELECT rolname||'|'||rolcanlogin||'|'||rolsuper||'|'||rolcreaterole||'|'||rolcreatedb||'|'||rolbypassrls||'|'||rolreplication FROM pg_roles WHERE rolname IN ($rolesInClause) ORDER BY rolname;"
- $detectOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $detectSql
+ $detectOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $detectSql -Stage "detect"
  $knownRoles=@{}
  foreach($line in @($detectOutput -split "\r?\n")){
   if([string]::IsNullOrWhiteSpace($line)){continue}
@@ -117,7 +120,7 @@ $detectSql="SELECT rolname||'|'||rolcanlogin||'|'||rolsuper||'|'||rolcreaterole|
  }
  if(-not $knownRoles.ContainsKey($superuser) -or -not $knownRoles[$superuser].super){throw "PostgreSQL cluster superuser was not created by the expected initialization; refusing database bootstrap."}
  $dbSql="SELECT datname||'|'||pg_get_userbyid(datdba) FROM pg_database WHERE datname = "+(ConvertTo-SqlStringLiteral $DatabaseName)+";"
- $dbOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $dbSql
+ $dbOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $dbSql -Stage "detect-database"
  $dbLines=@($dbOutput -split "\r?\n"|Where-Object{-not [string]::IsNullOrWhiteSpace($_)})
  $databaseExists=$dbLines.Count -gt 0
  $databaseOwner=$null
@@ -160,10 +163,10 @@ $detectSql="SELECT rolname||'|'||rolcanlogin||'|'||rolsuper||'|'||rolcreaterole|
  $statements.Add("GRANT ALL ON DATABASE "+$DatabaseName+" TO "+$MigrationRole+";")
  if($AdminUser -cne $superuser){$statements.Add("GRANT ALL ON DATABASE "+$DatabaseName+" TO "+$AdminUser+";")}
  $mutateSql=($statements -join [Environment]::NewLine)
- if(-not [string]::IsNullOrWhiteSpace($mutateSql)){Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $mutateSql|Out-Null}
+ if(-not [string]::IsNullOrWhiteSpace($mutateSql)){Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $mutateSql -Stage "mutate"|Out-Null}
 
  # Verify the converged state with a fresh read before reporting success.
- $verifyOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $detectSql
+ $verifyOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $detectSql -Stage "verify-roles"
  $verifiedRoles=@{}
  foreach($line in @($verifyOutput -split "\r?\n")){
   if([string]::IsNullOrWhiteSpace($line)){continue}
@@ -178,7 +181,7 @@ $detectSql="SELECT rolname||'|'||rolcanlogin||'|'||rolsuper||'|'||rolcreaterole|
   if($role -eq $superuser){if(-not $info.super){throw "PostgreSQL bootstrap verification found an unexpected superuser state; refusing to report success."};continue}
   if($info.super -or $info.createrole -or $info.createdb -or $info.bypassrls -or $info.replication -or ($info.login -ne $expectedLogin[$role])){throw "PostgreSQL bootstrap verification found an unexpected role state; refusing to report success."}
  }
- $verifyDbOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $dbSql
+ $verifyDbOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $dbSql -Stage "verify-database"
  $verifyDbLines=@($verifyDbOutput -split "\r?\n"|Where-Object{-not [string]::IsNullOrWhiteSpace($_)})
  if($verifyDbLines.Count -ne 1){throw "PostgreSQL bootstrap verification found a missing database; refusing to report success."}
  $verifyDbFields=$verifyDbLines[0].Split("|")
