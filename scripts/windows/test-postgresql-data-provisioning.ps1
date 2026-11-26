@@ -329,7 +329,7 @@ foreach($stage in @('after-create-postgresql','after-create-version','after-crea
  try{
   $p=Get-DataPaths $t.ProgramData
   $r=Invoke-Provisioner @('--provision-data','--bootstrap-sid',$bootstrapSid,'--postgres-sid',$postgresSid,'--pg-version','18','--program-data-root',$t.ProgramData) -Executable $faultExe -Fault $stage
-  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Fresh fault did not reach stage $stage: $($r.ExitCode) $($r.StdErr)"}
+  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Fresh fault did not reach stage ${stage}: $($r.ExitCode) $($r.StdErr)"}
   if(Test-Path -LiteralPath $p.PostgreSql){throw "Fresh fault left PostgreSQL behind after proven-safe rollback: $stage"}
   if(Test-Path -LiteralPath $p.Data){throw "Fresh fault left the data leaf behind: $stage"}
   if(-not(Test-Path -LiteralPath $p.Enterprise -PathType Container)){throw 'Rollback unexpectedly removed EnterpriseIT.'}
@@ -344,7 +344,7 @@ foreach($stage in @('after-create-postgresql','after-create-version','after-crea
   $dataId=[EnterpriseIT.ProvisionFileId]::Get($p.Data)
   $dataSddl=(Get-Acl -LiteralPath $p.Data).Sddl
   $r=Invoke-Provisioner @('--provision-data','--bootstrap-sid',$bootstrapSid,'--postgres-sid',$postgresSid,'--pg-version','18','--program-data-root',$t.ProgramData) -Executable $faultExe -Fault $stage
-  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Existing fault did not reach stage $stage: $($r.ExitCode) $($r.StdErr)"}
+  if($r.ExitCode -eq 0 -or $r.StdErr.Trim() -ne 'test-injected-fault'){throw "Existing fault did not reach stage ${stage}: $($r.ExitCode) $($r.StdErr)"}
   if(-not(Test-Path -LiteralPath $p.Data -PathType Container)){throw 'Fault removed an existing data leaf.'}
   if([EnterpriseIT.ProvisionFileId]::Get($p.Data) -ne $dataId){throw 'Fault replaced an existing data leaf identity.'}
   if((Get-Acl -LiteralPath $p.Data).Sddl -cne $dataSddl){throw 'Fault rewrote an existing data leaf ACL.'}
