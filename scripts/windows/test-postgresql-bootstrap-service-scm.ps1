@@ -335,6 +335,18 @@ if($denied -eq 2){exit 0};exit 43
   $dataRoot = Join-Path $diagnosticRoot "data"
   if (-not (Test-Path -LiteralPath (Join-Path $dataRoot "PG_VERSION") -PathType Leaf) -or (Get-Content -LiteralPath (Join-Path $dataRoot "PG_VERSION") -Raw).Trim() -ne "18") { throw "Service-owned initdb did not create a PostgreSQL 18 cluster." }
   if ((Get-Content -LiteralPath (Join-Path $dataRoot "pg_hba.conf") -Raw) -notmatch "scram-sha-256") { throw "Service-owned initdb did not produce SCRAM authentication policy." }
+  # The service must harden the fresh cluster to the exact orchestration and
+  # provisioner pins: active loopback-only listen/port plus explicit remote
+  # IPv4/IPv6 rejection appended after the SCRAM loopback rules.
+  $hardenedConf = Get-Content -LiteralPath (Join-Path $dataRoot "postgresql.conf") -Raw
+  if ($hardenedConf -notmatch "(?m)^\s*listen_addresses\s*=\s*'127\.0\.0\.1'" -or $hardenedConf -notmatch "(?m)^\s*port\s*=\s*5432\s*$") { throw "Service-owned initdb did not harden postgresql.conf to loopback-only 127.0.0.1:5432." }
+  $hardenedHba = Get-Content -LiteralPath (Join-Path $dataRoot "pg_hba.conf") -Raw
+  if ($hardenedHba -notmatch "0\.0\.0\.0/0\s+reject" -or $hardenedHba -notmatch "::/0\s+reject") { throw "Service-owned initdb did not add explicit remote rejection to pg_hba.conf." }
+  $hbaAllLines = @($hardenedHba -split "\r?\n")
+  $scramLine = $hbaAllLines | Where-Object { $_ -match "127\.0\.0\.1/32\s+scram-sha-256" } | Select-Object -First 1
+  $rejectLine = $hbaAllLines | Where-Object { $_ -match "0\.0\.0\.0/0\s+reject" } | Select-Object -First 1
+  if ($null -eq $scramLine -or $null -eq $rejectLine) { throw "Hardened pg_hba.conf must keep loopback SCRAM and add remote rejection." }
+  if ([Array]::IndexOf($hbaAllLines, $scramLine) -ge [Array]::IndexOf($hbaAllLines, $rejectLine)) { throw "Remote rejection must follow the loopback SCRAM rules in pg_hba.conf." }
 
   foreach ($file in @(Get-ChildItem -LiteralPath $diagnosticRoot -File -Recurse)) {
     $diskBytes = [IO.File]::ReadAllBytes($file.FullName)

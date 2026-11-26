@@ -79,6 +79,7 @@ function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
   (Join-Path $Plan.InstallRoot "EnterpriseIT.WebServiceHost.exe"),
   (Join-Path $Plan.InstallRoot "EnterpriseIT.WorkerServiceHost.exe"),
   (Join-Path $Plan.InstallRoot "EnterpriseIT.EdgeServiceHost.exe"),
+  (Join-Path $Plan.InstallRoot "EnterpriseIT.PostgreSQLBootstrap.exe"),
   (Join-Path $Plan.InstallRoot "CredentialVault.KeyringStorageHelper.exe"),
   (Join-Path $Plan.InstallRoot "CredentialVault.DpapiHelper.exe"),
   (Join-Path $Plan.InstallRoot "runtime\node.exe"),
@@ -88,6 +89,7 @@ function Get-WindowsServiceOrchestrationRequiredFiles([pscustomobject]$Plan){
   (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\postgres.exe"),
   (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\pg_ctl.exe"),
   (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\pg_isready.exe"),
+  (Join-Path $Plan.InstallRoot "postgresql\pgsql\bin\psql.exe"),
   (Join-Path $Plan.DataRoot "PG_VERSION"),
   (Join-Path $Plan.DataRoot "postgresql.conf"),
   (Join-Path $Plan.DataRoot "pg_hba.conf")
@@ -176,8 +178,60 @@ function Invoke-CredentialVaultProvisioner {
  }
  [pscustomobject]@{status="ok";mode=$mode;serviceSid=$ServiceSid}
 }
+function Assert-PostgreSqlBootstrapCapability {
+ # Capability gate for the PostgreSQL bootstrap path: opens only when the
+ # complete, validated bootstrap input set is present. Failure is fail-closed
+ # before preflight or any service mutation.
+ [CmdletBinding()]
+ param([hashtable]$Bootstrap)
+ if($null -eq $Bootstrap){return}
+ $capabilityFailure="PostgreSQL bootstrap capability prerequisites are not satisfied; no services were changed."
+ $requiredKeys=@("AdminUser","AdminPassword","DatabaseName","SchemaOwnerRole","MigrationRole","MigrationPassword","ApiRuntimeRole","ApiRuntimePassword","WorkerRuntimeRole","WorkerRuntimePassword")
+ foreach($key in $requiredKeys){
+  if(-not $Bootstrap.ContainsKey($key) -or $null -eq $Bootstrap[$key]){throw $capabilityFailure}
+ }
+ $inputs=Join-Path $PSScriptRoot "postgresql-deployment-inputs.ps1"
+ if(-not(Test-Path -LiteralPath $inputs -PathType Leaf)){throw $capabilityFailure}
+ . $inputs
+ Assert-PostgreSqlDeploymentInputs -PgHost "127.0.0.1" -PgPort 5432 -DatabaseName ([string]$Bootstrap.DatabaseName) -AdminUser ([string]$Bootstrap.AdminUser) -SchemaOwnerRole ([string]$Bootstrap.SchemaOwnerRole) -MigrationRole ([string]$Bootstrap.MigrationRole) -ApiRole ([string]$Bootstrap.ApiRuntimeRole) -WorkerRole ([string]$Bootstrap.WorkerRuntimeRole)
+}
+function Invoke-PostgreSqlFirstInstallLifecycle {
+ # First-install lifecycle for the PostgreSQL data directory: a missing
+ # cluster is initialized only through the dedicated bootstrap pipe with the
+ # operator-supplied secret; an existing cluster must prove exact native
+ # ownership before anything may observe it. No path-based creation or
+ # adoption is performed here.
+ [CmdletBinding(SupportsShouldProcess=$true)]
+ param([pscustomobject]$Plan,[hashtable]$Bootstrap=$null)
+ $identityHelper=Join-Path $PSScriptRoot "postgresql-cluster-identity.ps1"
+ if(-not(Test-Path -LiteralPath $identityHelper -PathType Leaf)){throw "PostgreSQL cluster identity helper is missing from the staged payload."}
+ . $identityHelper
+ $state=Get-PostgreSqlClusterState -DataRoot $Plan.DataRoot
+ if($WhatIfPreference){return [pscustomobject]@{status="whatif";clusterState=$state.state;initializedHere=$false;ownershipVerified=$false}}
+ $initializedHere=$false
+ if($state.state -eq "missing"){
+  if($null -eq $Bootstrap){throw "PostgreSQL data directory is missing and no bootstrap credential was provided; refusing to initialize a cluster."}
+  foreach($relative in @("provision-postgresql-bootstrap-service.ps1","invoke-postgresql-bootstrap.ps1")){
+   $helper=Join-Path $PSScriptRoot $relative
+   if(-not(Test-Path -LiteralPath $helper -PathType Leaf)){throw "PostgreSQL first-install helper is missing from the staged payload."}
+  }
+  . (Join-Path $PSScriptRoot "provision-postgresql-bootstrap-service.ps1") -InstallRoot $Plan.InstallRoot -DataRoot $Plan.DataRoot -Confirm:$false
+  & (Join-Path $PSScriptRoot "invoke-postgresql-bootstrap.ps1") -SuperuserPassword ([Security.SecureString]$Bootstrap.AdminPassword)
+  $state=Get-PostgreSqlClusterState -DataRoot $Plan.DataRoot
+  if($state.state -ne "initialized"){throw "PostgreSQL cluster initialization did not produce an initialized data directory."}
+  $initializedHere=$true
+ }
+ Assert-PostgreSqlClusterInitialized -DataRoot $Plan.DataRoot
+ $bootstrapSid=Resolve-PostgreSqlServiceSid -ServiceName "EnterpriseITPostgreSQLBootstrap"
+ $postgresSid=Resolve-PostgreSqlServiceSid -ServiceName "EnterpriseITPostgreSQL"
+ $verifyExe=Join-Path $Plan.InstallRoot "EnterpriseIT.PostgreSQLBootstrap.exe"
+ $programDataRoot=if($Plan.PSObject.Properties["ProgramDataRoot"]){[string]$Plan.ProgramDataRoot}else{""}
+ Invoke-PostgreSqlClusterOwnershipVerify -BootstrapExe $verifyExe -BootstrapSid $bootstrapSid -PostgresSid $postgresSid -ProgramDataRoot $programDataRoot|Out-Null
+ [pscustomobject]@{state="initialized";initializedHere=$initializedHere;ownershipVerified=$true}
+}
 function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl,[hashtable]$Bootstrap=$null){
- if($null -ne $Bootstrap){throw "PostgreSQL bootstrap is disabled pending secure credential transport and ownership verification; no services were changed."}
+ Assert-PostgreSqlBootstrapCapability -Bootstrap $Bootstrap
+ if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
  # Existing PG_VERSION/config files do not prove this cluster belongs to us.
  # Keep all mutation disabled, including the no-bootstrap path, until secure
  # ownership verification and the first-install lifecycle are implemented.
@@ -190,6 +244,10 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
   . (Join-Path $PSScriptRoot "provision-edge-service.ps1") -InstallRoot $Plan.InstallRoot -BindAddress $Plan.EdgeBindAddress -HttpsPort $Plan.EdgeHttpsPort -TlsHostname $Plan.EdgeTlsHostname -CertificateThumbprint $Plan.EdgeCertificateThumbprint
  $edgePreflightPlan=Get-EdgeServiceProvisioningPlan -InstallRoot $Plan.InstallRoot -BindAddress $Plan.EdgeBindAddress -HttpsPort $Plan.EdgeHttpsPort -TlsHostname $Plan.EdgeTlsHostname -CertificateThumbprint $Plan.EdgeCertificateThumbprint
  Test-EdgeServicePreflight -Plan $edgePreflightPlan|Out-Null
+ # First-install lifecycle runs before any service provisioning can observe
+ # the data directory: initialize a missing cluster through the dedicated
+ # bootstrap pipe, or prove exact native ownership of an existing one.
+ Invoke-PostgreSqlFirstInstallLifecycle -Plan $Plan -Bootstrap $Bootstrap|Out-Null
 . (Join-Path $PSScriptRoot "provision-postgresql-service.ps1") -InstallRoot $Plan.InstallRoot -DataRoot $Plan.DataRoot
  $pgPlan=Get-PostgreSqlServiceProvisioningPlan -InstallRoot $Plan.InstallRoot -DataRoot $Plan.DataRoot
  Invoke-PostgreSqlServiceProvisioning -Plan $pgPlan -Confirm:$false|Out-Null
@@ -221,7 +279,7 @@ function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.Secu
    $migrateScript=Join-Path $PSScriptRoot "invoke-postgresql-migrations.ps1"
    if(-not(Test-Path -LiteralPath $bootstrapScript -PathType Leaf)){throw "PostgreSQL bootstrap script is missing from the staged payload."}
    if(-not(Test-Path -LiteralPath $migrateScript -PathType Leaf)){throw "PostgreSQL migration script is missing from the staged payload."}
-   & $bootstrapScript -PgHost "127.0.0.1" -PgPort 5432 -AdminUser ([string]$Bootstrap.AdminUser) -AdminPassword ([Security.SecureString]$Bootstrap.AdminPassword) -DatabaseName ([string]$Bootstrap.DatabaseName) -SchemaOwnerRole ([string]$Bootstrap.SchemaOwnerRole) -MigrationRole ([string]$Bootstrap.MigrationRole) -MigrationPassword ([Security.SecureString]$Bootstrap.MigrationPassword) -ApiRole ([string]$Bootstrap.ApiRuntimeRole) -ApiPassword ([Security.SecureString]$Bootstrap.ApiRuntimePassword) -WorkerRole ([string]$Bootstrap.WorkerRuntimeRole) -WorkerPassword ([Security.SecureString]$Bootstrap.WorkerRuntimePassword) -Confirm:$false | Out-Null
+   & $bootstrapScript -PgHost "127.0.0.1" -PgPort 5432 -AdminUser ([string]$Bootstrap.AdminUser) -AdminPassword ([Security.SecureString]$Bootstrap.AdminPassword) -DatabaseName ([string]$Bootstrap.DatabaseName) -SchemaOwnerRole ([string]$Bootstrap.SchemaOwnerRole) -MigrationRole ([string]$Bootstrap.MigrationRole) -MigrationPassword ([Security.SecureString]$Bootstrap.MigrationPassword) -ApiRole ([string]$Bootstrap.ApiRuntimeRole) -ApiPassword ([Security.SecureString]$Bootstrap.ApiRuntimePassword) -WorkerRole ([string]$Bootstrap.WorkerRuntimeRole) -WorkerPassword ([Security.SecureString]$Bootstrap.WorkerRuntimePassword) -InstallRoot ([string]$Plan.InstallRoot) -DataRoot ([string]$Plan.DataRoot) -Confirm:$false | Out-Null
    & $migrateScript -InstallRoot $Plan.InstallRoot -PgHost "127.0.0.1" -PgPort 5432 -DatabaseName ([string]$Bootstrap.DatabaseName) -MigrationRole ([string]$Bootstrap.MigrationRole) -MigrationPassword ([Security.SecureString]$Bootstrap.MigrationPassword) -SchemaOwnerRole ([string]$Bootstrap.SchemaOwnerRole) -ApiRole ([string]$Bootstrap.ApiRuntimeRole) -WorkerRole ([string]$Bootstrap.WorkerRuntimeRole) -AdminPassword ([Security.SecureString]$Bootstrap.AdminPassword) -AdminUser ([string]$Bootstrap.AdminUser) -Confirm:$false | Out-Null
   }
   Invoke-CredentialVaultProvisioner -Plan $Plan -ServiceSid $apiProvisioningResult.serviceSid -VerifyOnly

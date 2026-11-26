@@ -36,7 +36,7 @@ if($MyInvocation.InvocationName -ne "."){
   if($LASTEXITCODE -ne 0 -or $versionOutput -notmatch '^postgres \(PostgreSQL\) 18\.7(?:\s|$)'){throw "PostgreSQL binary version is not pinned 18.7."}
   New-Item -ItemType Directory -Path $p.Destination -Force|Out-Null
   Copy-Item -LiteralPath $roots[0].FullName -Destination (Join-Path $p.Destination "pgsql") -Recurse
-  foreach($relative in @("bin\postgres.exe","bin\pg_ctl.exe","bin\initdb.exe","share\postgresql.conf.sample")){if(-not(Test-Path -LiteralPath (Join-Path $p.Destination ("pgsql\"+$relative)))){throw "PostgreSQL payload is incomplete: $relative"}}
+  foreach($relative in @("bin\postgres.exe","bin\pg_ctl.exe","bin\initdb.exe","bin\psql.exe","bin\pg_isready.exe","share\postgresql.conf.sample")){if(-not(Test-Path -LiteralPath (Join-Path $p.Destination ("pgsql\"+$relative)))){throw "PostgreSQL payload is incomplete: $relative"}}
   [pscustomobject]@{version="18.7";packageRevision="1";sha256=$actual;destination=$p.Destination;licensePayloadPreserved=$true}|ConvertTo-Json -Depth 3
  }catch{if(Test-Path -LiteralPath $p.Destination){Remove-Item -LiteralPath $p.Destination -Recurse -Force};throw}
  finally{if(Test-Path -LiteralPath $temp){Remove-Item -LiteralPath $temp -Recurse -Force}}

@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Win32.SafeHandles;
 
 namespace EnterpriseIT.PostgreSQLBootstrap;
@@ -19,6 +20,8 @@ internal sealed class PostgreSqlDataDirectoryHandleChain : IDisposable
     private const uint ObjectCaseInsensitive = 0x40, FileDirectoryFile = 1;
     private const uint FileOpenReparsePoint = 0x00200000, FileSynchronousIoNonAlert = 0x20;
     private const uint FileOpen = 1;
+    private const uint FileWriteData = 0x2;
+    private const uint PointerEnd = 2; // FILE_END for SetFilePointerEx
     private const int FileAttributeTagInfoClass = 9, FileIdInfoClass = 18;
 
     private readonly string _displayPath;
@@ -100,7 +103,7 @@ internal sealed class PostgreSqlDataDirectoryHandleChain : IDisposable
     internal SafeFileHandle OpenDataFileForRead(string name)
     {
         ThrowIfDisposed();
-        if (name is not ("PG_VERSION" or "pg_hba.conf"))
+        if (name is not ("PG_VERSION" or "pg_hba.conf" or "postgresql.conf"))
             throw new ArgumentException("Unexpected PostgreSQL verification file.", nameof(name));
         var parent = _components[^1];
         var nameBuffer = Marshal.StringToHGlobalUni(name);
@@ -138,6 +141,63 @@ internal sealed class PostgreSqlDataDirectoryHandleChain : IDisposable
             var result = file;
             file = null;
             return result;
+        }
+        finally
+        {
+            if (parentRef) parent.DangerousRelease();
+            file?.Dispose();
+            Marshal.FreeHGlobal(unicodeBuffer);
+            Marshal.FreeHGlobal(nameBuffer);
+        }
+    }
+
+    /// <summary>Appends UTF-8 text to a fixed configuration leaf relative to the
+    /// pinned data directory. The leaf must already exist as a plain file on the
+    /// pinned volume; no create, rename or path-based write is possible.</summary>
+    internal void AppendDataFileText(string name, string text)
+    {
+        ThrowIfDisposed();
+        if (name is not ("postgresql.conf" or "pg_hba.conf"))
+            throw new ArgumentException("Unexpected PostgreSQL configuration file.", nameof(name));
+        var bytes = new UTF8Encoding(false).GetBytes(text);
+        var parent = _components[^1];
+        var nameBuffer = Marshal.StringToHGlobalUni(name);
+        var unicodeBuffer = Marshal.AllocHGlobal(Marshal.SizeOf<UnicodeString>());
+        SafeFileHandle? file = null;
+        var parentRef = false;
+        try
+        {
+            Marshal.StructureToPtr(new UnicodeString
+            {
+                Length = checked((ushort)(name.Length * sizeof(char))),
+                MaximumLength = checked((ushort)((name.Length + 1) * sizeof(char))),
+                Buffer = nameBuffer
+            }, unicodeBuffer, false);
+            var attributes = new ObjectAttributes
+            {
+                Length = Marshal.SizeOf<ObjectAttributes>(),
+                RootDirectory = parent.DangerousGetHandle(),
+                ObjectName = unicodeBuffer,
+                Attributes = ObjectCaseInsensitive
+            };
+            var io = new IoStatusBlock();
+            parent.DangerousAddRef(ref parentRef);
+            var status = NtCreateFile(out file, FileWriteData | FileReadAttributes | ReadControl | Synchronize,
+                ref attributes, ref io, IntPtr.Zero, 0, ShareRead, FileOpen,
+                FileOpenReparsePoint | FileSynchronousIoNonAlert, IntPtr.Zero, 0);
+            if (status < 0)
+                throw new Win32Exception(unchecked((int)RtlNtStatusToDosError(status)));
+            if (!TryGetFileInformationByHandleEx(file, FileAttributeTagInfoClass, out FileAttributeTagInfo tag) ||
+                (tag.FileAttributes & (DirectoryAttribute | ReparseAttribute)) != 0)
+                throw new UnauthorizedAccessException("PostgreSQL configuration file is a directory or reparse point.");
+            if (!TryGetFileInformationByHandleEx(file, FileIdInfoClass, out FileIdInfo fileId) ||
+                fileId.VolumeSerial != _identities[^1].VolumeSerial)
+                throw new UnauthorizedAccessException("PostgreSQL configuration file identity is invalid.");
+            if (!SetFilePointerEx(file, 0, out _, PointerEnd))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            if (!WriteFile(file, bytes, checked((uint)bytes.Length), out var written, IntPtr.Zero) ||
+                written != (uint)bytes.Length)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
         }
         finally
         {
@@ -277,4 +337,14 @@ internal sealed class PostgreSqlDataDirectoryHandleChain : IDisposable
 
     [DllImport("ntdll.dll")]
     private static extern uint RtlNtStatusToDosError(int status);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetFilePointerEx(SafeFileHandle hFile, long distanceToMove,
+        out long lpDistanceToMoveHigh, uint dwMoveMethod);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite,
+        out uint lpNumberOfBytesWritten, IntPtr lpOverlapped);
 }

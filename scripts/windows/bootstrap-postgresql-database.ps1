@@ -11,20 +11,178 @@ param(
  [Parameter(Mandatory=$true)][string]$ApiRole,
  [Parameter(Mandatory=$true)][Security.SecureString]$ApiPassword,
  [Parameter(Mandatory=$true)][string]$WorkerRole,
- [Parameter(Mandatory=$true)][Security.SecureString]$WorkerPassword
+ [Parameter(Mandatory=$true)][Security.SecureString]$WorkerPassword,
+ [string]$DataRoot=(Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18\data"),
+ [string]$InstallRoot="",
+ [string]$PsqlPath=""
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference="Stop"
-
+# Native psql exit codes must not become terminating errors from stderr
+# redirection; failure is decided below from the exit code alone so no client
+# output (which may quote a rejected statement) can reach logs or messages.
+$PSNativeCommandUseErrorActionPreference=$false
 # Validation is shared with the migration entry point and does not contact the
 # server. It is not cluster identity or ownership verification.
 . (Join-Path $PSScriptRoot 'postgresql-deployment-inputs.ps1')
 Assert-PostgreSqlDeploymentInputs -PgHost $PgHost -PgPort $PgPort -DatabaseName $DatabaseName -AdminUser $AdminUser -SchemaOwnerRole $SchemaOwnerRole -MigrationRole $MigrationRole -ApiRole $ApiRole -WorkerRole $WorkerRole
 
-if($WhatIfPreference){
- [pscustomobject]@{status="whatif";database=$DatabaseName;schemaOwner=$SchemaOwnerRole;migrationRole=$MigrationRole;apiRole=$ApiRole;workerRole=$WorkerRole;mutated=$false} | ConvertTo-Json -Depth 4
- return
+if($WhatIfPreference){[pscustomobject]@{status="whatif";database=$DatabaseName;mutated=$false}|ConvertTo-Json -Depth 4;return}
+
+# Capability prerequisites: fail closed before any server contact. The
+# cluster must be initialized by the dedicated bootstrap pipeline with the
+# hardened loopback configuration; the staged payload must carry psql.
+. (Join-Path $PSScriptRoot 'postgresql-cluster-identity.ps1')
+Assert-PostgreSqlClusterInitialized -DataRoot $DataRoot
+if([string]::IsNullOrWhiteSpace($InstallRoot)){throw "PostgreSQL bootstrap requires the staged payload install root."}
+# PsqlPath is a test-instrumentation seam; production callers rely on the
+# staged payload path derived from InstallRoot.
+$psql=$PsqlPath
+if([string]::IsNullOrWhiteSpace($psql)){$psql=Join-Path $InstallRoot "postgresql\pgsql\bin\psql.exe"}
+if(-not(Test-Path -LiteralPath $psql -PathType Leaf)){throw "psql.exe is missing from the staged PostgreSQL payload."}
+if(-not $PSCmdlet.ShouldProcess($DatabaseName,"Create or verify PostgreSQL bootstrap roles and database")){[pscustomobject]@{status="skipped";database=$DatabaseName;mutated=$false}|ConvertTo-Json -Depth 4;return}
+
+# The connector is the initdb superuser created by the dedicated bootstrap
+# service. AdminPassword is that same operator-supplied bootstrap secret; it
+# is never written to a file, never placed in process arguments and never
+# included in a thrown message.
+$superuser="platform_admin"
+
+function ConvertTo-BootstrapPasswordText {
+ param([Security.SecureString]$Secure)
+ $ptr=[IntPtr]::Zero;$chars=$null
+ try{
+  $ptr=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($Secure)
+  $chars=[char[]]::new($Secure.Length)
+  [Runtime.InteropServices.Marshal]::Copy($ptr,$chars,0,$Secure.Length)
+  if([Array]::IndexOf($chars,[char]0) -ge 0 -or [Array]::IndexOf($chars,[char]10) -ge 0 -or [Array]::IndexOf($chars,[char]13) -ge 0){throw "PostgreSQL bootstrap password contains unsupported characters."}
+  return (-join $chars)
+ }finally{
+  if($chars){[Array]::Clear($chars,0,$chars.Length)}
+  if($ptr -ne [IntPtr]::Zero){[Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr)}
+ }
 }
-# Fail closed until the bootstrap credential channel and ownership/adoption
-# checks are reviewed and tested. Never place passwords in SQL argv or logs.
-throw "PostgreSQL bootstrap and migration are disabled pending secure credential transport and ownership verification."
+function ConvertTo-SqlStringLiteral {
+ param([string]$Value)
+ return "'"+($Value.Replace("'","''"))+"'"
+}
+function Invoke-BootstrapPsql {
+ [CmdletBinding()]
+ param(
+  [Parameter(Mandatory=$true)][string]$PsqlPath,
+  [Parameter(Mandatory=$true)][string]$ConnectionPassword,
+  [Parameter(Mandatory=$true)][string[]]$Arguments,
+  [Parameter(Mandatory=$true)][string]$Sql
+ )
+ if($Sql.Length -gt 32768){throw "PostgreSQL bootstrap SQL payload is too large."}
+ $hadPrevious=$null -ne (Get-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue)
+ $previous=$env:PGPASSWORD
+ $output=@();$exitCode=-1
+ try{
+  # Connection secret only via the child environment (never argv, never a
+  # file); SQL text only via stdin. stderr is discarded because PostgreSQL
+  # error text may quote the rejected statement.
+  $env:PGPASSWORD=$ConnectionPassword
+  $output=@($Sql | & $PsqlPath @Arguments 2>$null)
+  $exitCode=$LASTEXITCODE
+ }finally{
+  if($hadPrevious){$env:PGPASSWORD=$previous}else{Remove-Item -Path env:PGPASSWORD -ErrorAction SilentlyContinue}
+ }
+ if($exitCode -ne 0){throw "PostgreSQL bootstrap client failed with exit code $exitCode."}
+ return ($output -join [Environment]::NewLine)
+}
+
+$adminPasswordText=ConvertTo-BootstrapPasswordText -Secure $AdminPassword
+$migrationPasswordText=ConvertTo-BootstrapPasswordText -Secure $MigrationPassword
+$apiPasswordText=ConvertTo-BootstrapPasswordText -Secure $ApiPassword
+$workerPasswordText=ConvertTo-BootstrapPasswordText -Secure $WorkerPassword
+$connectionArguments=@("-X","-q","-t","-A","-v","ON_ERROR_STOP=1","--connect-timeout=10","--host=$PgHost","--port=$PgPort","--username=$superuser","--dbname=postgres","-f","-")
+$allRoles=@($superuser,$AdminUser,$SchemaOwnerRole,$MigrationRole,$ApiRole,$WorkerRole)|Select-Object -Unique
+$rolesInClause=(@($allRoles|ForEach-Object{ConvertTo-SqlStringLiteral $_}) -join ",")
+$expectedLogin=@{}
+$expectedLogin[$superuser]=$true
+$expectedLogin[$AdminUser]=$true
+$expectedLogin[$SchemaOwnerRole]=$false
+$expectedLogin[$MigrationRole]=$true
+$expectedLogin[$ApiRole]=$true
+$expectedLogin[$WorkerRole]=$true
+$detectSql="SELECT rolname||'|'||rolcanlogin||'|'||rolsuper||'|'||rolcreaterole||'|'||rolcreatedb||'|'||rolbypassrls||'|'||rolreplication FROM pg_roles WHERE rolname IN ($rolesInClause) ORDER BY rolname;"
+ $detectOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $detectSql
+ $knownRoles=@{}
+ foreach($line in @($detectOutput -split "\r?\n")){
+  if([string]::IsNullOrWhiteSpace($line)){continue}
+  $fields=$line.Split("|")
+  if($fields.Count -ne 7){throw "PostgreSQL bootstrap role detection returned an unexpected result."}
+  $knownRoles[$fields[0]]=@{login=($fields[1] -ceq "t");super=($fields[2] -ceq "t");createrole=($fields[3] -ceq "t");createdb=($fields[4] -ceq "t");bypassrls=($fields[5] -ceq "t");replication=($fields[6] -ceq "t")}
+ }
+ if(-not $knownRoles.ContainsKey($superuser) -or -not $knownRoles[$superuser].super){throw "PostgreSQL cluster superuser was not created by the expected initialization; refusing database bootstrap."}
+ $dbSql="SELECT datname||'|'||pg_get_userbyid(datdba) FROM pg_database WHERE datname = "+(ConvertTo-SqlStringLiteral $DatabaseName)+";"
+ $dbOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $dbSql
+ $dbLines=@($dbOutput -split "\r?\n"|Where-Object{-not [string]::IsNullOrWhiteSpace($_)})
+ $databaseExists=$dbLines.Count -gt 0
+ $databaseOwner=$null
+ if($databaseExists){
+  if($dbLines.Count -ne 1){throw "PostgreSQL bootstrap database detection returned an unexpected result."}
+  $dbFields=$dbLines[0].Split("|")
+  if($dbFields.Count -ne 2){throw "PostgreSQL bootstrap database detection returned an unexpected result."}
+  $databaseOwner=$dbFields[1]
+  if($databaseOwner -cne $SchemaOwnerRole){throw "Existing database does not match the expected owner; refusing to adopt it."}
+ }
+
+ # Fail closed on any pre-existing role whose attributes do not match the
+ # bootstrap definition; a privileged or login-mismatched role is foreign.
+ $managedRoles=@($AdminUser,$SchemaOwnerRole,$MigrationRole,$ApiRole,$WorkerRole)|Select-Object -Unique
+ foreach($role in $managedRoles){
+  if($role -ceq $superuser){continue}
+  if($knownRoles.ContainsKey($role)){
+   $info=$knownRoles[$role]
+   if($info.super -or $info.createrole -or $info.createdb -or $info.bypassrls -or $info.replication){throw "Existing PostgreSQL role does not match the expected bootstrap definition; refusing to adopt it."}
+   if($info.login -ne $expectedLogin[$role]){throw "Existing PostgreSQL role does not match the expected bootstrap definition; refusing to adopt it."}
+  }
+ }
+
+ $statements=[Collections.Generic.List[string]]::new()
+ $rolesCreated=[Collections.Generic.List[string]]::new()
+ $rolesConverged=[Collections.Generic.List[string]]::new()
+ if($AdminUser -cne $superuser){
+  if(-not $knownRoles.ContainsKey($AdminUser)){$statements.Add("CREATE ROLE "+$AdminUser+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $adminPasswordText)+";");$rolesCreated.Add($AdminUser)}
+  else{$statements.Add("ALTER ROLE "+$AdminUser+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $adminPasswordText)+";");$rolesConverged.Add($AdminUser)}
+ }
+ if(-not $knownRoles.ContainsKey($SchemaOwnerRole)){$statements.Add("CREATE ROLE "+$SchemaOwnerRole+";");$rolesCreated.Add($SchemaOwnerRole)}
+ if(-not $knownRoles.ContainsKey($MigrationRole)){$statements.Add("CREATE ROLE "+$MigrationRole+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $migrationPasswordText)+";");$rolesCreated.Add($MigrationRole)}
+ else{$statements.Add("ALTER ROLE "+$MigrationRole+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $migrationPasswordText)+";");$rolesConverged.Add($MigrationRole)}
+ if(-not $knownRoles.ContainsKey($ApiRole)){$statements.Add("CREATE ROLE "+$ApiRole+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $apiPasswordText)+";");$rolesCreated.Add($ApiRole)}
+ else{$statements.Add("ALTER ROLE "+$ApiRole+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $apiPasswordText)+";");$rolesConverged.Add($ApiRole)}
+ if(-not $knownRoles.ContainsKey($WorkerRole)){$statements.Add("CREATE ROLE "+$WorkerRole+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $workerPasswordText)+";");$rolesCreated.Add($WorkerRole)}
+ else{$statements.Add("ALTER ROLE "+$WorkerRole+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $workerPasswordText)+";");$rolesConverged.Add($WorkerRole)}
+ $databaseCreated=$false
+ if(-not $databaseExists){$statements.Add("CREATE DATABASE "+$DatabaseName+" OWNER "+$SchemaOwnerRole+";");$databaseCreated=$true}
+ $statements.Add("GRANT ALL ON DATABASE "+$DatabaseName+" TO "+$MigrationRole+";")
+ if($AdminUser -cne $superuser){$statements.Add("GRANT ALL ON DATABASE "+$DatabaseName+" TO "+$AdminUser+";")}
+ $mutateSql=($statements -join [Environment]::NewLine)
+ if(-not [string]::IsNullOrWhiteSpace($mutateSql)){Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $mutateSql|Out-Null}
+
+ # Verify the converged state with a fresh read before reporting success.
+ $verifyOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $detectSql
+ $verifiedRoles=@{}
+ foreach($line in @($verifyOutput -split "\r?\n")){
+  if([string]::IsNullOrWhiteSpace($line)){continue}
+  $fields=$line.Split("|")
+  if($fields.Count -ne 7){throw "PostgreSQL bootstrap verification returned an unexpected result."}
+  $verifiedRoles[$fields[0]]=@{login=($fields[1] -ceq "t");super=($fields[2] -ceq "t");createrole=($fields[3] -ceq "t");createdb=($fields[4] -ceq "t");bypassrls=($fields[5] -ceq "t");replication=($fields[6] -ceq "t")}
+ }
+ $verifyRoleList=@($superuser)+@($managedRoles)
+ foreach($role in @($verifyRoleList|Select-Object -Unique)){
+  if(-not $verifiedRoles.ContainsKey($role)){throw "PostgreSQL bootstrap verification found a missing role; refusing to report success."}
+  $info=$verifiedRoles[$role]
+  if($role -eq $superuser){if(-not $info.super){throw "PostgreSQL bootstrap verification found an unexpected superuser state; refusing to report success."};continue}
+  if($info.super -or $info.createrole -or $info.createdb -or $info.bypassrls -or $info.replication -or ($info.login -ne $expectedLogin[$role])){throw "PostgreSQL bootstrap verification found an unexpected role state; refusing to report success."}
+ }
+ $verifyDbOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $dbSql
+ $verifyDbLines=@($verifyDbOutput -split "\r?\n"|Where-Object{-not [string]::IsNullOrWhiteSpace($_)})
+ if($verifyDbLines.Count -ne 1){throw "PostgreSQL bootstrap verification found a missing database; refusing to report success."}
+ $verifyDbFields=$verifyDbLines[0].Split("|")
+ if($verifyDbFields.Count -ne 2 -or $verifyDbFields[1] -cne $SchemaOwnerRole){throw "PostgreSQL bootstrap verification found an unexpected database owner; refusing to report success."}
+ # Password texts remain referenced only until script exit; they are never
+ # written to disk, argv, logs or exception messages.
+ [pscustomobject]@{status="ok";database=$DatabaseName;databaseCreated=$databaseCreated;rolesCreated=@($rolesCreated);rolesConverged=@($rolesConverged);credentialTransport="child-environment-and-stdin";mutated=$true}|ConvertTo-Json -Depth 4

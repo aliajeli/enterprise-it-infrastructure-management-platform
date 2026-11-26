@@ -288,6 +288,28 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-safety.ps1
 
+      - name: Test PostgreSQL first-install lifecycle fail-closed gates
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-first-install-lifecycle.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL first-install lifecycle test failure::$message"
+            exit 1
+          }
+
+      - name: Test PostgreSQL database bootstrap capability against a real cluster
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-bootstrap-database.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL database bootstrap test failure::$message"
+            exit 1
+          }
+
       - name: Test Windows service host staging plan
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-windows-service-host-staging.ps1
