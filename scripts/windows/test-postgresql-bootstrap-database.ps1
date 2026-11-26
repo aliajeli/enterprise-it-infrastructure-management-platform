@@ -57,6 +57,14 @@ try{
  $initdbStart.RedirectStandardOutput=$true
  $initdbStart.RedirectStandardError=$true
  foreach($argument in @("--pgdata=$data","--username=platform_admin","--auth=scram-sha-256","--pwprompt","--encoding=UTF8")){$initdbStart.ArgumentList.Add($argument)}
+ # PostgreSQL 18 simple_prompt falls back to stdin only on the msys branch;
+ # without these process-local overrides the restricted re-exec may acquire a
+ # console and block on interactive input. Never permit an inherited
+ # PG_RESTRICT_EXEC (or any other PG* value) to alter re-exec behavior.
+ # This mirrors the dedicated bootstrap service and the reviewed stdin helper.
+ foreach($key in @($initdbStart.Environment.Keys|Where-Object{$_ -like 'PG*'})){$null=$initdbStart.Environment.Remove($key)}
+ $initdbStart.Environment['OSTYPE']='msys'
+ $initdbStart.Environment['LC_ALL']='C'
  $initdbProcess=[Diagnostics.Process]::Start($initdbStart)
  if($null -eq $initdbProcess){throw "Fixture initdb did not start."}
  $initdbOutTask=$initdbProcess.StandardOutput.ReadToEndAsync()
