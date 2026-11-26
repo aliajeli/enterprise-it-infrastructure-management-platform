@@ -41,7 +41,9 @@ function Assert-PostgreSqlClusterInitialized {
  if($conf -notmatch "(?m)^\s*listen_addresses\s*=\s*'127\.0\.0\.1'" -or $conf -notmatch "(?m)^\s*port\s*=\s*5432\s*$"){throw "PostgreSQL cluster must bind only to 127.0.0.1:5432; refusing database bootstrap."}
  $hba=Get-Content -LiteralPath $hbaPath -Raw
  if($hba -notmatch "127\.0\.0\.1/32\s+scram-sha-256" -or $hba -notmatch "0\.0\.0\.0/0\s+reject" -or $hba -notmatch "::/0\s+reject"){throw "PostgreSQL cluster authentication policy must be loopback-only SCRAM with explicit remote rejection; refusing database bootstrap."}
- [pscustomobject]@{valid=$true;dataRoot=$state.dataRoot;postgresMajorVersion="18";listenAddress="127.0.0.1";port=5432}
+ # The assertion is intentionally silent: callers treat script output as a
+ # JSON payload (ConvertFrom-Json), and a stray receipt object would arrive
+ # as "@{valid=True; ...}" and corrupt the parse. No caller consumes it.
 }
 
 function Resolve-PostgreSqlServiceSid {
