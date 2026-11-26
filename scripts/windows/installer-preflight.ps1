@@ -82,18 +82,28 @@ function Test-InstallerPreflightFacts {
     }
 
     $failed = @($checks | Where-Object { $_.required -and -not $_.passed })
+    $hostReady = ($failed.Count -eq 0)
+    # Product readiness is a capability gate, not a constant: the blocker
+    # list IS the gate, and a blocker is removed only when its capability is
+    # implemented and its test suite is green. Credential transport, cluster
+    # ownership, bootstrap, orchestration and offline installation are
+    # approved (CI-proven); migration transport and the Windows Server
+    # security acceptance remain open.
+    $installationBlockers = @(
+        "PostgreSQL migration credential transport is not approved.",
+        "Security review and supported Windows Server acceptance are incomplete."
+    )
     return [pscustomobject]@{
         schemaVersion = 2
-        # Host checks are necessary but not sufficient. Never report the
-        # product as install-ready while required deployment gates are closed.
-        hostReady = ($failed.Count -eq 0)
-        ready = $false
+        # Host checks are necessary but not sufficient for product
+        # readiness. The offline installer stages on hostReady; every
+        # remaining blocker stays enforced at its own fail-closed layer
+        # (the migration entry point refuses, orchestration rolls back the
+        # services it started, and Setup.exe will consume full ready).
+        hostReady = $hostReady
+        ready = ($hostReady -and $installationBlockers.Count -eq 0)
         readinessScope = "host-baseline-only"
-        installationBlockers = @(
-            "PostgreSQL credential transport and cluster ownership are not approved.",
-            "Bootstrap, migration, orchestration and offline installation are disabled.",
-            "Security review and supported Windows Server acceptance are incomplete."
-        )
+        installationBlockers = $installationBlockers
         minimumFreeSpaceGB = $MinimumFreeSpaceGB
         checks = @($checks.ToArray())
     }

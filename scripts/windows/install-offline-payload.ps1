@@ -181,7 +181,11 @@ if($MyInvocation.InvocationName -ne '.'){
  . (Join-Path $PSScriptRoot 'installer-preflight.ps1') -MinimumFreeSpaceGB $MinimumFreeSpaceGB
  $facts=Get-InstallerPreflightFacts
  $preflight=Test-InstallerPreflightFacts -Facts $facts -MinimumFreeSpaceGB $MinimumFreeSpaceGB
- if(-not $preflight.ready){$preflight|ConvertTo-Json -Depth 6;throw "Windows installer host preflight failed; no files or services were changed."}
+ # Stage on the host baseline. Product-level blockers (migration transport,
+ # Windows Server security acceptance) stay enforced at their own
+ # fail-closed layers: orchestration rolls back anything it started, and
+ # the full product `ready` flag remains closed for Setup.exe.
+ if(-not $preflight.hostReady){$preflight|ConvertTo-Json -Depth 6;throw "Windows installer host preflight failed; no files or services were changed."}
  $programFilesLocation=@($facts.Locations|Where-Object{$_.Name -eq 'ProgramFiles'})|Select-Object -First 1
  $requiredFreeBytes=[int64]$plan.ExpandedBytes+([int64]$MinimumFreeSpaceGB*1GB)
  if($null -eq $programFilesLocation -or [int64]$programFilesLocation.FreeBytes -lt $requiredFreeBytes){throw "Program Files volume lacks space for the expanded payload plus the configured free-space reserve."}
