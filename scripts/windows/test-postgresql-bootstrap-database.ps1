@@ -91,15 +91,36 @@ try{
  $pgCtl=Join-Path $installRoot "postgresql\pgsql\bin\pg_ctl.exe"
  $postgresLog=Join-Path $testRoot "postgres.log"
  $pgIsready=Join-Path $installRoot "postgresql\pgsql\bin\pg_isready.exe"
- # Start through pg_ctl exactly like the reviewed disposable initdb test:
- # pg_ctl -w blocks until the server accepts connections, and the -l file
- # captures any startup failure for the thrown diagnostic.
- $startOutput=@(& $pgCtl -D $data -l $postgresLog -o "-h 127.0.0.1 -p 5432" -w -t 60 start 2>&1)
- $startExit=$LASTEXITCODE
+ # Start through pg_ctl exactly like the reviewed disposable initdb test.
+ # CRITICAL: never capture pg_ctl's output with a PowerShell pipeline — the
+ # server it spawns inherits the redirected pipes and the capture waits for
+ # EOF from descendants forever (the documented trap in the disposable test).
+ # Wait on the pg_ctl process itself and drain the streams with a bound.
+ $pgCtlStart=[Diagnostics.ProcessStartInfo]::new()
+ $pgCtlStart.FileName=$pgCtl
+ foreach($argument in @("-D",$data,"-l",$postgresLog,"-o","-h 127.0.0.1 -p 5432","-w","-t","60","start")){$pgCtlStart.ArgumentList.Add($argument)}
+ $pgCtlStart.UseShellExecute=$false
+ $pgCtlStart.CreateNoWindow=$true
+ $pgCtlStart.RedirectStandardOutput=$true
+ $pgCtlStart.RedirectStandardError=$true
+ $pgCtlProc=[Diagnostics.Process]::Start($pgCtlStart)
+ if($null -eq $pgCtlProc){throw "Fixture pg_ctl could not be started."}
+ $ctlOutTask=$pgCtlProc.StandardOutput.ReadToEndAsync()
+ $ctlErrTask=$pgCtlProc.StandardError.ReadToEndAsync()
+ if(-not $pgCtlProc.WaitForExit(90000)){
+  try{$pgCtlProc.Kill($true)}catch{}
+  $pgCtlProc.Dispose()
+  throw "Fixture pg_ctl start timed out after 90 seconds."
+ }
+ $startExit=$pgCtlProc.ExitCode
+ $ctlOut="";$ctlErr=""
+ if($ctlOutTask.Wait(3000)){$ctlOut=$ctlOutTask.GetAwaiter().GetResult()}
+ if($ctlErrTask.Wait(3000)){$ctlErr=$ctlErrTask.GetAwaiter().GetResult()}
+ $pgCtlProc.Dispose()
  if($startExit -ne 0){
   $logTail=""
   if(Test-Path -LiteralPath $postgresLog){$logTail=(@(Get-Content -LiteralPath $postgresLog -ErrorAction SilentlyContinue|Select-Object -Last 8) -join " ; ")}
-  throw "Fixture postgres did not start (exit code $startExit). log tail: $logTail"
+  throw "Fixture postgres did not start (exit code $startExit). pg_ctl out: $ctlOut pg_ctl err: $ctlErr log tail: $logTail"
  }
  $pgStarted=$true
  & $pgIsready -h 127.0.0.1 -p 5432 -t 2|Out-Null
