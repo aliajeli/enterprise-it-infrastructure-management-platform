@@ -115,7 +115,10 @@ $expectedLogin[$SchemaOwnerRole]=$false
 $expectedLogin[$MigrationRole]=$true
 $expectedLogin[$ApiRole]=$true
 $expectedLogin[$WorkerRole]=$true
-$detectSql="SELECT rolname||'|'||rolcanlogin||'|'||rolsuper||'|'||rolcreaterole||'|'||rolcreatedb||'|'||rolbypassrls||'|'||rolreplication FROM pg_roles WHERE rolname IN ($rolesInClause) ORDER BY rolname;"
+# Booleans concatenated into text render as 'true'/'false' (boolean::text),
+# while the parser expects PostgreSQL's single-character boolean display.
+# Cast explicitly through left(...::text,1) so every flag arrives as 't'/'f'.
+$detectSql="SELECT rolname||'|'||left(rolcanlogin::text,1)||'|'||left(rolsuper::text,1)||'|'||left(rolcreaterole::text,1)||'|'||left(rolcreatedb::text,1)||'|'||left(rolbypassrls::text,1)||'|'||left(rolreplication::text,1) FROM pg_roles WHERE rolname IN ($rolesInClause) ORDER BY rolname;"
  $detectOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $detectSql -Stage "detect"
  $knownRoles=@{}
  foreach($line in @($detectOutput -split "\r?\n")){
