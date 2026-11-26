@@ -35,6 +35,7 @@ internal static class PostgreSqlDataDirectoryProvisioner
     private const uint ShareWrite = 2;
     private const uint CreateNew = 2; // NT FILE_CREATE, not Win32 CREATE_NEW
     private const uint FileOpen = 1;
+    private const uint OpenExisting = 3;
     private const uint BackupSemantics = 0x02000000;
     private const uint OpenReparsePoint = 0x00200000;
     private const uint DirectoryAttribute = 0x10;
