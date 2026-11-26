@@ -129,12 +129,10 @@ internal sealed class PostgreSqlDataDirectoryHandleChain : IDisposable
                 FileOpenReparsePoint | FileSynchronousIoNonAlert, IntPtr.Zero, 0);
             if (status < 0)
                 throw new Win32Exception(unchecked((int)RtlNtStatusToDosError(status)));
-            if (!GetFileInformationByHandleEx(file, FileAttributeTagInfoClass,
-                    out var tag, Marshal.SizeOf<FileAttributeTagInfo>()) ||
+            if (!TryGetFileInformationByHandleEx(file, FileAttributeTagInfoClass, out FileAttributeTagInfo tag) ||
                 (tag.FileAttributes & (DirectoryAttribute | ReparseAttribute)) != 0)
                 throw new UnauthorizedAccessException("PostgreSQL verification file is a directory or reparse point.");
-            if (!GetFileInformationByHandleEx(file, FileIdInfoClass,
-                    out var fileId, Marshal.SizeOf<FileIdInfo>()) ||
+            if (!TryGetFileInformationByHandleEx(file, FileIdInfoClass, out FileIdInfo fileId) ||
                 fileId.VolumeSerial != _identities[^1].VolumeSerial)
                 throw new UnauthorizedAccessException("PostgreSQL verification file identity is invalid.");
             var result = file;
@@ -211,14 +209,12 @@ internal sealed class PostgreSqlDataDirectoryHandleChain : IDisposable
     private static Identity ReadDirectoryIdentity(SafeFileHandle handle)
     {
         if (handle.IsInvalid ||
-            !GetFileInformationByHandleEx(handle, FileAttributeTagInfoClass,
-                out var tag, Marshal.SizeOf<FileAttributeTagInfo>()))
+            !TryGetFileInformationByHandleEx(handle, FileAttributeTagInfoClass, out FileAttributeTagInfo tag))
             throw new Win32Exception(Marshal.GetLastWin32Error());
         if ((tag.FileAttributes & DirectoryAttribute) == 0 ||
             (tag.FileAttributes & ReparseAttribute) != 0)
             throw new UnauthorizedAccessException("A PostgreSQL path component is not a plain directory.");
-        if (!GetFileInformationByHandleEx(handle, FileIdInfoClass,
-                out var id, Marshal.SizeOf<FileIdInfo>()))
+        if (!TryGetFileInformationByHandleEx(handle, FileIdInfoClass, out FileIdInfo id))
             throw new Win32Exception(Marshal.GetLastWin32Error());
         return new Identity(id.VolumeSerial, id.FileIdLow, id.FileIdHigh);
     }
@@ -248,15 +244,31 @@ internal sealed class PostgreSqlDataDirectoryHandleChain : IDisposable
     private static extern SafeFileHandle CreateFileW(string name, uint access, uint share, IntPtr security,
         uint disposition, uint flags, IntPtr template);
 
-    [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "GetFileInformationByHandleEx")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandleEx(SafeFileHandle handle, int infoClass,
-        out FileAttributeTagInfo info, int size);
+    private static bool TryGetFileInformationByHandleEx<T>(
+        SafeFileHandle handle, int infoClass, out T info) where T : struct
+    {
+        var size = Marshal.SizeOf<T>();
+        var buffer = Marshal.AllocHGlobal(size);
+        try
+        {
+            if (!GetFileInformationByHandleEx(handle, infoClass, buffer, checked((uint)size)))
+            {
+                info = default;
+                return false;
+            }
+            info = Marshal.PtrToStructure<T>(buffer);
+            return true;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
 
     [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "GetFileInformationByHandleEx")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandleEx(SafeFileHandle handle, int infoClass,
-        out FileIdInfo info, int size);
+    private static extern bool GetFileInformationByHandleEx(
+        SafeFileHandle handle, int infoClass, IntPtr info, uint size);
 
     [DllImport("ntdll.dll")]
     private static extern int NtCreateFile(out SafeFileHandle handle, uint access,
