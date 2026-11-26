@@ -28,7 +28,7 @@ function Invoke-PostgreSqlServiceProvisioning{
  if($null -eq $existing){
   $bin='"'+$Plan.PgCtlPath+'" runservice -N "EnterpriseITPostgreSQL" -D "'+$Plan.DataRoot+'" -w'
   if($PSCmdlet.ShouldProcess($Plan.ServiceName,"Register native PostgreSQL service with dedicated virtual account")){Invoke-PostgreSqlSc @("create",$Plan.ServiceName,"binPath=",$bin,"obj=",$Plan.ServiceAccount,"start=","auto","DisplayName=","Enterprise IT PostgreSQL 18")}
- }elseif($existing.PathName -notlike "*$($Plan.PgCtlPath)*" -or $existing.PathName -notlike "*$($Plan.DataRoot)*" -or $existing.StartName -ine $Plan.ServiceAccount){throw "Existing PostgreSQL service path, data directory or identity differs; refusing replacement."}
+ }else{throw "Existing PostgreSQL service detected; refusing to adopt or modify it."}
  if($PSCmdlet.ShouldProcess($Plan.ServiceName,"Configure service SID and bounded recovery")){Invoke-PostgreSqlSc @("sidtype",$Plan.ServiceName,"unrestricted");Invoke-PostgreSqlSc @("failure",$Plan.ServiceName,"reset=","86400","actions=",$Plan.RecoveryActions);Invoke-PostgreSqlSc @("failureflag",$Plan.ServiceName,"1")}
  $sidText=(& sc.exe showsid $Plan.ServiceName 2>&1|Out-String);if($LASTEXITCODE -ne 0){throw "Could not resolve PostgreSQL service SID."}
  $m=[regex]::Match($sidText,"S-1-5-80-(?:\d+-){4}\d+");if(-not $m.Success){throw "Invalid PostgreSQL service SID."};$sid=$m.Value

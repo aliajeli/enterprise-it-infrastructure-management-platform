@@ -1,3 +1,11 @@
+## 0.1.289 — refuse adoption of pre-existing PostgreSQL service — 2026-11-26
+
+The PostgreSQL service provisioner previously accepted an existing service when its image path, data directory, and account matched the requested plan, then modified its service SID, recovery policy, and filesystem ACLs. Matching service metadata is not proof of ownership.
+
+- Provisioning now rejects every pre-existing `EnterpriseITPostgreSQL` service before changing service configuration or filesystem ACLs.
+- Added a Windows policy regression assertion that rejects metadata-based service adoption.
+- This is a fail-closed ownership correction only. Handle-relative PostgreSQL directory provisioning, independent parent/data ACLs, transactional rollback, secure credential transport, Windows Server acceptance, and offline-installer activation remain outstanding.
+
 ## 0.1.288 — establish main/beta/developer branch flow — 2026-11-25
 
 Introduced an explicit three-stage branch model without changing the default branch or merging experimental work into main.
