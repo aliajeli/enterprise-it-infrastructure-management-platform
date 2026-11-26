@@ -6,6 +6,9 @@ Set-StrictMode -Version Latest
 if(-not $IsWindows){throw "Windows-only acceptance test."}
 $pf=[IO.Path]::GetFullPath([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)).TrimEnd([IO.Path]::DirectorySeparatorChar)
 . (Join-Path $PSScriptRoot "orchestrate-windows-services.ps1") -InstallRoot (Join-Path $pf "EnterpriseIT\1.2.3") -ApiDatabaseUrl (ConvertTo-SecureString "unused" -AsPlainText -Force) -WorkerDatabaseUrl (ConvertTo-SecureString "unused" -AsPlainText -Force) -EdgeBindAddress "192.0.2.10" -EdgeTlsHostname "it.example.internal" -EdgeCertificateThumbprint ("A"*40)
+# The state and SID helpers are also exercised directly below, so load the
+# shared module into this scope in addition to the lifecycle's own load.
+. (Join-Path $PSScriptRoot "postgresql-cluster-identity.ps1")
 $secret=ConvertTo-SecureString "lifecycle-synthetic-secret-1234" -AsPlainText -Force
 $fullBootstrap=@{
  AdminUser="platform_admin";AdminPassword=$secret;DatabaseName="enterprise_it"
