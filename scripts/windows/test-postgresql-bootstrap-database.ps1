@@ -86,6 +86,7 @@ try{
  [IO.File]::AppendAllText((Join-Path $data "postgresql.conf"),("`nlisten_addresses = '127.0.0.1'`nport = 5432`n"),[Text.UTF8Encoding]::new($false))
  [IO.File]::AppendAllText((Join-Path $data "pg_hba.conf"),("`nhost`tall`tall`t0.0.0.0/0`treject`nhost`tall`tall`t::/0`treject`n"),[Text.UTF8Encoding]::new($false))
 
+ Write-Output "::notice title=PostgreSQL database bootstrap test::fixture initialized and configuration pins appended"
  if(Get-NetTCPConnection -LocalPort 5432 -State Listen -ErrorAction SilentlyContinue){throw "TCP 5432 is occupied; cannot start the fixture cluster."}
  $pgCtl=Join-Path $installRoot "postgresql\pgsql\bin\pg_ctl.exe"
  $postgresLog=Join-Path $testRoot "postgres.log"
@@ -103,6 +104,7 @@ try{
  $pgStarted=$true
  & $pgIsready -h 127.0.0.1 -p 5432 -t 2|Out-Null
  if($LASTEXITCODE -ne 0){throw "Fixture cluster is not accepting connections on 127.0.0.1:5432."}
+ Write-Output "::notice title=PostgreSQL database bootstrap test::fixture server ready on 127.0.0.1:5432"
 
  $psql=Join-Path $installRoot "postgresql\pgsql\bin\psql.exe"
  # psql argv recorder: the capability must never pass a secret as a process
@@ -122,6 +124,7 @@ try{
  # Fresh creation: all five roles plus the owned database.
  $first=& $bootstrapScript @parameters -Confirm:$false|ConvertFrom-Json
  if($first.status -ne "ok" -or -not $first.databaseCreated){throw "Fresh bootstrap must create the database."}
+ Write-Output "::notice title=PostgreSQL database bootstrap test::fresh bootstrap created the database and roles"
  if(@($first.rolesCreated).Count -ne 5){throw "Fresh bootstrap must create all five deployment roles."}
  $owner=Invoke-TestPsql -PsqlExe $psql -Sql "SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname='ci_enterprise_it';"
  if($owner.Trim() -cne "ci_owner"){throw "Fresh bootstrap must own the database with the schema owner role."}
@@ -169,6 +172,7 @@ try{
  $argvContent=[IO.File]::ReadAllText($argvLog)
  if($argvContent -notmatch "ON_ERROR_STOP"){throw "psql argv recorder did not capture bootstrap invocations."}
  if($argvContent -match [regex]::Escape($secretMarker)){throw "Bootstrap passed a secret through psql process arguments."}
+ Write-Output "::notice title=PostgreSQL database bootstrap test::all role, adoption and argv assertions complete"
  Write-Host "PostgreSQL database bootstrap capability tests passed."
 }finally{
  if($argvEnvSet){Remove-Item -Path env:EIT_PSQL_ARGV_LOG -ErrorAction SilentlyContinue}

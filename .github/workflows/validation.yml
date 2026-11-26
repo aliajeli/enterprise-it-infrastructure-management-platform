@@ -155,7 +155,10 @@ jobs:
   windows-api-smoke:
     name: Windows API runtime smoke
     runs-on: windows-latest
-    timeout-minutes: 20
+    # This job now also runs the real initdb lifecycle and database-bootstrap
+    # capability tests; the previous 20-minute bound cancelled the database
+    # test mid-run while every gate was passing (run 45870490296).
+    timeout-minutes: 30
     env:
       DATABASE_URL: postgresql://platform:placeholder@127.0.0.1:5432/platform?schema=public
       API_HOST: 127.0.0.1
