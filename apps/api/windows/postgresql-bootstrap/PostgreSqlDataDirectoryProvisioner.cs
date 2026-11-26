@@ -472,14 +472,22 @@ internal static class PostgreSqlDataDirectoryProvisioner
         bool createdData, bool createdVersion, bool createdPostgreSql,
         DirectoryIdentity? dataIdentity, DirectoryIdentity? versionIdentity, DirectoryIdentity? postgreSqlIdentity)
     {
-        // Reverse order, created-only, identity-checked. EnterpriseIT is the
-        // shared application root and is deliberately never removed.
+        // Reverse order, created-only, identity-checked. Each child must be
+        // deleted (disposition set and handle closed) before its parent's
+        // disposition is attempted: FileDispositionInfo on a non-empty
+        // directory fails with STATUS_DIRECTORY_NOT_EMPTY, so deferring all
+        // dispositions would silently leave the parent in place.
+        // EnterpriseIT is the shared application root and is never removed.
         if (createdData && data is not null && !data.IsInvalid && dataIdentity.HasValue)
         {
             try
             {
                 var id = ReadAndVerifyDirectory(data, "data-leaf");
-                if (id == dataIdentity.Value) DeleteRelativeHandle(data);
+                if (id == dataIdentity.Value)
+                {
+                    DeleteRelativeHandle(data);
+                    data.Dispose(); // delete-on-close fires while the leaf is empty
+                }
             }
             catch { /* leave in place; fail closed by caller */ }
         }
@@ -488,7 +496,11 @@ internal static class PostgreSqlDataDirectoryProvisioner
             try
             {
                 var id = ReadAndVerifyDirectory(versionDir, "version-root");
-                if (id == versionIdentity.Value) DeleteRelativeHandle(versionDir);
+                if (id == versionIdentity.Value)
+                {
+                    DeleteRelativeHandle(versionDir);
+                    versionDir.Dispose(); // child leaf is already gone
+                }
             }
             catch { /* leave in place; fail closed by caller */ }
         }
@@ -497,7 +509,11 @@ internal static class PostgreSqlDataDirectoryProvisioner
             try
             {
                 var id = ReadAndVerifyDirectory(postgreSql, "postgresql-root");
-                if (id == postgreSqlIdentity.Value) DeleteRelativeHandle(postgreSql);
+                if (id == postgreSqlIdentity.Value)
+                {
+                    DeleteRelativeHandle(postgreSql);
+                    postgreSql.Dispose(); // version directory is already gone
+                }
             }
             catch { /* leave in place; fail closed by caller */ }
         }
