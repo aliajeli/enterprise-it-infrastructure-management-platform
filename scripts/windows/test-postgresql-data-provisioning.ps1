@@ -116,16 +116,33 @@ function Get-DataPaths([string]$ProgramData){
 # SIDs at RX for parents / Modify-minus-owner for the data leaf).
 function Assert-DataAcl([string]$Path,[bool]$Leaf){
  $acl=Get-Acl -LiteralPath $Path
- $sddl=$acl.Sddl.ToLowerInvariant()
- if($sddl -notmatch '^o:ba'){throw "Data-chain owner must be BUILTIN\Administrators: $Path"}
- if($sddl -notmatch 'd:p\('){throw "Data-chain DACL must be protected: $Path"}
- if(([regex]::Matches($sddl,'\(')).Count -ne 4){throw "Data-chain DACL must contain exactly four ACEs: $Path"}
- if(([regex]::Matches($sddl,'oici')).Count -ne 4){throw "Every data-chain ACE must be OICI: $Path"}
-  $serviceMaskPattern=if($Leaf){'0x0*1301ff'}else{'0x0*1200a9'}
- if(([regex]::Matches($sddl,$serviceMaskPattern)).Count -ne 2){throw "Service SID ACE mask mismatch (expected $serviceMaskPattern): $Path"}
- if(([regex]::Matches($sddl,'fa;;;sy')).Count -ne 1 -or ([regex]::Matches($sddl,'fa;;;ba')).Count -ne 1){throw "SYSTEM/Administrators FA ACE missing: $Path"}
- if($sddl -notmatch [regex]::Escape($bootstrapSid)){throw "Bootstrap service SID ACE missing: $Path"}
- if($sddl -notmatch [regex]::Escape($postgresSid)){throw "PostgreSQL service SID ACE missing: $Path"}
+ $owner=$acl.GetOwner([Security.Principal.SecurityIdentifier]).Value
+ if($owner -ne 'S-1-5-32-544' -and $owner -ne 'S-1-5-18'){
+  throw "Data-chain owner must be Administrators or SYSTEM (observed owner: $owner): $Path"
+ }
+ if($acl.AreAccessRulesProtected -ne $true){throw "Data-chain DACL must be protected: $Path"}
+ $rules=@($acl.Access)
+ if($rules.Count -ne 4){throw "Data-chain DACL must contain exactly four ACEs (observed: $($rules.Count); SDDL: $($acl.Sddl)): $Path"}
+ $expectedMask=if($Leaf){0x1301FF}else{0x1200A9}
+ $expected=@{'S-1-5-18'=0x1F01FF;'S-1-5-32-544'=0x1F01FF}
+ $expected[$bootstrapSid]=$expectedMask
+ $expected[$postgresSid]=$expectedMask
+ $seen=@{}
+ foreach($rule in $rules){
+  if($rule.IsInherited){throw "Data-chain ACE must be explicit: $Path"}
+  if($rule.AccessControlType -ne 'Allow'){throw "Data-chain ACE must be an allow ACE: $Path"}
+  $expectedInheritance=[Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [Security.AccessControl.InheritanceFlags]::ObjectInherit
+  if($rule.InheritanceFlags -ne $expectedInheritance -or $rule.PropagationFlags -ne 'None'){
+   throw "Data-chain ACE inheritance must be OICI with no propagation (observed: $($rule.InheritanceFlags)/$($rule.PropagationFlags)): $Path"
+  }
+  $sid=try{$rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value}catch{$rule.IdentityReference.Value}
+  if(-not $expected.ContainsKey($sid)){throw "Unexpected ACE principal on the data chain (observed: $sid): $Path"}
+  $mask=[int]$rule.FileSystemRights
+  if($mask -ne $expected[$sid]){throw "ACE mask mismatch for $sid (observed 0x$($mask.ToString('X8')), expected 0x$($expected[$sid].ToString('X8'))): $Path"}
+  if($seen.ContainsKey($sid)){throw "Duplicate ACE for $sid on the data chain: $Path"}
+  $seen[$sid]=$true
+ }
+ if($seen.Count -ne 4){throw "Not all expected principals are present on the data chain: $Path"}
  if((Get-Item -LiteralPath $Path -Force).Attributes -band [IO.FileAttributes]::ReparsePoint){throw "Data-chain path is a reparse point: $Path"}
 }
 

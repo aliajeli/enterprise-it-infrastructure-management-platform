@@ -232,7 +232,14 @@ jobs:
 
       - name: Test PostgreSQL data directory native provisioning policy
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/windows/test-postgresql-data-provisioning.ps1
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-data-provisioning.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL data provisioning test failure::$message"
+            exit 1
+          }
 
 
       - name: Test PostgreSQL bootstrap service staging plan
