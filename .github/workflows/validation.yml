@@ -305,6 +305,7 @@ jobs:
             Write-Output "::error title=PostgreSQL first-install lifecycle test failure::$message"
             exit 1
           }
+          exit 0
 
       - name: Test PostgreSQL database bootstrap capability against a real cluster
         shell: pwsh
@@ -316,6 +317,7 @@ jobs:
             Write-Output "::error title=PostgreSQL database bootstrap test failure::$message"
             exit 1
           }
+          exit 0
 
       - name: Test Windows service host staging plan
         shell: pwsh

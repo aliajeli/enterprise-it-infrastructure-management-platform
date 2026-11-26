@@ -137,3 +137,6 @@ try{
 }finally{
  if(Test-Path -LiteralPath $work){Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue}
 }
+# Fail-closed cases deliberately run executables that exit non-zero; do not
+# let that leftover exit code become the step's process exit code.
+$global:LASTEXITCODE=0

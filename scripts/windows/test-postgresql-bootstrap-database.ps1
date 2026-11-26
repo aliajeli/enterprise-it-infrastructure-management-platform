@@ -173,3 +173,6 @@ try{
  if($createdInstall -and (Test-Path -LiteralPath $installRoot)){Remove-Item -LiteralPath $installRoot -Recurse -Force -ErrorAction SilentlyContinue}
  if(Test-Path -LiteralPath $argvLog){Remove-Item -LiteralPath $argvLog -Force -ErrorAction SilentlyContinue}
 }
+# Leftover native exit codes from negative-path checks must not become the
+# step's process exit code.
+$global:LASTEXITCODE=0
