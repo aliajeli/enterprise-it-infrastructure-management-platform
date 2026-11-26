@@ -21,11 +21,34 @@ try{
  if($plan.EntryCount -ne 2){throw 'Valid archive entry count was not preserved.'}
  $dry=& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -WhatIf | ConvertFrom-Json
  if($dry.EntryCount -ne 2){throw 'Installer WhatIf must remain available for archive inspection.'}
+ if($dry.bootstrapRequested){throw 'Installer WhatIf must report no database bootstrap when no admin user is supplied.'}
  $blocked=$false
  try{& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -Confirm:$false|Out-Null}catch{
   $blocked=$_.Exception.Message -like '*Offline installation is disabled*no files or services were changed*'
  }
  if(-not $blocked){throw 'Installer mutation must be blocked before staging an immutable payload.'}
+
+ # First-install database bootstrap inputs must be received and validated by
+ # the installer itself - even in WhatIf preview mode - and reported through
+ # the plan so a fresh PostgreSQL install is completable from installer
+ # inputs alone. Secrets must never appear in any plan or message.
+ $bootstrapSecret='installer-bootstrap-secret-49'
+ $bootstrapSecure=ConvertTo-SecureString $bootstrapSecret -AsPlainText -Force
+ $incompleteRejected=$false
+ try{& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -BootstrapAdminUser 'platform_admin' -WhatIf|Out-Null}catch{
+  if($_.Exception.Message -match [regex]::Escape($bootstrapSecret)){throw 'Installer bootstrap validation exposed a secret.'}
+  $incompleteRejected=$_.Exception.Message -like '*Bootstrap requires admin, migration, API runtime and Worker runtime SecureString passwords*'
+ }
+ if(-not $incompleteRejected){throw 'Installer must reject an incomplete bootstrap credential set before any staging, including in WhatIf mode.'}
+ $bootstrapDry=& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -BootstrapAdminUser 'platform_admin' -BootstrapAdminPassword $bootstrapSecure -MigrationPassword $bootstrapSecure -ApiRuntimePassword $bootstrapSecure -WorkerRuntimePassword $bootstrapSecure -WhatIf|ConvertFrom-Json
+ if(-not $bootstrapDry.bootstrapRequested){throw 'Installer WhatIf must report that a database bootstrap was requested.'}
+ if(($bootstrapDry|ConvertTo-Json -Depth 5) -match [regex]::Escape($bootstrapSecret)){throw 'Installer WhatIf plan must not contain bootstrap secrets.'}
+ # The mutating installer path must forward every bootstrap input to the
+ # orchestration entry point that builds the bootstrap capability set.
+ $installerSource=Get-Content -LiteralPath $scriptPath -Raw
+ foreach($forwarded in @('-BootstrapAdminUser $BootstrapAdminUser','-BootstrapAdminPassword $BootstrapAdminPassword','-DatabaseName $DatabaseName','-SchemaOwnerRole $SchemaOwnerRole','-MigrationRole $MigrationRole','-MigrationPassword $MigrationPassword','-ApiRuntimeRole $ApiRuntimeRole','-ApiRuntimePassword $ApiRuntimePassword','-WorkerRuntimeRole $WorkerRuntimeRole','-WorkerRuntimePassword $WorkerRuntimePassword')){
+  if($installerSource -notmatch [regex]::Escape($forwarded)){throw "Installer must forward $forwarded to the orchestration entry point."}
+ }
  $readLock=Open-OfflineArchiveReadLock -ArchivePath $valid
  try{
   # Validation must still work while replacement/write attempts are denied.

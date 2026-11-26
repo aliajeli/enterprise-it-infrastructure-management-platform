@@ -8,7 +8,21 @@ param(
  [int]$EdgeHttpsPort=443,
  [string]$EdgeTlsHostname,
  [string]$EdgeCertificateThumbprint,
- [ValidateRange(1,1024)][int]$MinimumFreeSpaceGB=10
+ [ValidateRange(1,1024)][int]$MinimumFreeSpaceGB=10,
+ # Database bootstrap inputs for a first install against a fresh PostgreSQL
+ # cluster. They are validated here and forwarded verbatim to the
+ # orchestration entry point; an empty BootstrapAdminUser means no bootstrap
+ # (adopt an ownership-verified cluster instead).
+ [string]$BootstrapAdminUser="",
+ [Security.SecureString]$BootstrapAdminPassword,
+ [string]$DatabaseName="enterprise_it",
+ [string]$SchemaOwnerRole="enterprise_it_owner",
+ [string]$MigrationRole="enterprise_it_migrator",
+ [Security.SecureString]$MigrationPassword,
+ [string]$ApiRuntimeRole="enterprise_it_api",
+ [Security.SecureString]$ApiRuntimePassword,
+ [string]$WorkerRuntimeRole="enterprise_it_worker",
+ [Security.SecureString]$WorkerRuntimePassword
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference="Stop"
@@ -126,10 +140,18 @@ function Open-OfflineArchiveReadLock {
 }
 
 if($MyInvocation.InvocationName -ne '.'){
+ # Bootstrap inputs must be complete before any archive work: invalid
+ # credential sets are rejected in WhatIf preview mode as well, matching
+ # the database capability scripts. The WhatIf plan reports only whether a
+ # bootstrap was requested - never any bootstrap value.
+ $bootstrapRequested=-not [string]::IsNullOrWhiteSpace($BootstrapAdminUser)
+ if($bootstrapRequested -and ($null -eq $BootstrapAdminPassword -or $null -eq $MigrationPassword -or $null -eq $ApiRuntimePassword -or $null -eq $WorkerRuntimePassword)){
+  throw "Bootstrap requires admin, migration, API runtime and Worker runtime SecureString passwords."
+ }
  $archiveLock=Open-OfflineArchiveReadLock -ArchivePath $PayloadArchive
  try{
  $plan=Get-OfflineInstallerPlan -PayloadArchive $PayloadArchive -ExpectedSha256 $ExpectedSha256 -ArchiveHandle $archiveLock
- if($WhatIfPreference){$plan|ConvertTo-Json -Depth 4;return}
+ if($WhatIfPreference){$plan|Add-Member -NotePropertyName bootstrapRequested -NotePropertyValue $bootstrapRequested -PassThru|ConvertTo-Json -Depth 4;return}
  # Do not stage an immutable version or invoke orchestration while database
  # ownership/initialization is unresolved: that would leave partial installs.
  throw "Offline installation is disabled pending PostgreSQL initialization and ownership verification; no files or services were changed."
@@ -169,7 +191,7 @@ if($MyInvocation.InvocationName -ne '.'){
    [IO.Directory]::Move($staging,$installRoot)
   }finally{if(Test-Path -LiteralPath $staging){Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue}}
   try{
-   & (Join-Path $PSScriptRoot 'orchestrate-windows-services.ps1') -InstallRoot $installRoot -ApiDatabaseUrl $ApiDatabaseUrl -WorkerDatabaseUrl $WorkerDatabaseUrl -EdgeBindAddress $EdgeBindAddress -EdgeHttpsPort $EdgeHttpsPort -EdgeTlsHostname $EdgeTlsHostname -EdgeCertificateThumbprint $EdgeCertificateThumbprint -Confirm:$false
+   & (Join-Path $PSScriptRoot 'orchestrate-windows-services.ps1') -InstallRoot $installRoot -ApiDatabaseUrl $ApiDatabaseUrl -WorkerDatabaseUrl $WorkerDatabaseUrl -EdgeBindAddress $EdgeBindAddress -EdgeHttpsPort $EdgeHttpsPort -EdgeTlsHostname $EdgeTlsHostname -EdgeCertificateThumbprint $EdgeCertificateThumbprint -BootstrapAdminUser $BootstrapAdminUser -BootstrapAdminPassword $BootstrapAdminPassword -DatabaseName $DatabaseName -SchemaOwnerRole $SchemaOwnerRole -MigrationRole $MigrationRole -MigrationPassword $MigrationPassword -ApiRuntimeRole $ApiRuntimeRole -ApiRuntimePassword $ApiRuntimePassword -WorkerRuntimeRole $WorkerRuntimeRole -WorkerRuntimePassword $WorkerRuntimePassword -Confirm:$false
   }catch{
    throw "Payload $version was staged at '$installRoot', but service orchestration failed. The immutable payload was retained for diagnosis. $($_.Exception.Message)"
   }
