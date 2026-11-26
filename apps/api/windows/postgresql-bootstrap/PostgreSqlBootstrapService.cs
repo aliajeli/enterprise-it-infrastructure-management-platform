@@ -307,8 +307,11 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             throw new InvalidOperationException("Bootstrap payload root is not versioned.");
 
         var initdb = Path.Combine(installRoot, "postgresql", "pgsql", "bin", "initdb.exe");
-        if (!File.Exists(initdb))
-            throw new FileNotFoundException("PostgreSQL initdb payload is missing.");
+        // Pin initdb by handle before the version check: identity, reparse state
+        // and DACL are captured now, the no-delete share blocks rename/replace
+        // while both launches run, and the pin is re-verified after cluster
+        // initialization. A missing or non-plain payload fails closed here.
+        using var initdbPin = InitdbPayloadPin.Open(initdb);
 
         WriteTrace("initdb-version-check-started");
         using (var versionProcess = new Process
@@ -416,6 +419,9 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
                     throw new InvalidDataException("PostgreSQL SCRAM authentication policy was not created.");
             }
             dataDirectory.VerifyStillBound();
+            // Both launches are complete: the retained pin handle must still
+            // reference the same file with the same ACL and no reparse state.
+            initdbPin.VerifyUnchanged();
         }
         catch
         {

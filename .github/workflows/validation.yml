@@ -230,6 +230,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-service-scm.ps1
 
+      - name: Test PostgreSQL data directory native provisioning policy
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-postgresql-data-provisioning.ps1
+
 
       - name: Test PostgreSQL bootstrap service staging plan
         shell: pwsh

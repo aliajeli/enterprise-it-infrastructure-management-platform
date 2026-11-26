@@ -8,7 +8,7 @@ try{
  $package=[ordered]@{name="enterprise-it-infrastructure-management-platform";version="0.1.1";private=$true}
  $package|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $source "package.json") -Encoding utf8
  $required=@(
-  "runtime\node.exe","runtime\npm.cmd","EnterpriseIT.ApiServiceHost.exe","EnterpriseIT.WebServiceHost.exe","EnterpriseIT.WorkerServiceHost.exe","EnterpriseIT.EdgeServiceHost.exe",
+  "runtime\node.exe","runtime\npm.cmd","EnterpriseIT.ApiServiceHost.exe","EnterpriseIT.WebServiceHost.exe","EnterpriseIT.WorkerServiceHost.exe","EnterpriseIT.EdgeServiceHost.exe","EnterpriseIT.PostgreSQLBootstrap.exe",
   "CredentialVault.KeyringStorageHelper.exe","CredentialVault.DpapiHelper.exe",
   "apps\api\dist\server.js","apps\worker\dist\main.js","packages\database\dist\index.js","packages\database\prisma\schema.prisma","packages\database\prisma\migrations",
   "migration-tool\prisma.config.ts","migration-tool\node_modules\prisma\package.json","migration-tool\node_modules\prisma\build\index.js","migration-tool\node_modules\@prisma\engines\schema-engine-windows.exe",
@@ -16,7 +16,7 @@ try{
   "apps\web\.next\standalone\server.js","apps\web\.next\standalone\.next\required-server-files.json","apps\web\.next\standalone\node_modules\next\package.json","apps\web\.next\standalone\service-entry.cjs",
   "postgresql\pgsql\bin\postgres.exe","postgresql\pgsql\bin\pg_ctl.exe","postgresql\pgsql\bin\initdb.exe","postgresql\pgsql\share\postgresql.conf.sample",
   "scripts\windows\initialize-postgresql-cluster.ps1","scripts\windows\postgresql-deployment-inputs.ps1","scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1",
-  "scripts\windows\provision-postgresql-service.ps1","scripts\windows\provision-api-service.ps1","scripts\windows\provision-worker-service.ps1",
+  "scripts\windows\provision-postgresql-service.ps1","scripts\windows\provision-postgresql-bootstrap-service.ps1","scripts\windows\provision-api-service.ps1","scripts\windows\provision-worker-service.ps1",
   "scripts\windows\provision-web-service.ps1","scripts\windows\provision-edge-service.ps1",
   "scripts\windows\installer-preflight.ps1","scripts\windows\new-offline-payload-manifest.ps1","scripts\windows\install-offline-payload.ps1"
  )
