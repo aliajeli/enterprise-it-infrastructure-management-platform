@@ -87,6 +87,17 @@ try {
   Write-Host ("SCM service SID: " + $serviceSid)
   & icacls.exe $diagnosticRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap diagnostic directory." }
+  # The service pins the fixed ProgramData chain with NtCreateFile FILE_OPEN
+  # and deliberately refuses to create the data leaf; the privileged
+  # provisioner (and this fixture on its behalf) must create it first with the
+  # provisioner's leaf ACL: SYSTEM/Administrators full, bootstrap service SID
+  # Modify. initdb runs as the service identity and needs Modify to populate
+  # an otherwise empty cluster directory.
+  $dataRoot = Join-Path $diagnosticRoot "data"
+  if (Test-Path -LiteralPath $dataRoot) { throw "Bootstrap data leaf already exists; refusing to reuse it." }
+  New-Item -ItemType Directory -Path $dataRoot | Out-Null
+  & icacls.exe $dataRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap data leaf." }
   # This marker activates a bounded 15-second initdb hold only in this
   # disposable smoke fixture, allowing a separate Standard User to probe
   # PROCESS_DUP_HANDLE on the real initdb parent and restricted re-exec child.
