@@ -195,6 +195,35 @@ function Assert-PostgreSqlBootstrapCapability {
  . $inputs
  Assert-PostgreSqlDeploymentInputs -PgHost "127.0.0.1" -PgPort 5432 -DatabaseName ([string]$Bootstrap.DatabaseName) -AdminUser ([string]$Bootstrap.AdminUser) -SchemaOwnerRole ([string]$Bootstrap.SchemaOwnerRole) -MigrationRole ([string]$Bootstrap.MigrationRole) -ApiRole ([string]$Bootstrap.ApiRuntimeRole) -WorkerRole ([string]$Bootstrap.WorkerRuntimeRole)
 }
+function Assert-WindowsServiceOrchestrationCapability {
+ # Second capability gate for orchestration. It replaces the former
+ # unconditional "disabled pending PostgreSQL cluster ownership
+ # verification" throw: secure ownership verification and the first-install
+ # lifecycle are now implemented and proven by the CI suite (lifecycle
+ # fail-closed tests, real-initdb database bootstrap, SCM fixture). The
+ # gate opens only when the plan shape, the secure URL inputs, the staged
+ # ownership-capability scripts and the complete payload preflight (which
+ # requires the ownership-verification executable and the initialized
+ # cluster pins) are all present. Every check is read-only; failure is
+ # fail-closed before DNS resolution or any service change.
+ # CapabilityScriptRoot is a test seam for the missing-script branch.
+ [CmdletBinding()]
+ param(
+  [pscustomobject]$Plan,
+  [Security.SecureString]$ApiDatabaseUrl,
+  [Security.SecureString]$WorkerDatabaseUrl,
+  [string]$CapabilityScriptRoot=$PSScriptRoot
+ )
+ if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
+ $requiredPlanProperties=@("InstallRoot","DataRoot","EdgeBindAddress","EdgeHttpsPort","EdgeTlsHostname","EdgeCertificateThumbprint")
+ foreach($property in $requiredPlanProperties){
+  if($null -eq $Plan -or $null -eq $Plan.PSObject.Properties[$property] -or $null -eq $Plan.$property){throw "Orchestration plan is incomplete (missing $property); no services were changed."}
+ }
+ foreach($capabilityScript in @("postgresql-cluster-identity.ps1","invoke-postgresql-bootstrap.ps1","bootstrap-postgresql-database.ps1","invoke-postgresql-migrations.ps1")){
+  if(-not(Test-Path -LiteralPath (Join-Path $CapabilityScriptRoot $capabilityScript) -PathType Leaf)){throw "PostgreSQL orchestration capability script '$capabilityScript' is missing; no services were changed."}
+ }
+ Test-WindowsServiceOrchestrationPayload -Plan $Plan|Out-Null
+}
 function Invoke-PostgreSqlFirstInstallLifecycle {
  # First-install lifecycle for the PostgreSQL data directory: a missing
  # cluster is initialized only through the dedicated bootstrap pipe with the
@@ -231,13 +260,13 @@ function Invoke-PostgreSqlFirstInstallLifecycle {
 }
 function Invoke-WindowsServiceOrchestration([pscustomobject]$Plan,[Security.SecureString]$ApiDatabaseUrl,[Security.SecureString]$WorkerDatabaseUrl,[hashtable]$Bootstrap=$null){
  Assert-PostgreSqlBootstrapCapability -Bootstrap $Bootstrap
- if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
- # Existing PG_VERSION/config files do not prove this cluster belongs to us.
- # Keep all mutation disabled, including the no-bootstrap path, until secure
- # ownership verification and the first-install lifecycle are implemented.
- throw "Service orchestration is disabled pending PostgreSQL cluster ownership verification; no services were changed."
- if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
-  Test-WindowsServiceOrchestrationPayload -Plan $Plan|Out-Null
+ # Second capability gate (formerly an unconditional "disabled pending
+ # ownership verification" throw). The existing PG_VERSION/config files
+ # still do not prove the cluster belongs to us - that proof now happens
+ # through the staged ownership-verification executable inside the
+ # first-install lifecycle below - so the gate above must pass every
+ # read-only check before DNS resolution or any service change.
+ Assert-WindowsServiceOrchestrationCapability -Plan $Plan -ApiDatabaseUrl $ApiDatabaseUrl -WorkerDatabaseUrl $WorkerDatabaseUrl
  $resolved=@([Net.Dns]::GetHostAddresses($Plan.EdgeTlsHostname)|ForEach-Object{$_.IPAddressToString})
  if($Plan.EdgeBindAddress -notin $resolved){throw "Edge TLS hostname must resolve to the configured Edge bind address on this server."}
  # Load each guarded provisioning function only when needed; all provisioners are side-effect free under WhatIf.

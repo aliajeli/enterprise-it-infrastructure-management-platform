@@ -61,6 +61,43 @@ try{
  $freshInstallPreflight=Test-WindowsServiceOrchestrationPayload -Plan $fixturePlan
  if(-not $freshInstallPreflight.valid){throw "Fresh install payload preflight must not require a pre-existing Credential Vault leaf."}
 
+ # Second capability gate: opens only on a complete plan shape, secure URL
+ # inputs, the staged ownership-capability scripts and the full payload
+ # preflight (which requires the ownership-verification executable and the
+ # initialized cluster pins). Every rejection must happen before DNS or any
+ # service change.
+ $gateUrls=ConvertTo-SecureString "unused" -AsPlainText -Force
+ $gatePlan=[pscustomobject]@{
+  InstallRoot=$fixturePlan.InstallRoot;DataRoot=$fixturePlan.DataRoot
+  ProgramDataRoot=$fixturePlan.ProgramDataRoot
+  EdgeBindAddress="192.0.2.10";EdgeHttpsPort=443
+  EdgeTlsHostname="it.example.internal";EdgeCertificateThumbprint=("A"*40)
+ }
+ $gateAccepted=$true
+ try{Assert-WindowsServiceOrchestrationCapability -Plan $gatePlan -ApiDatabaseUrl $gateUrls -WorkerDatabaseUrl $gateUrls|Out-Null}catch{$gateAccepted=$false}
+ if(-not $gateAccepted){throw "Capability gate must accept the complete fixture payload."}
+ $nullUrlRejected=$false
+ try{Assert-WindowsServiceOrchestrationCapability -Plan $gatePlan -ApiDatabaseUrl $null -WorkerDatabaseUrl $gateUrls|Out-Null}catch{$nullUrlRejected=$_.Exception.Message -like '*Separate SecureString API and Worker database URLs*'}
+ if(-not $nullUrlRejected){throw "Capability gate must reject a missing database URL before preflight."}
+ $incompletePlanRejected=$false
+ try{Assert-WindowsServiceOrchestrationCapability -Plan ([pscustomobject]@{}) -ApiDatabaseUrl $gateUrls -WorkerDatabaseUrl $gateUrls|Out-Null}catch{$incompletePlanRejected=$_.Exception.Message -like '*Orchestration plan is incomplete*no services were changed*'}
+ if(-not $incompletePlanRejected){throw "Capability gate must reject an incomplete plan before preflight."}
+ $emptyScriptRoot=Join-Path $env:TEMP ("enterpriseit-gate-scripts-"+[guid]::NewGuid().ToString("N"))
+ New-Item -ItemType Directory -Path $emptyScriptRoot|Out-Null
+ try{
+  $missingScriptRejected=$false
+  try{Assert-WindowsServiceOrchestrationCapability -Plan $gatePlan -ApiDatabaseUrl $gateUrls -WorkerDatabaseUrl $gateUrls -CapabilityScriptRoot $emptyScriptRoot|Out-Null}catch{$missingScriptRejected=$_.Exception.Message -like '*capability script*missing*no services were changed*'}
+  if(-not $missingScriptRejected){throw "Capability gate must reject a payload without the ownership-capability scripts."}
+ }finally{
+  if(Test-Path -LiteralPath $emptyScriptRoot){Remove-Item -LiteralPath $emptyScriptRoot -Recurse -Force -ErrorAction SilentlyContinue}
+ }
+ $postgresExe=Join-Path $gatePlan.InstallRoot "postgresql\pgsql\bin\postgres.exe"
+ Remove-Item -LiteralPath $postgresExe -Force
+ $missingFileRejected=$false
+ try{Assert-WindowsServiceOrchestrationCapability -Plan $gatePlan -ApiDatabaseUrl $gateUrls -WorkerDatabaseUrl $gateUrls|Out-Null}catch{$missingFileRejected=$_.Exception.Message -like '*Orchestration preflight failed before service provisioning*missing*'}
+ if(-not $missingFileRejected){throw "Capability gate must reject a payload with a missing required file."}
+ [IO.File]::WriteAllText($postgresExe,"fixture")
+
  # Recreate vault for reparse tests. A directory junction at the Vault boundary must be
  # rejected before any service mutation.
  New-Item -ItemType Directory -Path $vaultRoot -Force|Out-Null

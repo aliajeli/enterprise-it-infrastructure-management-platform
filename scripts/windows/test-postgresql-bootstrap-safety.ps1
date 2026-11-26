@@ -71,24 +71,35 @@ try{Invoke-WindowsServiceOrchestration -Plan ([pscustomobject]@{}) -ApiDatabaseU
  $blocked=$_.Exception.Message -like '*bootstrap capability prerequisites are not satisfied*no services were changed*'
 }
 if(-not $blocked){throw "Orchestration must reject an incomplete bootstrap capability before preflight or service mutation."}
+# Second capability gate: an incomplete plan must fail closed before DNS,
+# payload preflight or any service mutation (the former unconditional
+# "disabled pending ownership verification" throw, now testable).
 $blocked=$false
 try{Invoke-WindowsServiceOrchestration -Plan ([pscustomobject]@{}) -ApiDatabaseUrl $secret -WorkerDatabaseUrl $secret | Out-Null}catch{
- $blocked=$_.Exception.Message -like '*Service orchestration is disabled*ownership verification*no services were changed*'
+ $blocked=$_.Exception.Message -like '*Orchestration plan is incomplete*no services were changed*'
 }
-if(-not $blocked){throw "Orchestration without bootstrap must not adopt an unknown cluster."}
-# A complete bootstrap input set opens the capability gate and must stop at
-# the cluster-ownership gate before any preflight or service mutation.
+if(-not $blocked){throw "Orchestration without bootstrap must fail closed on an incomplete plan before preflight or service mutation."}
+# A complete bootstrap input set opens the first capability gate and a
+# plan-shaped input opens the second; execution must then stop at payload
+# preflight - which requires the ownership-verification executable and the
+# initialized cluster pins - before any service mutation.
 $fullBootstrap=@{
  AdminUser="test_admin";AdminPassword=$secret;DatabaseName="test_db"
  SchemaOwnerRole="test_owner";MigrationRole="test_migrator";MigrationPassword=$secret
  ApiRuntimeRole="test_api";ApiRuntimePassword=$secret
  WorkerRuntimeRole="test_worker";WorkerRuntimePassword=$secret
 }
-$blocked=$false
-try{Invoke-WindowsServiceOrchestration -Plan ([pscustomobject]@{}) -ApiDatabaseUrl $secret -WorkerDatabaseUrl $secret -Bootstrap $fullBootstrap | Out-Null}catch{
- $blocked=$_.Exception.Message -like '*Service orchestration is disabled*ownership verification*no services were changed*'
+$ownershipShapedPlan=[pscustomobject]@{
+ InstallRoot=(Join-Path $pf "EnterpriseIT\9.9.9")
+ DataRoot=(Join-Path $env:ProgramData "EnterpriseIT\PostgreSQL\18\data")
+ EdgeBindAddress="192.0.2.10";EdgeHttpsPort=443
+ EdgeTlsHostname="it.example.internal";EdgeCertificateThumbprint=("A"*40)
 }
-if(-not $blocked){throw "Complete bootstrap inputs must open the capability and stop at the ownership gate."}
+$blocked=$false
+try{Invoke-WindowsServiceOrchestration -Plan $ownershipShapedPlan -ApiDatabaseUrl $secret -WorkerDatabaseUrl $secret -Bootstrap $fullBootstrap | Out-Null}catch{
+ $blocked=$_.Exception.Message -like '*Orchestration preflight failed before service provisioning*missing*'
+}
+if(-not $blocked){throw "Complete bootstrap inputs must open both capability gates and stop at payload preflight before any service mutation."}
 $rejected=$false
 $collidingBootstrap=$fullBootstrap.Clone()
 $collidingBootstrap["WorkerRuntimeRole"]="test_api"
