@@ -60,10 +60,12 @@ try{
  [IO.File]::WriteAllText((Join-Path $dataRoot "postgresql.conf"),("#"+[Environment]::NewLine+"listen_addresses = '127.0.0.1'"+[Environment]::NewLine+"port = 5432"+[Environment]::NewLine))
  [IO.File]::WriteAllText((Join-Path $dataRoot "pg_hba.conf"),("host all all 127.0.0.1/32 scram-sha-256"+[Environment]::NewLine+"host all all 0.0.0.0/0 reject"+[Environment]::NewLine+"host all all ::/0 reject"+[Environment]::NewLine))
  $rejected=$false
+ $observedVerifyFailure=""
  try{Invoke-PostgreSqlFirstInstallLifecycle -Plan ([pscustomobject]@{InstallRoot=$installWithFakeExe;DataRoot=$dataRoot}) -Bootstrap $fullBootstrap|Out-Null}catch{
   $rejected=$_.Exception.Message -like '*PostgreSQL cluster ownership verification failed*refusing to adopt*'
+  if(-not $rejected){$observedVerifyFailure=$_.Exception.Message}
  }
- if(-not $rejected){throw "Ownership verification failure must be fail-closed with the fixed message."}
+ if(-not $rejected){throw "Ownership verification failure must be fail-closed with the fixed message. Observed: $observedVerifyFailure"}
 
  # 5) The verification executable must exist before any verify invocation.
  $rejected=$false
@@ -95,11 +97,15 @@ try{
  $state=Get-PostgreSqlClusterState -DataRoot $dataRoot
  if($state.state -ne "initialized"){throw "Hardened cluster fixture must report initialized state."}
 
- # 7) Service identities resolve to dedicated virtual service SIDs without
- #    requiring the services to exist.
+ # 7) Service identities derive to the pinned SHA1 vectors (identical to the
+ #    native executable and `sc showsid`) without requiring registration.
+ $expectedServiceSids=@{
+  "EnterpriseITPostgreSQLBootstrap"="S-1-5-80-2898200459-3236970252-1070820519-1144135147-264584976"
+  "EnterpriseITPostgreSQL"="S-1-5-80-2114905006-2325062578-1701378398-3453278453-1022961949"
+ }
  foreach($name in @("EnterpriseITPostgreSQLBootstrap","EnterpriseITPostgreSQL")){
   $sid=Resolve-PostgreSqlServiceSid -ServiceName $name
-  if($sid -notmatch '^S-1-5-80-(?:\d+-){4}\d+$'){throw "Resolved service identity for $name is invalid."}
+  if($sid -cne $expectedServiceSids[$name]){throw "Resolved service identity for $name does not match the pinned cross-implementation vector."}
  }
 
  # 8) The bootstrap capability gate opens only for a complete, valid input

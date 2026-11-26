@@ -48,8 +48,16 @@ function Resolve-PostgreSqlServiceSid {
  [CmdletBinding()]
  param([Parameter(Mandatory=$true)][string]$ServiceName)
  if($ServiceName -cnotmatch '^EnterpriseIT[A-Za-z]+$'){throw "Unexpected Windows service name for PostgreSQL ownership verification."}
- try{$sid=([Security.Principal.NTAccount]("NT SERVICE\"+$ServiceName)).Translate([Security.Principal.SecurityIdentifier])}catch{throw "PostgreSQL service identity could not be resolved for ownership verification."}
- $value=$sid.Value
+ # Service SIDs are the SHA1-of-uppercase-name derivation used by the native
+ # bootstrap executable and cross-checked against `sc showsid` in CI. Computing
+ # them directly works before the service is ever registered, unlike an account
+ # lookup of NT SERVICE\... for an unregistered service.
+ $bytes=[Text.Encoding]::Unicode.GetBytes($ServiceName.ToUpperInvariant())
+ $sha1=[Security.Cryptography.SHA1]::Create()
+ try{$hash=$sha1.ComputeHash($bytes)}finally{$sha1.Dispose()}
+ $parts=@()
+ for($i=0;$i -lt 5;$i++){$parts+=[BitConverter]::ToUInt32($hash,$i*4).ToString([Globalization.CultureInfo]::InvariantCulture)}
+ $value="S-1-5-80-"+($parts -join "-")
  if($value -notmatch '^S-1-5-80-(?:\d+-){4}\d+$'){throw "PostgreSQL service identity is invalid for ownership verification."}
  return $value
 }

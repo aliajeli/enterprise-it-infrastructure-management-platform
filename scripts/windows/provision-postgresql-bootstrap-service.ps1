@@ -50,8 +50,16 @@ try{
  $bootstrapMatch=[regex]::Match($bootstrapSidText,"S-1-5-80-(?:\d+-){4}\d+")
  if(-not $bootstrapMatch.Success){throw "Bootstrap service SID is invalid."}
  $expectedSid=$bootstrapMatch.Value
- $postgresSid=([Security.Principal.NTAccount]"NT SERVICE\EnterpriseITPostgreSQL").Translate([Security.Principal.SecurityIdentifier])
- $postgresSidValue=$postgresSid.Value
+ # Derive the not-yet-registered PostgreSQL service SID with the documented
+ # SHA1-of-uppercase-name algorithm (identical to the native executable and
+ # `sc showsid`); an NT SERVICE\... account lookup only resolves registered
+ # services, and the PostgreSQL service does not exist yet at first install.
+ $sidBytes=[Text.Encoding]::Unicode.GetBytes("EnterpriseITPostgreSQL".ToUpperInvariant())
+ $sidSha1=[Security.Cryptography.SHA1]::Create()
+ try{$sidHash=$sidSha1.ComputeHash($sidBytes)}finally{$sidSha1.Dispose()}
+ $sidParts=@()
+ for($sidIndex=0;$sidIndex -lt 5;$sidIndex++){$sidParts+=[BitConverter]::ToUInt32($sidHash,$sidIndex*4).ToString([Globalization.CultureInfo]::InvariantCulture)}
+ $postgresSidValue="S-1-5-80-"+($sidParts -join "-")
  if($postgresSidValue -notmatch "^S-1-5-80-(?:\d+-){4}\d+$"){throw "PostgreSQL service SID is invalid."}
  & icacls.exe $root /grant:r ("*"+$bootstrapMatch.Value+":(OI)(CI)(RX)") /T|Out-Host
  if($LASTEXITCODE -ne 0){throw "Bootstrap payload ACL failed."}
