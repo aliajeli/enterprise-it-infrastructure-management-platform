@@ -1,3 +1,8 @@
+## 0.1.291 — fix Native file information interop — 2026-11-26
+
+- Replaced ambiguous duplicate P/Invoke overloads for GetFileInformationByHandleEx with one pointer-based native declaration and a typed structure reader. This resolves the C# compiler ambiguity observed in Windows CI.
+- The new Windows CI run for this correction is pending; do not treat the earlier failed run as a successful validation.
+
 ## 0.1.290 — pin PostgreSQL data path and separate parent ACL — 2026-11-26
 
 - Added a Windows Native handle chain for the fixed ProgramData PostgreSQL data directory. Components are opened relative to retained parent handles with reparse-point opening, directory/type checks, volume serial and 128-bit file-ID verification. Handles omit FILE_SHARE_DELETE to prevent path replacement while initialization is active.

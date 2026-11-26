@@ -1,3 +1,7 @@
+## 0.1.291 — fix Native file information interop — 2026-11-26
+
+Corrected the PostgreSQL handle-chain Native interop declaration. GetFileInformationByHandleEx now has one P/Invoke signature accepting an unmanaged buffer; a generic typed helper marshals FILE_ATTRIBUTE_TAG_INFO and FILE_ID_INFO. This addresses the CS0121 ambiguous-overload compiler errors found by the Windows build. A new CI run is pending against the corrected branch head.
+
 ## 0.1.290 — pin PostgreSQL data path and separate parent ACL — 2026-11-26
 
 Added a dedicated Native handle chain for ProgramData\EnterpriseIT\PostgreSQL\18\data. Each component is opened handle-relative with FILE_OPEN_REPARSE_POINT and without FILE_SHARE_DELETE; directory attributes, reparse status, volume serial and 128-bit File ID are checked. The service opens PG_VERSION and pg_hba.conf relative to the pinned data handle and verifies the chain identity before and after initdb. Runtime directory creation/adoption was removed.
