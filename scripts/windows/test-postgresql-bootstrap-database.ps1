@@ -161,8 +161,16 @@ try{
  $env:EIT_PSQL_ARGV_LOG=$argvLog
  $argvEnvSet=$true
 
- # Fresh creation: all five roles plus the owned database.
- $first=& $bootstrapScript @parameters -Confirm:$false|ConvertFrom-Json
+ # Fresh creation: all five roles plus the owned database. On failure,
+ # surface the psql argv tail (arguments only - SQL travels via stdin and
+ # passwords via the child environment, so no secret can appear here).
+ try{
+  $first=& $bootstrapScript @parameters -Confirm:$false|ConvertFrom-Json
+ }catch{
+  $argvTail=""
+  if(Test-Path -LiteralPath $argvLog){$argvTail=(@(Get-Content -LiteralPath $argvLog -ErrorAction SilentlyContinue|Select-Object -Last 4) -join " ; ")}
+  throw "$($_.Exception.Message) | psql argv tail: [$argvTail]"
+ }
  if($first.status -ne "ok" -or -not $first.databaseCreated){throw "Fresh bootstrap must create the database."}
  Write-Output "::notice title=PostgreSQL database bootstrap test::fresh bootstrap created the database and roles"
  if(@($first.rolesCreated).Count -ne 5){throw "Fresh bootstrap must create all five deployment roles."}

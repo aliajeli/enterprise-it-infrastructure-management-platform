@@ -124,7 +124,11 @@ $detectSql="SELECT rolname||'|'||rolcanlogin||'|'||rolsuper||'|'||rolcreaterole|
   if($fields.Count -ne 7){throw "PostgreSQL bootstrap role detection returned an unexpected result."}
   $knownRoles[$fields[0]]=@{login=($fields[1] -ceq "t");super=($fields[2] -ceq "t");createrole=($fields[3] -ceq "t");createdb=($fields[4] -ceq "t");bypassrls=($fields[5] -ceq "t");replication=($fields[6] -ceq "t")}
  }
- if(-not $knownRoles.ContainsKey($superuser) -or -not $knownRoles[$superuser].super){throw "PostgreSQL cluster superuser was not created by the expected initialization; refusing database bootstrap."}
+ if(-not $knownRoles.ContainsKey($superuser) -or -not $knownRoles[$superuser].super){
+  # Detected rows contain only role names and boolean flags - never secret
+  # material - so they are safe to surface for fail-closed diagnosis.
+  throw "PostgreSQL cluster superuser was not created by the expected initialization; refusing database bootstrap. detected roles: [$detectOutput]"
+ }
  $dbSql="SELECT datname||'|'||pg_get_userbyid(datdba) FROM pg_database WHERE datname = "+(ConvertTo-SqlStringLiteral $DatabaseName)+";"
  $dbOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $dbSql -Stage "detect-database"
  $dbLines=@($dbOutput -split "\r?\n"|Where-Object{-not [string]::IsNullOrWhiteSpace($_)})
