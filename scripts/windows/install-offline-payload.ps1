@@ -139,6 +139,29 @@ function Open-OfflineArchiveReadLock {
  return [IO.File]::Open($full,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
 }
 
+function Assert-OfflineInstallerCapability {
+ # First capability gate for the offline installer. It replaces the former
+ # unconditional "Offline installation is disabled pending PostgreSQL
+ # initialization and ownership verification" throw: those capabilities now
+ # exist and are CI-proven (first-install lifecycle, ownership verification,
+ # database bootstrap), and orchestration's own capability gates run again
+ # before any service change. This gate keeps only the read-only
+ # installer-level checks fail-closed before staging: secure URL inputs,
+ # Edge parameters, and the orchestration entry point beside the installer.
+ # InstallerScriptRoot is a test seam for the missing-entry-point branch.
+ [CmdletBinding()]
+ param(
+  [Security.SecureString]$ApiDatabaseUrl,
+  [Security.SecureString]$WorkerDatabaseUrl,
+  [string]$EdgeBindAddress,
+  [string]$EdgeTlsHostname,
+  [string]$EdgeCertificateThumbprint,
+  [string]$InstallerScriptRoot=$PSScriptRoot
+ )
+ if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
+ if([string]::IsNullOrWhiteSpace($EdgeBindAddress) -or [string]::IsNullOrWhiteSpace($EdgeTlsHostname) -or [string]::IsNullOrWhiteSpace($EdgeCertificateThumbprint)){throw "Edge bind address, TLS hostname and certificate thumbprint are required."}
+ if(-not(Test-Path -LiteralPath (Join-Path $InstallerScriptRoot "orchestrate-windows-services.ps1") -PathType Leaf)){throw "Service orchestration entry point is missing beside the installer; no files or services were changed."}
+}
 if($MyInvocation.InvocationName -ne '.'){
  # Bootstrap inputs must be complete before any archive work: invalid
  # credential sets are rejected in WhatIf preview mode as well, matching
@@ -152,11 +175,9 @@ if($MyInvocation.InvocationName -ne '.'){
  try{
  $plan=Get-OfflineInstallerPlan -PayloadArchive $PayloadArchive -ExpectedSha256 $ExpectedSha256 -ArchiveHandle $archiveLock
  if($WhatIfPreference){$plan|Add-Member -NotePropertyName bootstrapRequested -NotePropertyValue $bootstrapRequested -PassThru|ConvertTo-Json -Depth 4;return}
- # Do not stage an immutable version or invoke orchestration while database
- # ownership/initialization is unresolved: that would leave partial installs.
- throw "Offline installation is disabled pending PostgreSQL initialization and ownership verification; no files or services were changed."
- if($null -eq $ApiDatabaseUrl -or $null -eq $WorkerDatabaseUrl){throw "Separate SecureString API and Worker database URLs are required."}
- if([string]::IsNullOrWhiteSpace($EdgeBindAddress) -or [string]::IsNullOrWhiteSpace($EdgeTlsHostname) -or [string]::IsNullOrWhiteSpace($EdgeCertificateThumbprint)){throw "Edge bind address, TLS hostname and certificate thumbprint are required."}
+ # Capability gate (formerly the unconditional "offline installation is
+ # disabled" throw): fail-closed read-only checks before any staging.
+ Assert-OfflineInstallerCapability -ApiDatabaseUrl $ApiDatabaseUrl -WorkerDatabaseUrl $WorkerDatabaseUrl -EdgeBindAddress $EdgeBindAddress -EdgeTlsHostname $EdgeTlsHostname -EdgeCertificateThumbprint $EdgeCertificateThumbprint
  . (Join-Path $PSScriptRoot 'installer-preflight.ps1') -MinimumFreeSpaceGB $MinimumFreeSpaceGB
  $facts=Get-InstallerPreflightFacts
  $preflight=Test-InstallerPreflightFacts -Facts $facts -MinimumFreeSpaceGB $MinimumFreeSpaceGB

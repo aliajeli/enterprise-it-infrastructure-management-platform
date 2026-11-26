@@ -22,11 +22,34 @@ try{
  $dry=& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -WhatIf | ConvertFrom-Json
  if($dry.EntryCount -ne 2){throw 'Installer WhatIf must remain available for archive inspection.'}
  if($dry.bootstrapRequested){throw 'Installer WhatIf must report no database bootstrap when no admin user is supplied.'}
+ # Capability gate (G3 replacement): incomplete inputs must be rejected
+ # before staging, and the orchestration entry point must exist beside the
+ # installer. Full-input acceptance is covered by the integrated round trip.
  $blocked=$false
  try{& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -Confirm:$false|Out-Null}catch{
-  $blocked=$_.Exception.Message -like '*Offline installation is disabled*no files or services were changed*'
+  $blocked=$_.Exception.Message -like '*Separate SecureString API and Worker database URLs*'
  }
- if(-not $blocked){throw 'Installer mutation must be blocked before staging an immutable payload.'}
+ if(-not $blocked){throw 'Installer must reject missing database URLs before staging an immutable payload.'}
+ $edgeSecret=ConvertTo-SecureString 'unused' -AsPlainText -Force
+ $blocked=$false
+ try{& $scriptPath -PayloadArchive $valid -ExpectedSha256 $hash -ApiDatabaseUrl $edgeSecret -WorkerDatabaseUrl $edgeSecret -Confirm:$false|Out-Null}catch{
+  $blocked=$_.Exception.Message -like '*Edge bind address, TLS hostname and certificate thumbprint are required*'
+ }
+ if(-not $blocked){throw 'Installer must reject missing Edge inputs before staging.'}
+ $emptyEntryRoot=Join-Path $env:TEMP ("enterpriseit-installer-entry-"+[guid]::NewGuid().ToString("N"))
+ New-Item -ItemType Directory -Path $emptyEntryRoot|Out-Null
+ try{
+  $blocked=$false
+  try{Assert-OfflineInstallerCapability -ApiDatabaseUrl $edgeSecret -WorkerDatabaseUrl $edgeSecret -EdgeBindAddress '192.0.2.10' -EdgeTlsHostname 'it.example.internal' -EdgeCertificateThumbprint ('A'*40) -InstallerScriptRoot $emptyEntryRoot|Out-Null}catch{
+   $blocked=$_.Exception.Message -like '*orchestration entry point is missing*no files or services were changed*'
+  }
+  if(-not $blocked){throw 'Installer capability gate must reject a payload without the orchestration entry point.'}
+ }finally{
+  if(Test-Path -LiteralPath $emptyEntryRoot){Remove-Item -LiteralPath $emptyEntryRoot -Recurse -Force -ErrorAction SilentlyContinue}
+ }
+ $accepted=$true
+ try{Assert-OfflineInstallerCapability -ApiDatabaseUrl $edgeSecret -WorkerDatabaseUrl $edgeSecret -EdgeBindAddress '192.0.2.10' -EdgeTlsHostname 'it.example.internal' -EdgeCertificateThumbprint ('A'*40)|Out-Null}catch{$accepted=$false}
+ if(-not $accepted){throw 'Installer capability gate must accept complete inputs with the orchestration entry point present.'}
 
  # First-install database bootstrap inputs must be received and validated by
  # the installer itself - even in WhatIf preview mode - and reported through

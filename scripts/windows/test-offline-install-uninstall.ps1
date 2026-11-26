@@ -95,6 +95,51 @@ try{
  Remove-Item -LiteralPath (Join-Path $fixtureRoot "state") -Force
  Remove-Item -LiteralPath $junctionTarget -Recurse -Force
 
+ # Integrated install -> uninstall round trip: a real install verifies the
+ # archive, builds a passing manifest, stages the immutable versioned root,
+ # reaches orchestration and fails closed there (the fixture payload cannot
+ # pass orchestration preflight), retains the staged root as designed, and
+ # a real uninstall then removes it. Without bootstrap credentials the
+ # first-install fail-closed stop inside orchestration stays authoritative.
+ Add-Type -AssemblyName System.IO.Compression
+ $roundtripArchive=Join-Path $env:TEMP ("enterpriseit-roundtrip-"+[guid]::NewGuid().ToString("N")+".zip")
+ $roundtripRoot=Join-Path $pf "EnterpriseIT\0.1.128"
+ $pkgContent='{"version":"0.1.128"}'
+ $pkgBytes=[Text.UTF8Encoding]::new($false).GetBytes($pkgContent)
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{$pkgHash=[Convert]::ToHexString($sha.ComputeHash($pkgBytes)).ToLowerInvariant()}finally{$sha.Dispose()}
+ $manifestContent='{"schemaVersion":1,"hashAlgorithm":"SHA-256","applicationVersion":"0.1.128","files":[{"path":"package.json","sha256":"'+$pkgHash+'","size":'+$pkgBytes.Length+'}]}'
+ $stream=[IO.File]::Open($roundtripArchive,[IO.FileMode]::CreateNew)
+ try{
+  $zip=[IO.Compression.ZipArchive]::new($stream,[IO.Compression.ZipArchiveMode]::Create,$true)
+  try{
+   $pkgEntry=$zip.CreateEntry("package.json")
+   $entryStream=$pkgEntry.Open()
+   try{$entryStream.Write($pkgBytes,0,$pkgBytes.Length)}finally{$entryStream.Dispose()}
+   $manBytes=[Text.UTF8Encoding]::new($false).GetBytes($manifestContent)
+   $manEntry=$zip.CreateEntry("payload.manifest.json")
+   $entryStream=$manEntry.Open()
+   try{$entryStream.Write($manBytes,0,$manBytes.Length)}finally{$entryStream.Dispose()}
+  }finally{$zip.Dispose()}
+ }finally{$stream.Dispose()}
+ $roundtripHash=(Get-FileHash -LiteralPath $roundtripArchive -Algorithm SHA256).Hash
+ if(Test-Path -LiteralPath $roundtripRoot){Remove-Item -LiteralPath $roundtripRoot -Recurse -Force}
+ $roundtripUrls=ConvertTo-SecureString 'unused' -AsPlainText -Force
+ $installFailed=$false
+ $installMessage=""
+ try{
+  & (Join-Path $PSScriptRoot "install-offline-payload.ps1") -PayloadArchive $roundtripArchive -ExpectedSha256 $roundtripHash -ApiDatabaseUrl $roundtripUrls -WorkerDatabaseUrl $roundtripUrls -EdgeBindAddress "192.0.2.10" -EdgeTlsHostname "it.example.internal" -EdgeCertificateThumbprint ("A"*40) -MinimumFreeSpaceGB 1 -Confirm:$false|Out-Null
+ }catch{
+  $installFailed=$true
+  $installMessage=$_.Exception.Message
+ }
+ if(-not $installFailed -or $installMessage -notlike "*was staged at*service orchestration failed*"){
+  throw "Integrated install must stage the payload and fail closed at orchestration preflight; got: $installMessage"
+ }
+ if(-not (Test-Path -LiteralPath $roundtripRoot)){throw "Integrated install must retain the staged versioned root for uninstall."}
+ $roundtripUninstall=& (Join-Path $PSScriptRoot "uninstall-offline-payload.ps1") -InstallRoot $roundtripRoot -Confirm:$false|ConvertFrom-Json
+ if($roundtripUninstall.status -ne "ok" -or -not $roundtripUninstall.installRootRemoved -or (Test-Path -LiteralPath $roundtripRoot)){throw "Integrated uninstall must remove the staged root after the failed orchestration."}
+
  Write-Host "Offline payload uninstall policy tests passed."
 }finally{
  Remove-FixtureServices
@@ -105,4 +150,8 @@ try{
  if(Test-Path -LiteralPath $fixtureData){Remove-Item -LiteralPath $fixtureData -Recurse -Force -ErrorAction SilentlyContinue}
  $leftover=Join-Path $env:TEMP "enterpriseit-uninstall-junction-*"
  Get-Item -Path $leftover -ErrorAction SilentlyContinue|Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+ $roundtripRoot=Join-Path $pf "EnterpriseIT\0.1.128"
+ if(Test-Path -LiteralPath $roundtripRoot){Remove-Item -LiteralPath $roundtripRoot -Recurse -Force -ErrorAction SilentlyContinue}
+ $roundtripArchive=Join-Path $env:TEMP "enterpriseit-roundtrip-*.zip"
+ Get-Item -Path $roundtripArchive -ErrorAction SilentlyContinue|Remove-Item -Force -ErrorAction SilentlyContinue
 }

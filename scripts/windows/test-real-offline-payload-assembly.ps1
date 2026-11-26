@@ -47,9 +47,9 @@ try{
  & (Join-Path $PSScriptRoot 'test-postgresql-migration-disposable.ps1') -PayloadRoot $extract -WorkRoot $work|Out-Null
  $blocked=$false
  try{& (Join-Path $PSScriptRoot 'install-offline-payload.ps1') -PayloadArchive $archive -ExpectedSha256 $hash -Confirm:$false|Out-Null}catch{
-  $blocked=$_.Exception.Message -like '*Offline installation is disabled*no files or services were changed*'
+  $blocked=$_.Exception.Message -like '*Separate SecureString API and Worker database URLs*'
  }
- if(-not $blocked){throw 'Real experimental archive must not bypass the disabled installer gate.'}
+ if(-not $blocked){throw 'Real experimental archive must not install without complete capability inputs; no files or services were changed.'}
  Write-Host 'Real disposable payload assembly and archive checks passed; installer remains disabled, no artifact released.'
 }finally{
  if($created -and (Test-Path -LiteralPath $root)){
