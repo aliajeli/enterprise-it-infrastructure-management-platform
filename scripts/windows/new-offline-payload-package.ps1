@@ -38,7 +38,7 @@ function Get-OfflinePayloadPackagePlan {
   "scripts\windows\initialize-postgresql-cluster.ps1","scripts\windows\postgresql-deployment-inputs.ps1","scripts\windows\postgresql-cluster-identity.ps1","scripts\windows\bootstrap-postgresql-database.ps1","scripts\windows\invoke-postgresql-bootstrap.ps1","scripts\windows\invoke-postgresql-migrations.ps1","scripts\windows\orchestrate-windows-services.ps1",
   "scripts\windows\provision-postgresql-service.ps1","scripts\windows\provision-postgresql-bootstrap-service.ps1","scripts\windows\provision-api-service.ps1","scripts\windows\provision-worker-service.ps1",
   "scripts\windows\provision-web-service.ps1","scripts\windows\provision-edge-service.ps1",
-  "scripts\windows\installer-preflight.ps1","scripts\windows\new-offline-payload-manifest.ps1","scripts\windows\install-offline-payload.ps1"
+  "scripts\windows\installer-preflight.ps1","scripts\windows\new-offline-payload-manifest.ps1","scripts\windows\install-offline-payload.ps1","scripts\\windows\\uninstall-offline-payload.ps1"
  )
  $webFlat="apps\web\.next\standalone\server.js"
  $webMonorepo="apps\web\.next\standalone\apps\web\server.js"

@@ -346,6 +346,18 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-offline-installer.ps1
 
+      - name: Test offline payload install and uninstall policy
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-offline-install-uninstall.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Offline install/uninstall test failure::$message"
+            exit 1
+          }
+          exit 0
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
