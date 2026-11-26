@@ -322,7 +322,15 @@ if($denied -eq 2){exit 0};exit 43
   $handleProbeStart.LoadUserProfile = $false
   $child = [Diagnostics.Process]::Start($handleProbeStart)
   if ($null -eq $child) { throw "Standard User initdb process-access probe could not be created." }
-  if (-not $child.WaitForExit(15000)) { $child.Kill($true); throw "Standard User initdb process-access probe timed out." }
+  # The probe compiles its P/Invoke stub with Add-Type on first use, which can
+  # exceed 15 seconds on a loaded runner. Drain both redirected streams so a
+  # verbose failure cannot fill the pipes, close stdin the probe never reads,
+  # and keep the bound below the service smoke-hold window so both target
+  # pids stay alive for the probe.
+  $null = $child.StandardOutput.ReadToEndAsync()
+  $null = $child.StandardError.ReadToEndAsync()
+  $child.StandardInput.Close()
+  if (-not $child.WaitForExit(30000)) { $child.Kill($true); throw "Standard User initdb process-access probe timed out after 30 seconds." }
   if ($child.ExitCode -ne 0) {
     if ($child.ExitCode -eq 41) { throw "Standard User obtained PROCESS_DUP_HANDLE on a service-owned initdb process." }
     throw "Standard User PROCESS_DUP_HANDLE denial was not established for both initdb processes."
