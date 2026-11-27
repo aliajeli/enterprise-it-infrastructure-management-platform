@@ -41,6 +41,8 @@ jobs:
           $package = Get-Content package.json -Raw | ConvertFrom-Json
           if ($package.version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid application version.' }
           & ./scripts/windows/test-enterpriseit-setup.ps1
+          if (-not $?) { throw 'Setup.exe test script reported an error.' }
+          $global:LASTEXITCODE = 0
           $exe = Join-Path $PWD 'build/setup/EnterpriseIT.Setup.exe'
           if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'Setup.exe was not produced.' }
           if ((Get-Item -LiteralPath $exe).Length -lt 1MB) { throw 'Setup.exe is unexpectedly small.' }

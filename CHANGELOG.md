@@ -1,3 +1,8 @@
+## 0.1.296 — Windows Setup preview PowerShell exit-state correction — 2026-11-27
+
+- Reset the PowerShell process native exit-code state after the test script returns successfully. The script's negative-path tests intentionally invoke Setup.exe expecting nonzero exits; PowerShell otherwise propagates the final expected native exit code and marks the outer CI step failed despite the explicit success result.
+- The Windows Setup.exe publish, payload digest verification, and install/uninstall policy test all completed successfully in the preceding run; the failure was only the outer process exit-state propagation. No installer guard was changed.
+
 ## 0.1.295 — Windows Setup preview CI exit-code correction — 2026-11-27
 
 - Corrected the preview release workflow to rely on the PowerShell test script's terminating errors and its explicit output-file assertions, rather than a stale native-command `$LASTEXITCODE` left behind by expected fail-closed negative tests.
