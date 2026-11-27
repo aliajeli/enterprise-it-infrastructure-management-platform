@@ -5,15 +5,12 @@ on:
     branches:
       - main
       - beta
-      - developer
-      - "phase3/**"
-      - "arena/**"
+      - develop
   pull_request:
     branches:
       - main
       - beta
-      - developer
-      - "phase3/**"
+      - develop
   workflow_dispatch:
 
 permissions:
