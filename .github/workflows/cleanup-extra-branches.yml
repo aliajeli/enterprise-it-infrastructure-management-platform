@@ -1,0 +1,90 @@
+name: Archive and delete non-core branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DELETE_EXTRA_BRANCHES to archive and delete every branch except main, beta and develop'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: cleanup-extra-branches
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Archive then delete non-core branches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate explicit confirmation and core branches
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$CONFIRMATION" != "DELETE_EXTRA_BRANCHES" ]]; then
+            echo "::error::Confirmation string did not match. No branches were changed."
+            exit 1
+          fi
+          mapfile -t branches < <(gh api --paginate "repos/$REPOSITORY/branches" --jq '.[].name')
+          for required in main beta develop; do
+            if ! printf '%s\\n' "${branches[@]}" | grep -Fxq "$required"; then
+              echo "::error::Required branch $required is missing. Aborting."
+              exit 1
+            fi
+          done
+          printf 'Found %s branches. Core branches are present.\\n' "${#branches[@]}"
+
+      - name: Archive and delete all other branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t branches < <(gh api --paginate "repos/$REPOSITORY/branches" --jq '.[].name')
+          mapfile -t open_heads < <(gh pr list --repo "$REPOSITORY" --state open --json headRefName --jq '.[].headRefName')
+
+          for branch in "${branches[@]}"; do
+            case "$branch" in
+              main|beta|develop)
+                echo "KEEP $branch"
+                continue
+                ;;
+            esac
+
+            for open_head in "${open_heads[@]}"; do
+              if [[ "$open_head" == "$branch" ]]; then
+                echo "::error::Open PR still uses $branch. Nothing further will be deleted."
+                exit 1
+              fi
+            done
+
+            sha="$(gh api "repos/$REPOSITORY/branches/$branch" --jq '.commit.sha')"
+            safe_name="${branch//\\//--}"
+            tag="archive/branch-cleanup/${safe_name}-${sha:0:12}"
+
+            if existing="$(gh api "repos/$REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null)"; then
+              if [[ "$existing" != "$sha" ]]; then
+                echo "::error::Archive tag $tag exists at a different SHA. Aborting."
+                exit 1
+              fi
+            else
+              gh api --method POST "repos/$REPOSITORY/git/refs" \\
+                -f "ref=refs/tags/$tag" \\
+                -f "sha=$sha" >/dev/null
+            fi
+
+            echo "ARCHIVED $branch -> $tag ($sha)"
+            gh api --method DELETE "repos/$REPOSITORY/git/refs/heads/$branch"
+            echo "DELETED $branch"
+          done
+
+          echo "Branch cleanup completed. main, beta and develop were preserved."
