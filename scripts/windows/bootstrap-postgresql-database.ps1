@@ -157,20 +157,37 @@ $detectSql="SELECT rolname||'|'||left(rolcanlogin::text,1)||'|'||left(rolsuper::
   }
  }
 
+ # Existing login roles are never password-reset during a retry. Prove that
+ # each supplied credential already authenticates before any mutation; a
+ # mismatch aborts without rotating credentials or partially converging state.
+ $existingCredentials=@(
+  [pscustomobject]@{Role=$AdminUser;Password=$adminPasswordText},
+  [pscustomobject]@{Role=$MigrationRole;Password=$migrationPasswordText},
+  [pscustomobject]@{Role=$ApiRole;Password=$apiPasswordText},
+  [pscustomobject]@{Role=$WorkerRole;Password=$workerPasswordText}
+ )
+ $rolesConverged=[Collections.Generic.List[string]]::new()
+ foreach($credential in $existingCredentials){
+  if($credential.Role -ceq $superuser -or -not $knownRoles.ContainsKey($credential.Role)){continue}
+  $loginArguments=@("-X","-q","-t","-A","-v","ON_ERROR_STOP=1","--host=$PgHost","--port=$PgPort","--username=$($credential.Role)","--dbname=postgres","-f","-")
+  try{
+   $loginOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $credential.Password -Arguments $loginArguments -Sql "SELECT current_user;" -Stage "verify-existing-credential"
+   if($loginOutput.Trim() -cne $credential.Role){throw "credential-mismatch"}
+  }catch{
+   throw "Existing PostgreSQL login credential verification failed for role '$($credential.Role)'; refusing to rotate or overwrite its password."
+  }
+  $rolesConverged.Add($credential.Role)
+ }
+
  $statements=[Collections.Generic.List[string]]::new()
  $rolesCreated=[Collections.Generic.List[string]]::new()
- $rolesConverged=[Collections.Generic.List[string]]::new()
  if($AdminUser -cne $superuser){
   if(-not $knownRoles.ContainsKey($AdminUser)){$statements.Add("CREATE ROLE "+$AdminUser+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $adminPasswordText)+";");$rolesCreated.Add($AdminUser)}
-  else{$statements.Add("ALTER ROLE "+$AdminUser+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $adminPasswordText)+";");$rolesConverged.Add($AdminUser)}
  }
  if(-not $knownRoles.ContainsKey($SchemaOwnerRole)){$statements.Add("CREATE ROLE "+$SchemaOwnerRole+";");$rolesCreated.Add($SchemaOwnerRole)}
  if(-not $knownRoles.ContainsKey($MigrationRole)){$statements.Add("CREATE ROLE "+$MigrationRole+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $migrationPasswordText)+";");$rolesCreated.Add($MigrationRole)}
- else{$statements.Add("ALTER ROLE "+$MigrationRole+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $migrationPasswordText)+";");$rolesConverged.Add($MigrationRole)}
  if(-not $knownRoles.ContainsKey($ApiRole)){$statements.Add("CREATE ROLE "+$ApiRole+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $apiPasswordText)+";");$rolesCreated.Add($ApiRole)}
- else{$statements.Add("ALTER ROLE "+$ApiRole+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $apiPasswordText)+";");$rolesConverged.Add($ApiRole)}
  if(-not $knownRoles.ContainsKey($WorkerRole)){$statements.Add("CREATE ROLE "+$WorkerRole+" LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $workerPasswordText)+";");$rolesCreated.Add($WorkerRole)}
- else{$statements.Add("ALTER ROLE "+$WorkerRole+" WITH LOGIN PASSWORD "+(ConvertTo-SqlStringLiteral $workerPasswordText)+";");$rolesConverged.Add($WorkerRole)}
  $databaseCreated=$false
  if(-not $databaseExists){$statements.Add("CREATE DATABASE "+$DatabaseName+" OWNER "+$SchemaOwnerRole+";");$databaseCreated=$true}
  $statements.Add("GRANT ALL ON DATABASE "+$DatabaseName+" TO "+$MigrationRole+";")

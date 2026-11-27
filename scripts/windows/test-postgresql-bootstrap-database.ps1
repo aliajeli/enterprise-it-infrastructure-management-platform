@@ -185,10 +185,23 @@ try{
  # A fresh SCRAM connection as a runtime role proves the password converged.
  Invoke-TestPsql -PsqlExe $psql -Sql "SELECT 1;" -User "ci_api" -Database "ci_enterprise_it"|Out-Null
 
- # Idempotent second run converges without recreating the database.
+ # A retry with a wrong existing API password must fail before mutation
+ # and must not rotate the stored credential. The original password must still
+ # authenticate, and the next retry with the correct credential must succeed.
+ $wrongSecret=ConvertTo-SecureString ("ci-db-wrong-api-"+[guid]::NewGuid().ToString("N")+"Aa1!") -AsPlainText -Force
+ $wrongParameters=$parameters.Clone()
+ $wrongParameters["ApiPassword"]=$wrongSecret
+ $wrongCredentialRejected=$false
+ try{& $bootstrapScript @wrongParameters -Confirm:$false|Out-Null}catch{
+  $wrongCredentialRejected=$_.Exception.Message -like "*credential verification failed for role 'ci_api'; refusing to rotate*"
+ }
+ if(-not $wrongCredentialRejected){throw "Mismatched existing API credential must fail closed before mutation."}
+ Invoke-TestPsql -PsqlExe $psql -Sql "SELECT 1;" -User "ci_api" -Database "ci_enterprise_it"|Out-Null
+
+ # Idempotent second run verifies existing credentials without resetting them.
  $second=& $bootstrapScript @parameters -Confirm:$false|ConvertFrom-Json
  if($second.status -ne "ok" -or $second.databaseCreated){throw "Second bootstrap run must be idempotent."}
- if(@($second.rolesConverged).Count -ne 4){throw "Second bootstrap run must converge the four login roles."}
+ if(@($second.rolesConverged).Count -ne 4){throw "Second bootstrap run must verify the four existing login roles."}
 
  # Foreign-owned database must be rejected before any mutation: a role left
  # in a mismatched state proves no statement executed.
