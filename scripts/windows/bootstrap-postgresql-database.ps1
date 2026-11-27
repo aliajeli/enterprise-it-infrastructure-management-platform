@@ -179,6 +179,11 @@ $detectSql="SELECT rolname||'|'||left(rolcanlogin::text,1)||'|'||left(rolsuper::
   $rolesConverged.Add($credential.Role)
  }
 
+ # Never adopt a pre-existing membership that lets the migration login
+ # administer role grants. The intended contract permits SET only.
+ $membershipPreflightSql="SELECT left(admin_option::text,1) FROM pg_auth_members m JOIN pg_roles member ON member.oid=m.member JOIN pg_roles granted ON granted.oid=m.roleid WHERE member.rolname="+(ConvertTo-SqlStringLiteral $MigrationRole)+" AND granted.rolname="+(ConvertTo-SqlStringLiteral $SchemaOwnerRole)+";"
+ $membershipPreflight=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $membershipPreflightSql -Stage "preflight-migration-membership"
+ if($membershipPreflight.Trim() -ceq "t"){throw "Existing migration role membership has ADMIN OPTION; refusing to adopt it."}
  $statements=[Collections.Generic.List[string]]::new()
  $rolesCreated=[Collections.Generic.List[string]]::new()
  if($AdminUser -cne $superuser){
