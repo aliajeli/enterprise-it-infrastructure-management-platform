@@ -187,11 +187,15 @@ try{
  # A pre-existing ADMIN OPTION would let the migration login delegate the
  # schema-owner role. Bootstrap must reject that state before changing it.
  Invoke-TestPsql -PsqlExe $psql -Sql "GRANT ci_owner TO ci_migrator WITH ADMIN OPTION, INHERIT FALSE, SET TRUE;"|Out-Null
+ $fixtureAdminOption=Invoke-TestPsql -PsqlExe $psql -Sql "SELECT admin_option FROM pg_auth_members m JOIN pg_roles member ON member.oid=m.member JOIN pg_roles granted ON granted.oid=m.roleid WHERE member.rolname='ci_migrator' AND granted.rolname='ci_owner';"
+ if($fixtureAdminOption.Trim() -cne "t"){throw "PostgreSQL fixture did not create the expected ADMIN OPTION membership."}
  $adminMembershipRejected=$false
+ $adminMembershipError="<bootstrap returned success without throwing>"
  try{& $bootstrapScript @parameters -Confirm:$false|Out-Null}catch{
-  $adminMembershipRejected=$_.Exception.Message -like "*membership has ADMIN OPTION*refusing to adopt*"
+  $adminMembershipError=$_.Exception.Message
+  $adminMembershipRejected=$adminMembershipError -like "*membership has ADMIN OPTION*refusing to adopt*"
  }
- if(-not $adminMembershipRejected){throw "Bootstrap must reject a migration membership with ADMIN OPTION."}
+ if(-not $adminMembershipRejected){throw "Bootstrap must reject a migration membership with ADMIN OPTION. Observed: $adminMembershipError"}
  $adminOption=Invoke-TestPsql -PsqlExe $psql -Sql "SELECT admin_option FROM pg_auth_members m JOIN pg_roles member ON member.oid=m.member JOIN pg_roles granted ON granted.oid=m.roleid WHERE member.rolname='ci_migrator' AND granted.rolname='ci_owner';"
  if($adminOption.Trim() -cne "t"){throw "Rejected ADMIN OPTION membership must remain unchanged."}
  Invoke-TestPsql -PsqlExe $psql -Sql "REVOKE ADMIN OPTION FOR ci_owner FROM ci_migrator;"|Out-Null
