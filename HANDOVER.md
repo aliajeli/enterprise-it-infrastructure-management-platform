@@ -1,3 +1,10 @@
+## 0.1.294 — Windows Setup.exe development preview — 2026-11-27
+
+- Bumped the immutable application version for this development preview.
+- Added a Windows-only GitHub Actions publication workflow that builds and exercises the self-contained Setup.exe CLI on a disposable Windows runner, computes SHA-256, and publishes a GitHub prerelease on `develop`.
+- The prerelease is explicitly a **Setup CLI/diagnostic preview, not an installable platform package**. The EXE supports usage and payload verification; the actual install path remains fail-closed while the PostgreSQL migration and service orchestration acceptance gates remain disabled.
+- No service, database, firewall, router, NAT, or production data changes are performed by this workflow.
+
 ## 0.1.293 — PostgreSQL bootstrap capability: first-install lifecycle, ownership verification and real database bootstrap — 2026-11-26
 
 Completed the first of the four activation steps (PostgreSQL Bootstrap) as a capability with tests rather than by deleting a guard. `bootstrap-postgresql-database.ps1` now performs the real work: it fails closed on cluster state and hardened configuration before contacting any server, then detects, creates or converges the five deployment roles and the owned database over `psql` with the connection secret only in the child environment and SQL only on stdin; a foreign-owned database or a role with unexpected attributes is rejected before a single statement executes, and a post-run verification pass must confirm the converged state before success is reported. `scripts/windows/postgresql-cluster-identity.ps1` provides the shared read-only state/config assertions, deterministic service-SID resolution and delegation to the native `--verify-data` ownership proof.

@@ -1,0 +1,77 @@
+name: Windows Setup CLI preview release
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'apps/api/windows/setup/**'
+      - 'scripts/windows/test-enterpriseit-setup.ps1'
+      - '.github/workflows/windows-setup-preview-release.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: setup-preview-release-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: Build and publish Setup.exe development preview
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact develop commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Validate version and build/test self-contained Setup.exe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = Get-Content package.json -Raw | ConvertFrom-Json
+          if ($package.version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid application version.' }
+          & ./scripts/windows/test-enterpriseit-setup.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Setup.exe test failed.' }
+          $exe = Join-Path $PWD 'build/setup/EnterpriseIT.Setup.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'Setup.exe was not produced.' }
+          if ((Get-Item -LiteralPath $exe).Length -lt 1MB) { throw 'Setup.exe is unexpectedly small.' }
+          $hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath 'build/setup/SHA256SUMS.txt' -Value "$hash  EnterpriseIT.Setup.exe" -Encoding ascii
+          "APP_VERSION=$($package.version)" >> $env:GITHUB_ENV
+          "SETUP_SHA256=$hash" >> $env:GITHUB_ENV
+
+      - name: Publish clearly-labeled prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "v$env:APP_VERSION"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) { throw "Release/tag $tag already exists; immutable releases are never overwritten." }
+          $notes = @"
+          # EnterpriseIT $env:APP_VERSION — Development Preview
+
+          **This is NOT an installable platform release.**
+
+          This asset is the self-contained Setup.exe command-line/diagnostic preview. It can display usage and validate a supplied offline payload against an independently obtained SHA-256 digest. The integrated install path remains intentionally fail-closed: PostgreSQL migration activation, complete service orchestration, and clean Windows Server installation acceptance are not yet complete.
+
+          - Source branch: develop
+          - Source commit: $env:GITHUB_SHA
+          - Setup.exe SHA-256: $env:SETUP_SHA256
+          - Signing: unsigned; SHA-256 provides integrity checking, not publisher authentication.
+
+          Do not use this preview to modify a production server or production database. No router, firewall, NAT, or port-mapping changes are included.
+          "@
+          Set-Content -LiteralPath 'build/setup/RELEASE-NOTES.md' -Value $notes -Encoding utf8
+          gh release create $tag build/setup/EnterpriseIT.Setup.exe build/setup/SHA256SUMS.txt build/setup/RELEASE-NOTES.md --target $env:GITHUB_SHA --title "EnterpriseIT $env:APP_VERSION — Development Preview" --prerelease --notes "$notes"
