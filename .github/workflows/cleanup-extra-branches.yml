@@ -35,7 +35,7 @@ jobs:
           fi
           mapfile -t branches < <(gh api --paginate "repos/$REPOSITORY/branches" --jq '.[].name')
           for required in main beta develop; do
-            if ! printf '%s\\n' "${branches[@]}" | grep -Fxq "$required"; then
+            if ! printf '%s\n' "${branches[@]}" | grep -Fxq "$required"; then
               echo "::error::Required branch $required is missing. Aborting."
               exit 1
             fi
@@ -68,7 +68,7 @@ jobs:
             done
 
             sha="$(gh api "repos/$REPOSITORY/branches/$branch" --jq '.commit.sha')"
-            safe_name="${branch//\\//--}"
+            safe_name="${branch//\//--}"
             tag="archive/branch-cleanup/${safe_name}-${sha:0:12}"
 
             if existing="$(gh api "repos/$REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null)"; then
