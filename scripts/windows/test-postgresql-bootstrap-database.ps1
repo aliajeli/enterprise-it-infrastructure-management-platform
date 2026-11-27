@@ -184,6 +184,17 @@ try{
  if($roleSetting.Trim() -cne "1"){throw "Bootstrap must configure the migration login default role as SchemaOwnerRole."}
  $migrationIdentity=Invoke-TestPsql -PsqlExe $psql -Sql "SELECT session_user||'|'||current_user;" -User "ci_migrator" -Database "ci_enterprise_it"
  if($migrationIdentity.Trim() -cne "ci_migrator|ci_owner"){throw "Migration login must authenticate as ci_migrator and execute with ci_owner as current_user."}
+ # A pre-existing ADMIN OPTION would let the migration login delegate the
+ # schema-owner role. Bootstrap must reject that state before changing it.
+ Invoke-TestPsql -PsqlExe $psql -Sql "GRANT ci_owner TO ci_migrator WITH ADMIN OPTION, INHERIT FALSE, SET TRUE;"|Out-Null
+ $adminMembershipRejected=$false
+ try{& $bootstrapScript @parameters -Confirm:$false|Out-Null}catch{
+  $adminMembershipRejected=$_.Exception.Message -like "*membership has ADMIN OPTION*refusing to adopt*"
+ }
+ if(-not $adminMembershipRejected){throw "Bootstrap must reject a migration membership with ADMIN OPTION."}
+ $adminOption=Invoke-TestPsql -PsqlExe $psql -Sql "SELECT admin_option FROM pg_auth_members m JOIN pg_roles member ON member.oid=m.member JOIN pg_roles granted ON granted.oid=m.roleid WHERE member.rolname='ci_migrator' AND granted.rolname='ci_owner';"
+ if($adminOption.Trim() -cne "t"){throw "Rejected ADMIN OPTION membership must remain unchanged."}
+ Invoke-TestPsql -PsqlExe $psql -Sql "REVOKE ADMIN OPTION FOR ci_owner FROM ci_migrator;"|Out-Null
  $roleCount=Invoke-TestPsql -PsqlExe $psql -Sql "SELECT count(*) FROM pg_roles WHERE rolname IN ('ci_bootstrap_admin','ci_owner','ci_migrator','ci_api','ci_worker');"
  if($roleCount.Trim() -cne "5"){throw "Fresh bootstrap must create all five deployment roles."}
  $privileged=Invoke-TestPsql -PsqlExe $psql -Sql "SELECT count(*) FROM pg_roles WHERE rolname IN ('ci_owner','ci_migrator','ci_api','ci_worker') AND (rolsuper OR rolcreaterole OR rolcreatedb OR rolbypassrls OR rolreplication);"
