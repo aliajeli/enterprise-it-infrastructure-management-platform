@@ -1,3 +1,8 @@
+## 0.1.295 — Windows Setup preview CI exit-code correction — 2026-11-27
+
+- Corrected the preview release workflow to rely on the PowerShell test script's terminating errors and its explicit output-file assertions, rather than a stale native-command `$LASTEXITCODE` left behind by expected fail-closed negative tests.
+- No installer security gate or installation behavior was changed.
+
 ## 0.1.294 — Windows Setup.exe development preview — 2026-11-27
 
 - Bumped the immutable application version for this development preview.
