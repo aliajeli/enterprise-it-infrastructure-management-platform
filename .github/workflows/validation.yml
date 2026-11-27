@@ -358,6 +358,26 @@ jobs:
           }
           exit 0
 
+      - name: Build and test EnterpriseIT Setup.exe
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-enterpriseit-setup.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=EnterpriseIT Setup.exe test failure::$message"
+            exit 1
+          }
+          exit 0
+
+      - name: Publish EnterpriseIT Setup.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterpriseit-setup-${{ github.run_id }}
+          path: build/setup/EnterpriseIT.Setup.exe
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
 
