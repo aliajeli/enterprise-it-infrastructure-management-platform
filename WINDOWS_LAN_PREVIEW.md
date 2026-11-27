@@ -24,7 +24,7 @@ Omit `-BootstrapAdmin` after the first administrator has been created. The scrip
 
 The API listens only on `127.0.0.1:13001`. PostgreSQL is published only on `127.0.0.1:5432`. Only the web application listens on all workstation interfaces at TCP 3000.
 
-The script prints the workstation's LAN IPv4 address. From another computer on the same LAN, open `http://WORKSTATION-LAN-IP:3000` and sign in using the administrator account created during bootstrap. Do not expose TCP 3000 to public networks.
+The script prints the workstation's LAN IPv4 address. Use that exact URL both on the workstation and from other computers on the same LAN: `http://WORKSTATION-LAN-IP:3000`. The API validates the configured public origin, so do not switch between the LAN IP, `localhost`, and a hostname during a session. Sign in using the administrator account created during bootstrap. Do not expose TCP 3000 to public networks.
 
 ## Windows Firewall
 

@@ -74,8 +74,7 @@ try {
 } catch { & (Join-Path $PSScriptRoot "stop-lan-preview.ps1"); throw }
 Write-Host ""
 Write-Host "EnterpriseIT LAN preview is running."
-Write-Host "Open from this PC: http://127.0.0.1:3000"
-Write-Host ("Open from another PC on the same LAN: http://" + $lanIp + ":3000")
+Write-Host ("Open from this PC or another computer on the same LAN: http://" + $lanIp + ":3000")
 Write-Host "API and PostgreSQL remain loopback-only."
 Write-Host "Logs: $logRoot"
 Write-Host "Stop: pwsh -NoProfile -File scripts\windows\stop-lan-preview.ps1"
