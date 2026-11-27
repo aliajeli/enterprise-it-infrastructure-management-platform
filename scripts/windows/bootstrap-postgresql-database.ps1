@@ -191,6 +191,11 @@ $detectSql="SELECT rolname||'|'||left(rolcanlogin::text,1)||'|'||left(rolsuper::
  $databaseCreated=$false
  if(-not $databaseExists){$statements.Add("CREATE DATABASE "+$DatabaseName+" OWNER "+$SchemaOwnerRole+";");$databaseCreated=$true}
  $statements.Add("GRANT ALL ON DATABASE "+$DatabaseName+" TO "+$MigrationRole+";")
+ # The disposable PostgreSQL 18 / Prisma 7.10.1 experiment proved this exact
+ # role-default mechanism: the login authenticates as MigrationRole while
+ # every migration connection executes with SchemaOwnerRole as current_user.
+ $statements.Add("GRANT "+$SchemaOwnerRole+" TO "+$MigrationRole+" WITH INHERIT FALSE, SET TRUE;")
+ $statements.Add("ALTER ROLE "+$MigrationRole+" SET role = "+(ConvertTo-SqlStringLiteral $SchemaOwnerRole)+";")
  if($AdminUser -cne $superuser){$statements.Add("GRANT ALL ON DATABASE "+$DatabaseName+" TO "+$AdminUser+";")}
  $mutateSql=($statements -join [Environment]::NewLine)
  if(-not [string]::IsNullOrWhiteSpace($mutateSql)){Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $mutateSql -Stage "mutate"|Out-Null}
@@ -216,6 +221,15 @@ $detectSql="SELECT rolname||'|'||left(rolcanlogin::text,1)||'|'||left(rolsuper::
  if($verifyDbLines.Count -ne 1){throw "PostgreSQL bootstrap verification found a missing database; refusing to report success."}
  $verifyDbFields=$verifyDbLines[0].Split("|")
  if($verifyDbFields.Count -ne 2 -or $verifyDbFields[1] -cne $SchemaOwnerRole){throw "PostgreSQL bootstrap verification found an unexpected database owner; refusing to report success."}
+ # Verify both the explicit SET-only membership and the role default that
+ # Prisma uses on each new connection. Never report bootstrap success unless
+ # the effective migration identity can be established by the real login.
+ $membershipSql="SELECT member.rolname||'|'||granted.rolname||'|'||left(m.inherit_option::text,1)||'|'||left(m.set_option::text,1) FROM pg_auth_members m JOIN pg_roles member ON member.oid=m.member JOIN pg_roles granted ON granted.oid=m.roleid WHERE member.rolname="+(ConvertTo-SqlStringLiteral $MigrationRole)+" AND granted.rolname="+(ConvertTo-SqlStringLiteral $SchemaOwnerRole)+";"
+ $membershipOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $membershipSql -Stage "verify-migration-membership"
+ if($membershipOutput.Trim() -cne ($MigrationRole+"|"+$SchemaOwnerRole+"|f|t")){throw "PostgreSQL bootstrap verification found an unexpected migration role membership; refusing to report success."}
+ $settingSql="SELECT count(*) FROM pg_db_role_setting s JOIN pg_roles r ON r.oid=s.setrole WHERE r.rolname="+(ConvertTo-SqlStringLiteral $MigrationRole)+" AND s.setdatabase=0 AND "+(ConvertTo-SqlStringLiteral ("role="+$SchemaOwnerRole))+"=ANY(s.setconfig);"
+ $settingOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $adminPasswordText -Arguments $connectionArguments -Sql $settingSql -Stage "verify-migration-role-setting"
+ if($settingOutput.Trim() -cne "1"){throw "PostgreSQL bootstrap verification found an unexpected migration role default; refusing to report success."}
  # Password texts remain referenced only until script exit; they are never
  # written to disk, argv, logs or exception messages.
  [pscustomobject]@{status="ok";database=$DatabaseName;databaseCreated=$databaseCreated;rolesCreated=@($rolesCreated);rolesConverged=@($rolesConverged);credentialTransport="child-environment-and-stdin";mutated=$true}|ConvertTo-Json -Depth 4
