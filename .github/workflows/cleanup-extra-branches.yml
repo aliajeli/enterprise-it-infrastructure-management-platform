@@ -49,10 +49,44 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t branches < <(gh api --paginate "repos/$REPOSITORY/branches" --jq '.[].name')
           mapfile -t open_heads < <(gh pr list --repo "$REPOSITORY" --state open --json headRefName --jq '.[].headRefName')
 
-          for branch in "${branches[@]}"; do
+          while IFS=
+            case "$branch" in
+              main|beta|develop)
+                echo "KEEP $branch"
+                continue
+                ;;
+            esac
+
+            for open_head in "${open_heads[@]}"; do
+              if [[ "$open_head" == "$branch" ]]; then
+                echo "::error::Open PR still uses $branch. Nothing further will be deleted."
+                exit 1
+              fi
+            done
+
+            safe_name="${branch//\//--}"
+            tag="archive/branch-cleanup/${safe_name}-${sha:0:12}"
+
+            if existing="$(gh api "repos/$REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null)"; then
+              if [[ "$existing" != "$sha" ]]; then
+                echo "::error::Archive tag $tag exists at a different SHA. Aborting."
+                exit 1
+              fi
+            else
+              gh api --method POST "repos/$REPOSITORY/git/refs" \\
+                -f "ref=refs/tags/$tag" \\
+                -f "sha=$sha" >/dev/null
+            fi
+
+            echo "ARCHIVED $branch -> $tag ($sha)"
+            gh api --method DELETE "repos/$REPOSITORY/git/refs/heads/$branch"
+            echo "DELETED $branch"
+          done < <(gh api --paginate "repos/$REPOSITORY/branches" --jq '.[] | [.name, .commit.sha] | @tsv')
+
+          echo "Branch cleanup completed. main, beta and develop were preserved."
+\\t' read -r branch sha; do
             case "$branch" in
               main|beta|develop)
                 echo "KEEP $branch"
