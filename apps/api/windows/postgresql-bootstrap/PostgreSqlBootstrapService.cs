@@ -307,8 +307,11 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             throw new InvalidOperationException("Bootstrap payload root is not versioned.");
 
         var initdb = Path.Combine(installRoot, "postgresql", "pgsql", "bin", "initdb.exe");
-        if (!File.Exists(initdb))
-            throw new FileNotFoundException("PostgreSQL initdb payload is missing.");
+        // Pin initdb by handle before the version check: identity, reparse state
+        // and DACL are captured now, the no-delete share blocks rename/replace
+        // while both launches run, and the pin is re-verified after cluster
+        // initialization. A missing or non-plain payload fails closed here.
+        using var initdbPin = InitdbPayloadPin.Open(initdb);
 
         WriteTrace("initdb-version-check-started");
         using (var versionProcess = new Process
@@ -337,14 +340,12 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
                 throw new InvalidDataException("Unsupported PostgreSQL initdb version.");
         }
 
-        var dataRoot = Path.GetFullPath(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "EnterpriseIT", "PostgreSQL", "18", "data"));
-        if (Directory.Exists(dataRoot) && Directory.EnumerateFileSystemEntries(dataRoot).Any())
-            throw new IOException("PostgreSQL data directory is not empty.");
-
-        Directory.CreateDirectory(dataRoot);
-        WriteTrace("initdb-data-root-prepared");
+        using var dataDirectory = PostgreSqlDataDirectoryHandleChain.OpenKnownDataRoot();
+        var dataRoot = dataDirectory.DisplayPath;
+        dataDirectory.VerifyStillBound();
+        // Do not create or adopt a path here. The privileged provisioner must
+        // create the fixed directory and establish its ACL before this service runs.
+        WriteTrace("initdb-data-root-handle-verified");
         var start = new ProcessStartInfo
         {
             FileName = initdb,
@@ -404,15 +405,25 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
             await Task.WhenAll(stdoutDrain, stderrDrain).WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
             if (process.ExitCode != 0)
                 throw new InvalidOperationException("PostgreSQL initdb failed.");
-            var versionFile = Path.Combine(dataRoot, "PG_VERSION");
-            if (!File.Exists(versionFile) ||
-                !string.Equals((await File.ReadAllTextAsync(versionFile, cancellationToken)).Trim(), "18",
-                    StringComparison.Ordinal))
-                throw new InvalidDataException("PostgreSQL cluster verification failed.");
-            var hbaPath = Path.Combine(dataRoot, "pg_hba.conf");
-            if (!File.Exists(hbaPath) ||
-                !(await File.ReadAllTextAsync(hbaPath, cancellationToken)).Contains("scram-sha-256", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("PostgreSQL SCRAM authentication policy was not created.");
+            dataDirectory.VerifyStillBound();
+            using (var versionHandle = dataDirectory.OpenDataFileForRead("PG_VERSION"))
+            using (var versionReader = new StreamReader(new FileStream(versionHandle, FileAccess.Read, 4096, isAsync: false), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            {
+                if (!string.Equals((await versionReader.ReadToEndAsync(cancellationToken)).Trim(), "18", StringComparison.Ordinal))
+                    throw new InvalidDataException("PostgreSQL cluster verification failed.");
+            }
+            using (var hbaHandle = dataDirectory.OpenDataFileForRead("pg_hba.conf"))
+            using (var hbaReader = new StreamReader(new FileStream(hbaHandle, FileAccess.Read, 4096, isAsync: false), Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            {
+                if (!(await hbaReader.ReadToEndAsync(cancellationToken)).Contains("scram-sha-256", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("PostgreSQL SCRAM authentication policy was not created.");
+            }
+            dataDirectory.VerifyStillBound();
+            await HardenClusterConfigurationAsync(dataDirectory, cancellationToken);
+            dataDirectory.VerifyStillBound();
+            // Both launches are complete: the retained pin handle must still
+            // reference the same file with the same ACL and no reparse state.
+            initdbPin.VerifyUnchanged();
         }
         catch
         {
@@ -431,6 +442,52 @@ internal sealed class PostgreSqlBootstrapService : BackgroundService
         {
             Array.Clear(stdin, 0, stdin.Length);
         }
+    }
+
+    private static async Task<string> ReadDataFileTextAsync(
+        PostgreSqlDataDirectoryHandleChain dataDirectory, string name, CancellationToken cancellationToken)
+    {
+        using var handle = dataDirectory.OpenDataFileForRead(name);
+        using var reader = new StreamReader(
+            new FileStream(handle, FileAccess.Read, 4096, isAsync: false), Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true);
+        return await reader.ReadToEndAsync(cancellationToken);
+    }
+
+    // A fresh initdb writes only the shipped sample configuration. Any active
+    // network setting or remote-reject line before hardening means the cluster
+    // was not created by this initialization, so the request fails closed.
+    // Hardening appends the exact loopback pins through the pinned handle
+    // chain (never by path) and re-reads both files to prove they applied.
+    // The appended values are the same pins the orchestration preflight and
+    // the PostgreSQL service provisioner require before any service starts.
+    private async Task HardenClusterConfigurationAsync(
+        PostgreSqlDataDirectoryHandleChain dataDirectory, CancellationToken cancellationToken)
+    {
+        WriteTrace("cluster-config-hardening-started");
+        var conf = await ReadDataFileTextAsync(dataDirectory, "postgresql.conf", cancellationToken);
+        if (System.Text.RegularExpressions.Regex.IsMatch(conf, @"(?m)^\s*listen_addresses\s*=") ||
+            System.Text.RegularExpressions.Regex.IsMatch(conf, @"(?m)^\s*port\s*="))
+            throw new InvalidDataException("PostgreSQL configuration was not created by the expected initialization.");
+        var hba = await ReadDataFileTextAsync(dataDirectory, "pg_hba.conf", cancellationToken);
+        if (hba.Contains("0.0.0.0/0", StringComparison.Ordinal) ||
+            hba.Contains("::/0", StringComparison.Ordinal))
+            throw new InvalidDataException("PostgreSQL client authentication policy was not created by the expected initialization.");
+        dataDirectory.AppendDataFileText("postgresql.conf",
+            "\nlisten_addresses = '127.0.0.1'\nport = 5432\n");
+        dataDirectory.AppendDataFileText("pg_hba.conf",
+            "\nhost\tall\tall\t0.0.0.0/0\treject\nhost\tall\tall\t::/0\treject\n");
+        conf = await ReadDataFileTextAsync(dataDirectory, "postgresql.conf", cancellationToken);
+        if (!System.Text.RegularExpressions.Regex.IsMatch(conf, @"(?m)^\s*listen_addresses\s*=\s*'127\.0\.0\.1'") ||
+            !System.Text.RegularExpressions.Regex.IsMatch(conf, @"(?m)^\s*port\s*=\s*5432\s*$"))
+            throw new InvalidDataException("PostgreSQL loopback configuration could not be established.");
+        hba = await ReadDataFileTextAsync(dataDirectory, "pg_hba.conf", cancellationToken);
+        if (!hba.Contains("127.0.0.1/32", StringComparison.Ordinal) ||
+            !hba.Contains("0.0.0.0/0\treject", StringComparison.Ordinal) ||
+            !hba.Contains("::/0\treject", StringComparison.Ordinal) ||
+            !hba.Contains("scram-sha-256", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("PostgreSQL authentication policy could not be hardened.");
+        WriteTrace("cluster-config-hardened");
     }
 
     private static async Task DrainAndDiscardAsync(StreamReader reader)

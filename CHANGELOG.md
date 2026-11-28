@@ -1,3 +1,73 @@
+## 0.1.296 — Windows Setup preview PowerShell exit-state correction — 2026-11-27
+
+- Reset the PowerShell process native exit-code state after the test script returns successfully. The script's negative-path tests intentionally invoke Setup.exe expecting nonzero exits; PowerShell otherwise propagates the final expected native exit code and marks the outer CI step failed despite the explicit success result.
+- The Windows Setup.exe publish, payload digest verification, and install/uninstall policy test all completed successfully in the preceding run; the failure was only the outer process exit-state propagation. No installer guard was changed.
+
+## 0.1.295 — Windows Setup preview CI exit-code correction — 2026-11-27
+
+- Corrected the preview release workflow to rely on the PowerShell test script's terminating errors and its explicit output-file assertions, rather than a stale native-command `$LASTEXITCODE` left behind by expected fail-closed negative tests.
+- No installer security gate or installation behavior was changed.
+
+## 0.1.294 — Windows Setup.exe development preview — 2026-11-27
+
+- Bumped the immutable application version for this development preview.
+- Added a Windows-only GitHub Actions publication workflow that builds and exercises the self-contained Setup.exe CLI on a disposable Windows runner, computes SHA-256, and publishes a GitHub prerelease on `develop`.
+- The prerelease is explicitly a **Setup CLI/diagnostic preview, not an installable platform package**. The EXE supports usage and payload verification; the actual install path remains fail-closed while the PostgreSQL migration and service orchestration acceptance gates remain disabled.
+- No service, database, firewall, router, NAT, or production data changes are performed by this workflow.
+
+## 0.1.293 — PostgreSQL bootstrap capability: first-install lifecycle, ownership verification and real database bootstrap — 2026-11-26
+
+- Replaced the terminal throw in `bootstrap-postgresql-database.ps1` with the real bootstrap capability: fail-closed cluster-state and hardened-configuration checks before any server contact, then idempotent detection/creation of the five deployment roles and the owned database through `psql`. The connection secret travels only in the child `PGPASSWORD` environment and SQL text only on stdin; process arguments, logs and exception messages never contain a credential, PostgreSQL client stderr is discarded because error text may quote a rejected statement, and a pre-existing database with a different owner or a role with unexpected attributes is rejected before any statement executes.
+- Added `scripts/windows/postgresql-cluster-identity.ps1`: read-only cluster state detection (missing/initialized with strict rejection of stray content, reparse points and non-18 majors), the hardened loopback configuration assertion, deterministic `NT SERVICE\...` SID resolution, and delegation to the native `--verify-data` mode for exact ACL ownership proof. The lifecycle fails closed on every ambiguous condition.
+- The dedicated bootstrap service now hardens a fresh cluster immediately after initdb: it rejects any pre-existing active network setting (a cluster not created by this initialization), appends the exact `listen_addresses = '127.0.0.1'`, `port = 5432` and remote IPv4/IPv6 reject pins through the pinned handle chain (new `AppendDataFileText` — handle-relative, no path write), and re-reads both files to prove the pins applied. The SCM acceptance test now asserts these pins, their SCRAM-first ordering, and continues to prove no secret appears in argv or on disk.
+- Added `Invoke-PostgreSqlFirstInstallLifecycle` to the orchestrator: a missing data directory is initialized only through the dedicated bootstrap pipe with the operator-supplied secret (after the native provisioner creates the fixed chain), while an existing cluster must pass the configuration assertion and the native ownership verification before anything may observe it; missing cluster without credential, missing bootstrap payload and verification failure all fail closed before service registration. The unconditional bootstrap throw is now the `Assert-PostgreSqlBootstrapCapability` gate, which opens only for a complete, validated input set; the unconditional orchestration gate at `orchestrate-windows-services.ps1` remains in place unchanged.
+- Payload completeness: `invoke-postgresql-bootstrap.ps1`, `postgresql-cluster-identity.ps1`, `psql.exe` and `pg_isready.exe` are now required offline payload components (packager and packager test), `stage-postgresql.ps1` requires `psql.exe`/`pg_isready.exe`, and the orchestration preflight requires `EnterpriseIT.PostgreSQLBootstrap.exe` plus `psql.exe` (18 required files).
+- New tests: `test-postgresql-first-install-lifecycle.ps1` (fail-closed lifecycle/capability/state edges with zero mutation) and `test-postgresql-bootstrap-database.ps1` (real PostgreSQL 18.7 cluster on the CI runner: fresh creation, independent verification, SCRAM login as a runtime role, idempotent convergence, foreign-database and foreign-role rejection proven mutation-free, uninitialized-cluster rejection, and a psql argv recorder proving no secret in process arguments). The safety test now expects the capability and cluster-state messages, and a complete bootstrap input set must open the capability and stop at the ownership gate.
+- The offline-installer disable-guard, the migration capability throw, Windows Server virtual-account acceptance, Credential Persistence, Discovery Handler, SNMP polling and Device Scanning remain disabled/pending as before.
+
+## 0.1.292 — native PostgreSQL data-directory provisioning and initdb payload pinning — 2026-11-26
+
+- Added an elevated single-purpose provisioning/verify mode to the dedicated PostgreSQL bootstrap executable (`--provision-data` / `--verify-data`), dispatched before the host is built. The fixed chain `ProgramData\EnterpriseIT\PostgreSQL\<version>` (traversal parent) and `...\data` (leaf) is created with `NtCreateFile` + `FILE_CREATE` and an explicit `SECURITY_DESCRIPTOR` at creation; every component is opened handle-relative with reparse-point, volume-serial and 128-bit file-ID checks, and handles omit `FILE_SHARE_DELETE`.
+- Enforced the split ACL policy at creation and on every verify run: owner Administrators, protected DACL, exactly four OICI allow ACEs — SYSTEM/Administrators Full Control, both service SIDs at read/execute traversal on the parents and Modify on the data leaf. `EnterpriseIT` is never re-ACLed: a missing root inherits the OS-managed ProgramData ACL at creation and an existing root is type/volume-checked only, so the Credential Vault's exact `EnterpriseIT` policy verification is unaffected.
+- Added transactional, identity-checked rollback: only directories created by the current invocation (proven by file ID) are removed in reverse order; `EnterpriseIT` and pre-existing stores are never removed or rewritten. Wrong ACLs, junctions (including intermediate ProgramData ancestors), non-directory collisions, broad-write ancestors, invalid arguments and non-elevated execution fail closed with fixed, path-free error categories.
+- `provision-postgresql-bootstrap-service.ps1` no longer creates or re-ACLs the data chain by path; it delegates to the native mode and adds identity-proven rollback of its own service registration — the created service's Path, Account and service SID are re-read from the SCM and must match this run before `sc delete`, and ambiguity fails closed. The Program Files payload read grant remains path-based by design (outside the data-directory trust boundary).
+- Pinned `initdb.exe` by handle before the version check, replacing the `File.Exists` TOCTOU: identity, reparse state and DACL are captured at open, the no-delete share blocks rename/replace while both launches run, and identity plus ACL are re-verified after cluster initialization.
+- Added `scripts/windows/test-postgresql-data-provisioning.ps1` and wired it into Platform validation: exact parent/leaf ACL assertions, EnterpriseIT non-mutation, verify mode, idempotency by file ID, junction/ancestor-reparse rejection, wrong-ACL no-mutation, file-slot collision, broad-write ancestor, argument/SID exit codes, and an isolated `POSTGRES_TEST_FAULTS` build exercising rollback at every stage plus confirmation that release builds ignore the fault key.
+- Closed the offline payload gap: `EnterpriseIT.PostgreSQLBootstrap.exe` and `scripts\windows\provision-postgresql-bootstrap-service.ps1` are required payload components in both the packager and its test. The offline-install disable-guard is unchanged. Windows Server acceptance, offline-installer activation, Credential Persistence, Discovery Handler, SNMP polling and Device Scanning remain disabled pending Security Gate.
+
+## 0.1.291 — fix Native file information interop — 2026-11-26
+
+- Replaced ambiguous duplicate P/Invoke overloads for GetFileInformationByHandleEx with one pointer-based native declaration and a typed structure reader. This resolves the C# compiler ambiguity observed in Windows CI.
+- The new Windows CI run for this correction is pending; do not treat the earlier failed run as a successful validation.
+
+## 0.1.290 — pin PostgreSQL data path and separate parent ACL — 2026-11-26
+
+- Added a Windows Native handle chain for the fixed ProgramData PostgreSQL data directory. Components are opened relative to retained parent handles with reparse-point opening, directory/type checks, volume serial and 128-bit file-ID verification. Handles omit FILE_SHARE_DELETE to prevent path replacement while initialization is active.
+- PostgreSQL cluster marker files are opened relative to the pinned data-directory handle and reject directories and reparse points. The chain is reopened and identity-compared before and after initdb.
+- Removed runtime path-based creation/adoption of the PostgreSQL data directory; provisioning must establish it before the service starts.
+- Changed the parent ACL so PostgreSQL receives read/execute traversal only; Modify remains scoped to the data leaf. SYSTEM and Administrators retain Full Control.
+- This is a source-level hardening step, not Windows adversarial acceptance. Provisioner path-based directory creation/ACL application, ACL-at-create, transactional rollback, initdb executable path pinning, and exact-head Windows tests remain outstanding. Offline installation remains disabled.
+
+## 0.1.289 — refuse adoption of pre-existing PostgreSQL service — 2026-11-26
+
+The PostgreSQL service provisioner previously accepted an existing service when its image path, data directory, and account matched the requested plan, then modified its service SID, recovery policy, and filesystem ACLs. Matching service metadata is not proof of ownership.
+
+- Provisioning now rejects every pre-existing `EnterpriseITPostgreSQL` service before changing service configuration or filesystem ACLs.
+- Added a Windows policy regression assertion that rejects metadata-based service adoption.
+- This is a fail-closed ownership correction only. Handle-relative PostgreSQL directory provisioning, independent parent/data ACLs, transactional rollback, secure credential transport, Windows Server acceptance, and offline-installer activation remain outstanding.
+
+## 0.1.288 — establish main/beta/developer branch flow — 2026-11-25
+
+Introduced an explicit three-stage branch model without changing the default branch or merging experimental work into main.
+
+- `main` remains the stable release branch.
+- `beta` is initialized as a fast-forward of the current validated development head, so it contains the current project state without rewriting main.
+- `developer` is the active integration branch and starts from the latest reviewed development commit.
+- Platform validation now runs on pushes to main, beta, and developer, and on pull requests targeting those branches.
+- Existing arena and phase3 branches are preserved. No pull requests were merged and no installer, service, credential, database, firewall, or NAT behavior was enabled.
+
+The offline installer remains disabled pending handle-based PostgreSQL data-directory provisioning, transactional service/ACL rollback, secure bootstrap credential transport, and Windows Server acceptance.
+
 ## 0.1.287 — make legacy handle and pipe diagnostics assert their documented outcomes — 2026-11-25
 
 The three legacy Windows experiments were failing because they treated observations outside the supported trust boundary as product-test failures: same-account processes can obtain process-handle access when running under the same interactive identity, while PostgreSQL 18.7 re-exec changes the named-pipe client PID. These observations do not demonstrate compromise of the production bootstrap service, which is tested separately against a distinct Standard User and the service-owned initdb parent/re-exec child.

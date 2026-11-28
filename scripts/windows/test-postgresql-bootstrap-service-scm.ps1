@@ -87,6 +87,17 @@ try {
   Write-Host ("SCM service SID: " + $serviceSid)
   & icacls.exe $diagnosticRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap diagnostic directory." }
+  # The service pins the fixed ProgramData chain with NtCreateFile FILE_OPEN
+  # and deliberately refuses to create the data leaf; the privileged
+  # provisioner (and this fixture on its behalf) must create it first with the
+  # provisioner's leaf ACL: SYSTEM/Administrators full, bootstrap service SID
+  # Modify. initdb runs as the service identity and needs Modify to populate
+  # an otherwise empty cluster directory.
+  $dataRoot = Join-Path $diagnosticRoot "data"
+  if (Test-Path -LiteralPath $dataRoot) { throw "Bootstrap data leaf already exists; refusing to reuse it." }
+  New-Item -ItemType Directory -Path $dataRoot | Out-Null
+  & icacls.exe $dataRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)(F)" "*S-1-5-32-544:(OI)(CI)(F)" ("*" + $serviceSid + ":(OI)(CI)(M)") | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Could not protect bootstrap data leaf." }
   # This marker activates a bounded 15-second initdb hold only in this
   # disposable smoke fixture, allowing a separate Standard User to probe
   # PROCESS_DUP_HANDLE on the real initdb parent and restricted re-exec child.
@@ -311,7 +322,15 @@ if($denied -eq 2){exit 0};exit 43
   $handleProbeStart.LoadUserProfile = $false
   $child = [Diagnostics.Process]::Start($handleProbeStart)
   if ($null -eq $child) { throw "Standard User initdb process-access probe could not be created." }
-  if (-not $child.WaitForExit(15000)) { $child.Kill($true); throw "Standard User initdb process-access probe timed out." }
+  # The probe compiles its P/Invoke stub with Add-Type on first use, which can
+  # exceed 15 seconds on a loaded runner. Drain both redirected streams so a
+  # verbose failure cannot fill the pipes, close stdin the probe never reads,
+  # and keep the bound below the service smoke-hold window so both target
+  # pids stay alive for the probe.
+  $null = $child.StandardOutput.ReadToEndAsync()
+  $null = $child.StandardError.ReadToEndAsync()
+  $child.StandardInput.Close()
+  if (-not $child.WaitForExit(30000)) { $child.Kill($true); throw "Standard User initdb process-access probe timed out after 30 seconds." }
   if ($child.ExitCode -ne 0) {
     if ($child.ExitCode -eq 41) { throw "Standard User obtained PROCESS_DUP_HANDLE on a service-owned initdb process." }
     throw "Standard User PROCESS_DUP_HANDLE denial was not established for both initdb processes."
@@ -324,6 +343,18 @@ if($denied -eq 2){exit 0};exit 43
   $dataRoot = Join-Path $diagnosticRoot "data"
   if (-not (Test-Path -LiteralPath (Join-Path $dataRoot "PG_VERSION") -PathType Leaf) -or (Get-Content -LiteralPath (Join-Path $dataRoot "PG_VERSION") -Raw).Trim() -ne "18") { throw "Service-owned initdb did not create a PostgreSQL 18 cluster." }
   if ((Get-Content -LiteralPath (Join-Path $dataRoot "pg_hba.conf") -Raw) -notmatch "scram-sha-256") { throw "Service-owned initdb did not produce SCRAM authentication policy." }
+  # The service must harden the fresh cluster to the exact orchestration and
+  # provisioner pins: active loopback-only listen/port plus explicit remote
+  # IPv4/IPv6 rejection appended after the SCRAM loopback rules.
+  $hardenedConf = Get-Content -LiteralPath (Join-Path $dataRoot "postgresql.conf") -Raw
+  if ($hardenedConf -notmatch "(?m)^\s*listen_addresses\s*=\s*'127\.0\.0\.1'" -or $hardenedConf -notmatch "(?m)^\s*port\s*=\s*5432\s*$") { throw "Service-owned initdb did not harden postgresql.conf to loopback-only 127.0.0.1:5432." }
+  $hardenedHba = Get-Content -LiteralPath (Join-Path $dataRoot "pg_hba.conf") -Raw
+  if ($hardenedHba -notmatch "0\.0\.0\.0/0\s+reject" -or $hardenedHba -notmatch "::/0\s+reject") { throw "Service-owned initdb did not add explicit remote rejection to pg_hba.conf." }
+  $hbaAllLines = @($hardenedHba -split "\r?\n")
+  $scramLine = $hbaAllLines | Where-Object { $_ -match "127\.0\.0\.1/32\s+scram-sha-256" } | Select-Object -First 1
+  $rejectLine = $hbaAllLines | Where-Object { $_ -match "0\.0\.0\.0/0\s+reject" } | Select-Object -First 1
+  if ($null -eq $scramLine -or $null -eq $rejectLine) { throw "Hardened pg_hba.conf must keep loopback SCRAM and add remote rejection." }
+  if ([Array]::IndexOf($hbaAllLines, $scramLine) -ge [Array]::IndexOf($hbaAllLines, $rejectLine)) { throw "Remote rejection must follow the loopback SCRAM rules in pg_hba.conf." }
 
   foreach ($file in @(Get-ChildItem -LiteralPath $diagnosticRoot -File -Recurse)) {
     $diskBytes = [IO.File]::ReadAllBytes($file.FullName)
@@ -335,12 +366,22 @@ if($denied -eq 2){exit 0};exit 43
   Write-Host "SCM, Administrator preflight, Standard User pipe denial, real PostgreSQL 18.7 service-owned initdb, Standard User PROCESS_DUP_HANDLE denial on parent/re-exec child, SCRAM and plaintext-marker scan passed."
 
 } catch {
+  $failureMessage = $_.Exception.Message
   Write-Host ("Bootstrap SCM fixture failed at stage: " + $testStage)
   if (Test-Path -LiteralPath $diagnosticFile) {
     Get-Content -LiteralPath $diagnosticFile | ForEach-Object { Write-Host ("TRACE: " + $_) }
   } else { Write-Host "No bootstrap trace file was created before fixture failure." }
   try { Write-Host ((& sc.exe queryex $serviceName 2>&1 | Out-String)) } catch {}
-  throw
+  # Surface the failing stage and the non-secret diagnostic tail inside the
+  # exception so CI annotations remain sufficient when job logs are unreadable.
+  $traceTail = ""
+  try {
+    if (Test-Path -LiteralPath $diagnosticFile) {
+      $traceLines = @([IO.File]::ReadAllLines($diagnosticFile))
+      if ($traceLines.Count -gt 0) { $traceTail = (@($traceLines | Select-Object -Last 6) -join " ; ") }
+    }
+  } catch {}
+  throw "SCM fixture failed at stage '$testStage': $failureMessage | trace: $traceTail"
 } finally {
   if ($null -ne $child) { try { if (-not $child.HasExited) { $child.Kill(); $child.WaitForExit(10000) | Out-Null } } catch {}; $child.Dispose() }
   if ($createdService) {

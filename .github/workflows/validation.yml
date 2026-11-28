@@ -3,12 +3,14 @@ name: Platform validation
 on:
   push:
     branches:
-      - "phase3/**"
-      - "arena/**"
+      - main
+      - beta
+      - develop
   pull_request:
     branches:
       - main
-      - "phase3/**"
+      - beta
+      - develop
   workflow_dispatch:
 
 permissions:
@@ -150,7 +152,10 @@ jobs:
   windows-api-smoke:
     name: Windows API runtime smoke
     runs-on: windows-latest
-    timeout-minutes: 20
+    # This job now also runs the real initdb lifecycle and database-bootstrap
+    # capability tests; the previous 20-minute bound cancelled the database
+    # test mid-run while every gate was passing (run 45870490296).
+    timeout-minutes: 30
     env:
       DATABASE_URL: postgresql://platform:placeholder@127.0.0.1:5432/platform?schema=public
       API_HOST: 127.0.0.1
@@ -223,7 +228,25 @@ jobs:
         run: dotnet build apps/api/windows/postgresql-bootstrap/EnterpriseIT.PostgreSQLBootstrap.csproj --configuration Release
       - name: Verify dedicated PostgreSQL bootstrap service under SCM and Standard User pipe denial
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-service-scm.ps1
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-bootstrap-service-scm.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL bootstrap SCM test failure::$message"
+            exit 1
+          }
+
+      - name: Test PostgreSQL data directory native provisioning policy
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-data-provisioning.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL data provisioning test failure::$message"
+            exit 1
+          }
 
 
       - name: Test PostgreSQL bootstrap service staging plan
@@ -272,6 +295,30 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-postgresql-bootstrap-safety.ps1
 
+      - name: Test PostgreSQL first-install lifecycle fail-closed gates
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-first-install-lifecycle.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL first-install lifecycle test failure::$message"
+            exit 1
+          }
+          exit 0
+
+      - name: Test PostgreSQL database bootstrap capability against a real cluster
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-postgresql-bootstrap-database.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=PostgreSQL database bootstrap test failure::$message"
+            exit 1
+          }
+          exit 0
+
       - name: Test Windows service host staging plan
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-windows-service-host-staging.ps1
@@ -295,6 +342,38 @@ jobs:
       - name: Test offline installer archive validation
         shell: pwsh
         run: pwsh -NoProfile -File scripts/windows/test-offline-installer.ps1
+
+      - name: Test offline payload install and uninstall policy
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-offline-install-uninstall.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=Offline install/uninstall test failure::$message"
+            exit 1
+          }
+          exit 0
+
+      - name: Build and test EnterpriseIT Setup.exe
+        shell: pwsh
+        run: |
+          try {
+            & ./scripts/windows/test-enterpriseit-setup.ps1
+          } catch {
+            $message = $_.Exception.Message.Replace('%','%25').Replace("`r",'%0D').Replace("`n",'%0A')
+            Write-Output "::error title=EnterpriseIT Setup.exe test failure::$message"
+            exit 1
+          }
+          exit 0
+
+      - name: Publish EnterpriseIT Setup.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: enterpriseit-setup-${{ github.run_id }}
+          path: build/setup/EnterpriseIT.Setup.exe
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Build Windows DPAPI helper
         run: dotnet build apps/api/windows/dpapi-helper/CredentialVault.DpapiHelper.csproj --configuration Release
@@ -683,3 +762,15 @@ jobs:
           git commit -m "chore(deps): refresh lockfile for v${VERSION}"
           AUTH="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
           git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${AUTH}" push origin "HEAD:${GITHUB_REF_NAME}"
+
+
+  windows-lan-preview-script-validation:
+    name: Windows LAN preview launcher syntax and policy
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Parse and validate workstation launcher scripts
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/windows/test-lan-preview-launcher.ps1
