@@ -171,7 +171,7 @@ $detectSql="SELECT rolname||'|'||left(rolcanlogin::text,1)||'|'||left(rolsuper::
   if($credential.Role -ceq $superuser -or -not $knownRoles.ContainsKey($credential.Role)){continue}
   $loginArguments=@("-X","-q","-t","-A","-v","ON_ERROR_STOP=1","--host=$PgHost","--port=$PgPort","--username=$($credential.Role)","--dbname=postgres","-f","-")
   try{
-   $loginOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $credential.Password -Arguments $loginArguments -Sql "SELECT current_user;" -Stage "verify-existing-credential"
+   $loginOutput=Invoke-BootstrapPsql -PsqlPath $psql -ConnectionPassword $credential.Password -Arguments $loginArguments -Sql "SELECT session_user;" -Stage "verify-existing-credential"
    if($loginOutput.Trim() -cne $credential.Role){throw "credential-mismatch"}
   }catch{
    throw "Existing PostgreSQL login credential verification failed for role '$($credential.Role)'; refusing to rotate or overwrite its password."
